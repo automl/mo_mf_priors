@@ -1,1 +1,1 @@
-# Multi-objective Multi-fidelity Priors
+# Multi-objective Multi-fidelity Optimization with Priors

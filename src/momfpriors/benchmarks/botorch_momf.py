@@ -1,0 +1,123 @@
+from __future__ import annotations
+
+import numpy as np
+import torch
+from botorch.test_functions.multi_objective_multi_fidelity import MOMFBraninCurrin, MOMFPark
+from ConfigSpace import ConfigurationSpace
+
+from hpoglue import FunctionalBenchmark, Measure, Query, Result
+from hpoglue.fidelity import RangeFidelity
+from hpoglue.run_glue import run_glue
+from momfpriors.benchmarks.utils import find_incumbent
+from momfpriors.optimizers.random_search import RandomSearch
+
+
+# MOMF Branin Currin
+def _get_MOMFBC_space(seed: int = 0) -> ConfigurationSpace:
+    cs = ConfigurationSpace(
+        seed=seed,
+        space={
+            f"x{i}": (0.0, 1.0) for i in range(2)
+        }
+    )
+    return cs
+
+def wrapped_MOMFBC(
+    query: Query,
+) -> Result:
+    config = query.config.values
+    fidelity = float(query.fidelity/100) if query.fidelity else 1.0
+    X = torch.Tensor(np.array([config["x0"], config["x1"], fidelity]))
+    out = MOMFBraninCurrin()(X).tolist()
+
+    return Result(
+        query=query,
+        fidelity=query.fidelity,
+        values={
+            f"value{i}": -out[i-1] for i, _ in enumerate(out, start=1)
+        }
+    )
+
+MOMFBC_Bench = FunctionalBenchmark(
+    name="MOMFBraninCurrin",
+    config_space=_get_MOMFBC_space(),
+    metrics={
+        "value1": Measure.metric((-np.inf, np.inf), minimize=True), 
+        "value2": Measure.metric((-np.inf, np.inf), minimize=True)
+    },
+    fidelities={
+        "s": RangeFidelity.from_tuple((0, 100, 1))
+    },
+    query=wrapped_MOMFBC
+)
+
+
+# MOMF Park
+
+def _get_MOMFPark_space(seed: int = 0) -> ConfigurationSpace:
+    cs = ConfigurationSpace(
+        seed=seed,
+        space={
+            f"x{i}": (0.0, 1.0) for i in range(4)
+        }
+    )
+    return cs
+
+def wrapped_MOMFPark(
+    query: Query,
+) -> Result:
+    config = query.config.values
+    fidelity = query.fidelity[-1] if query.fidelity else 100
+    fidelity = float(fidelity/100)
+    X = torch.Tensor(np.array([config[f"x{i}"] for i in range(4)] + [fidelity]))
+    out = MOMFPark()(X).tolist()
+
+    return Result(
+        query=query,
+        fidelity=query.fidelity,
+        values={
+            f"value{i}": -out[i-1] for i, _ in enumerate(out, start=1)
+        }
+    )
+
+MOMFPark_Bench = FunctionalBenchmark(
+    name="MOMFPark",
+    config_space=_get_MOMFPark_space(),
+    metrics={
+        "value1": Measure.metric((-np.inf, np.inf), minimize=True), 
+        "value2": Measure.metric((-np.inf, np.inf), minimize=True)
+    },
+    fidelities={
+        "s": RangeFidelity.from_tuple((0, 100, 1))
+    },
+    query=wrapped_MOMFPark
+)
+
+
+if __name__ == "__main__":
+    # bench = MOMFBC_Bench
+    bench = MOMFPark_Bench
+    _df = run_glue(
+        optimizer=RandomSearch,
+        benchmark=bench,
+        seed=1,
+        budget=10000
+    )
+    print(bench.desc.name)
+    # print(df)
+    print(
+        find_incumbent(
+            df=_df,
+            results_col="result_values",
+            objective="value1",
+            minimize=True
+        )
+    )
+    print(
+        find_incumbent(
+            df=_df,
+            results_col="result_values",
+            objective="value2",
+            minimize=True
+        )
+    )
