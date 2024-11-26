@@ -1,10 +1,18 @@
-from hpoglue import Config, Optimizer, Problem, Query, Result
+from __future__ import annotations
+
 from pathlib import Path
+
+from hpoglue import Config, Optimizer, Problem, Query, Result
 
 
 class RandomSearch(Optimizer):
     name = "RandomSearch"
-    support = Problem.Support()
+    support = Problem.Support(
+        objectives=("single", "many"),
+        fidelities=(None),
+        cost_awareness=(None),
+        tabular=False
+    )
     def __init__(
         self,
         problem: Problem,
