@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 
-from hpoglue import Config, FunctionalBenchmark, Query, Result, run_glue
+from hpoglue import FunctionalBenchmark, Result
+
 from momfpriors.benchmarks import BENCHMARKS
-from momfpriors.benchmarks.utils import bench_first_fid, cs_random_sampling, find_incumbent
-from momfpriors.optimizers.random_search import RandomSearch
+from momfpriors.benchmarks.utils import bench_first_fid, cs_random_sampling, get_prior_configs
 
 
 def generate_priors_wrt_obj(
     seed: int,
     nsamples: int,
+    prior_spec: Iterable[tuple[str, int, float | None, float | None]],
     to: Path,
     benchmarks: (
         Mapping[str, str]
@@ -25,24 +26,24 @@ def generate_priors_wrt_obj(
     """Generate priors for the given benchmarks.
 
     Args:
-        seed (int): The seed to use for generating the priors.
+        seed: The seed to use for generating the priors.
 
-        nsamples (int): The number of samples to generate.
+        nsamples: The number of samples to generate.
 
-        to (Path): The path to save the priors.
+        prior_spec: The prior specification to use for generating the priors.
 
-        benchmarks (
-            Mapping[str, str]
-            | Mapping[FunctionalBenchmark, str]
-            | list[Mapping[str, str]]
-            | list[Mapping[FunctionalBenchmark, str]]
-        ): The benchmarks to generate priors for.
-        Each Mapping should have the benchmark as the key and the objective to generate the priors for as the value.
+        to: The path to save the priors.
 
-        fidelity (int | float | None, optional): The fidelity to use for the benchmarks. Defaults to None.
-        Only uses the first available fidelity for the benchmark.
+        benchmarks: The benchmarks to generate priors for.
+            Each Mapping should have the benchmark as the key and the objective to
+            generate the priors for as the value.
 
-        clean (bool, optional): Whether to clean the priors directory before generating the priors. Defaults to False.
+        fidelity: The fidelity to use for the benchmarks.
+            Defaults to None.
+            Only uses the first available fidelity for the benchmark.
+
+        clean: Whether to clean the priors directory before generating the priors.
+            Defaults to False.
     """
     # if to.exists() and clean:
     #     for child in filter(lambda path: path.is_file(), to.iterdir()):
@@ -84,34 +85,47 @@ def generate_priors_wrt_obj(
         else:
             at = max_fidelity
 
-        # results: list[Result] = []
-        # bench = benchmark.load(benchmark)
-        # for query in cs_random_sampling(
-        #     benchmark=benchmark,
-        #     nsamples=nsamples,
-        #     seed=seed,
-        #     at=at,
-        # ):
-        #     results.append(bench.query(query))
-
-        _df = run_glue.run_glue(
-            optimizer=RandomSearch,
+        results: list[Result] = []
+        bench = benchmark.load(benchmark)
+        for query in cs_random_sampling(
             benchmark=benchmark,
+            nsamples=nsamples,
             seed=seed,
-            budget=nsamples
+            at=at,
+        ):
+            results.append(bench.query(query))
+
+        prior_spec_results = []
+        _results = sorted(results, key=lambda r: r.values[objective])
+
+        for _, index, _, _ in prior_spec:
+            prior_spec_results.append(_results[index])
+
+        print(".\n".join([str(res) for res in prior_spec_results]))
+
+        prior_configs = get_prior_configs(
+            results=results,
+            space=benchmark.config_space,
+            objective=objective,
+            seed=seed,
+            prior_spec=prior_spec,
         )
 
-        print(_df)
+        print(prior_configs)
+
 
 
 if __name__ == "__main__":
     generate_priors_wrt_obj(
         seed=1,
         nsamples=10,
+        prior_spec=[
+            ("good", 0, 0.01, None)
+        ],
         to=Path("priors"),
         benchmarks=[
-            {"MOMFPark": "value1"},
-            {"MOMFPark": "value2"},
+            {"MOMFBraninCurrin": "value1"},
+            {"MOMFBraninCurrin": "value2"},
         ],
         fidelity=100,
         clean=True
