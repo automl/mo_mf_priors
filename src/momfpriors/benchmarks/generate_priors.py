@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+import argparse
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 
+import yaml
 from hpoglue import FunctionalBenchmark, Result
 
 from momfpriors.benchmarks import BENCHMARKS
 from momfpriors.benchmarks.utils import bench_first_fid, cs_random_sampling, get_prior_configs
 
 
-def generate_priors_wrt_obj(
+def generate_priors_wrt_obj(  # noqa: C901, PLR0912
     seed: int,
     nsamples: int,
     prior_spec: Iterable[tuple[str, int, float | None, float | None]],
@@ -21,6 +23,7 @@ def generate_priors_wrt_obj(
         | list[Mapping[FunctionalBenchmark, str]]
     ),
     fidelity: int | float | None = None,
+    *,
     clean: bool = False,
 ) -> None:
     """Generate priors for the given benchmarks.
@@ -45,11 +48,11 @@ def generate_priors_wrt_obj(
         clean: Whether to clean the priors directory before generating the priors.
             Defaults to False.
     """
-    # if to.exists() and clean:
-    #     for child in filter(lambda path: path.is_file(), to.iterdir()):
-    #         child.unlink()
+    if to.exists() and clean:
+        for child in filter(lambda path: path.is_file(), to.iterdir()):
+            child.unlink()
 
-    # to.mkdir(exist_ok=True)
+    to.mkdir(exist_ok=True)
 
     if isinstance(benchmarks, dict):
         benchmarks = [benchmarks]
@@ -111,22 +114,113 @@ def generate_priors_wrt_obj(
             prior_spec=prior_spec,
         )
 
-        print(prior_configs)
+        for name, config in prior_configs.items():
+            with (to / f"{benchmark.name}_{objective}_{name}.yaml").open("w") as f:
+                yaml.dump(
+                    {
+                        "benchmark": benchmark.name,
+                        "prior_name": name,
+                        "objective": objective,
+                        "config": config.values,
+                    }, f
+                )
 
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=0
+    )
+    parser.add_argument(
+        "--nsamples",
+        type=int,
+        default=10
+    )
+    parser.add_argument(
+        "--prior_spec",
+        nargs="+",
+        type=str,
+        default=[
+            "good:0:0.01:None",
+            "medium:0:0.125:None",
+            "bad:-1:0:None",
+        ],
+    )
+    parser.add_argument(
+        "--to",
+        type=Path,
+        default=Path("./src/priors"),
+    )
+    parser.add_argument(
+        "--benchmarks",
+        nargs="+",
+        type=str,
+        default=[
+            "MOMFBraninCurrin:value1",
+            "MOMFBraninCurrin:value2",
+            "MOMFPark:value1",
+            "MOMFPark:value2",
+        ],
+    )
+    parser.add_argument(
+        "--fidelity",
+        type=float,
+        default=None
+    )
+    parser.add_argument(
+        "--clean",
+        action="store_true"
+    )
+    args = parser.parse_args()
+
+    if isinstance(args.benchmarks, str):
+        args.benchmarks = [args.benchmarks]
+
+    _benchmarks: list[Mapping[str, str]] = []
+    for benchmark in args.benchmarks:
+        if ":" not in benchmark:
+            raise ValueError(
+                "Invalid benchmark specification!"
+                "Expected format: 'benchmark:objective'"
+                f"Got: '{benchmark}'"
+            )
+        bench_name, objective = benchmark.split(":")
+        _benchmarks.append({bench_name.strip(): objective.strip()}
+        )
+
+    if isinstance(args.prior_spec, str):
+        args.prior_spec = [args.prior_spec]
+
+    _prior_spec: list[tuple[str, int, float | None, float | None]] = []
+    for prior in args.prior_spec:
+        if ":" not in prior:
+            raise ValueError(
+                "Invalid prior specification!"
+                "Expected format: 'name:index:std:categorical_swap_chance'"
+                f"Got: '{prior}'"
+            )
+        name, index, std, categorical_swap_chance = prior.split(":")
+        _prior_spec.append(
+            (
+                name.strip(),
+                int(index.strip()),
+                float(std.strip()) if std != "None" else None,
+                float(categorical_swap_chance.strip())
+                if categorical_swap_chance != "None"
+                else None,
+            )
+        )
+
     generate_priors_wrt_obj(
-        seed=1,
-        nsamples=10,
-        prior_spec=[
-            ("good", 0, 0.01, None)
-        ],
-        to=Path("priors"),
-        benchmarks=[
-            {"MOMFBraninCurrin": "value1"},
-            {"MOMFBraninCurrin": "value2"},
-        ],
-        fidelity=100,
-        clean=True
+        seed=args.seed,
+        nsamples=args.nsamples,
+        prior_spec=_prior_spec,
+        to=args.to,
+        benchmarks=_benchmarks,
+        fidelity=args.fidelity,
+        clean=args.clean,
     )
