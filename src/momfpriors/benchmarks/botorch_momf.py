@@ -5,11 +5,11 @@ import torch
 from botorch.test_functions.multi_objective_multi_fidelity import MOMFBraninCurrin, MOMFPark
 from ConfigSpace import ConfigurationSpace
 from hpoglue import FunctionalBenchmark, Measure, Query, Result
-from hpoglue.fidelity import ContinuousFidelity, RangeFidelity
+from hpoglue.fidelity import ContinuousFidelity
 from hpoglue.run_glue import run_glue
 
+from momfpriors.baselines.random_search import RandomSearch
 from momfpriors.benchmarks.utils import find_incumbent
-from momfpriors.optimizers.random_search import RandomSearch
 
 
 # MOMF Branin Currin
