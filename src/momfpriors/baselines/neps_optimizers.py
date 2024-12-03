@@ -60,10 +60,10 @@ class NepsOptimizer:
         self.space = space
         if not isinstance(root_dir, Path):
             root_dir = Path(root_dir)
-        self.working_dir = root_dir / "neps_dir"
         self.searcher = kwargs.get("searcher", "random_search")
         self.name = f"NepsOptimizer_{self.searcher}"
         self.seed = seed
+        self.working_dir = root_dir / "neps_dir" / self.name
 
 
     def __call__(
