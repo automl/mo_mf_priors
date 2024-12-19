@@ -8,6 +8,7 @@ import yaml
 from hpoglue import FunctionalBenchmark, Result
 
 from momfpriors.benchmarks import BENCHMARKS
+from momfpriors.benchmarks.bbob_mo import bbob_function_definitions, create_bbob_mo_desc
 from momfpriors.benchmarks.utils import bench_first_fid, cs_random_sampling, get_prior_configs
 
 
@@ -60,8 +61,11 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
     for benchmk in benchmarks:
         benchmark, objective = next(iter(benchmk.items()))
         if isinstance(benchmark, str):
-            assert benchmark in BENCHMARKS, f"Unknown benchmark: {benchmark}"
-            benchmark = BENCHMARKS[benchmark]
+            if benchmark.startswith("bbob"):
+                benchmark = create_bbob_mo_desc(func=benchmark)
+            else:
+                assert benchmark in BENCHMARKS, f"Unknown benchmark: {benchmark}"
+                benchmark = BENCHMARKS[benchmark]
 
         if isinstance(benchmark, FunctionalBenchmark):
             benchmark = benchmark.description
