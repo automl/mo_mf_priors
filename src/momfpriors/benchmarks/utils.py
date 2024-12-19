@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -243,3 +244,15 @@ def perturb(  # noqa: C901, PLR0912
         config_id=config.config_id,
         values=perturbed_val,
     )
+
+
+def objective_fn_wrapper(
+    objective_fn: Callable,
+    **config: Mapping[str, Any]
+) -> Mapping[str, Any]:
+    query = Query(
+        config=Config(config_id=None, values=config),
+        fidelity=None,
+    )
+    result: Result = objective_fn(query)
+    return result.values
