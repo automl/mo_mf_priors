@@ -29,6 +29,7 @@ def neps_mo_scalarized(
     **config: Mapping[str, Any]
 ) -> Mapping[str, Any]:
     results = objective_fn_wrapper(objective_fn, **config)
+    logger.info(results)
     scalarized_objective = sum(
         scalarization_weights[obj] * results[obj] for obj in objectives
     )
@@ -55,7 +56,7 @@ class NepsOptimizer(Abstract_NonAskTellOptimizer):
         problem: Problem,
         seed: int = 0,
         root_dir: str | Path = "results",
-    ):
+    ) -> None:
         self.problem = problem
         self.space = problem.config_space
         if not isinstance(root_dir, Path):
@@ -76,7 +77,7 @@ class NepsOptimizer(Abstract_NonAskTellOptimizer):
         objectives = objectives if isinstance(objectives, list) else [objectives]
         benchmark = self.problem.benchmark.load(self.problem.benchmark)
         if len(objectives) > 1:
-            if scalarization_weights is None:
+            if not scalarization_weights:
                 scalarization_weights = {
                     f"{obj}": 1.0/len(objectives) for obj in objectives
                 }
