@@ -12,6 +12,7 @@ from ConfigSpace import Configuration, ConfigurationSpace
 from hpoglue import BenchmarkDescription, Config, Problem, Query, Result
 
 from momfpriors.benchmarks.utils import objective_fn_wrapper
+from momfpriors.constants import DEFAULT_RESULTS_DIR
 from momfpriors.optimizer import Abstract_NonAskTellOptimizer
 
 logger = logging.getLogger(__name__)
@@ -29,10 +30,11 @@ def neps_mo_scalarized(
     **config: Mapping[str, Any]
 ) -> Mapping[str, Any]:
     results = objective_fn_wrapper(objective_fn, **config)
-    logger.info(results)
     scalarized_objective = sum(
         scalarization_weights[obj] * results[obj] for obj in objectives
     )
+    logger.info([results[obj] for obj in objectives])
+    logger.info(f"{scalarized_objective=}")
     return {
         "loss": scalarized_objective,
         "cost": None,
@@ -55,18 +57,19 @@ class NepsOptimizer(Abstract_NonAskTellOptimizer):
         self,
         problem: Problem,
         seed: int = 0,
-        root_dir: str | Path = "results",
+        working_directory: str | Path = DEFAULT_RESULTS_DIR,
+        **kwargs: Any,
     ) -> None:
         self.problem = problem
         self.space = problem.config_space
-        if not isinstance(root_dir, Path):
-            root_dir = Path(root_dir)
+        if not isinstance(working_directory, Path):
+            working_directory = Path(working_directory)
         self.searcher = self.problem.optimizer_hyperparameters.get(
             "searcher", "random_search"
         )
         self.name = f"NepsOptimizer_{self.searcher}"
         self.seed = seed
-        self.working_dir = root_dir / "neps_dir" / self.name
+        self.working_dir = working_directory / "neps_dir" / self.name
 
 
     def optimize(
