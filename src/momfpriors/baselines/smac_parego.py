@@ -43,6 +43,7 @@ class SMAC_ParEGO(Abstract_AskTellOptimizer):
         problem: Problem,
         seed: int,
         working_directory: Path,
+        **kwargs: Any
     ):
         """Create a SMAC Optimizer instance for a given problem statement.
 
