@@ -11,7 +11,7 @@ from hpoglue import FunctionalBenchmark, Problem
 
 from momfpriors.baselines import OPTIMIZERS
 from momfpriors.benchmarks import BENCHMARKS
-from momfpriors.constants import DEFAULT_ROOT_DIR
+from momfpriors.constants import DEFAULT_PRIORS_DIR, DEFAULT_RESULTS_DIR
 from momfpriors.optimizer import Abstract_AskTellOptimizer, Abstract_NonAskTellOptimizer
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def _run(
     seed: int = 0,
     num_iterations: int = 1000,
     prior_path: str | None = None,
-    root_dir: str | Path = "results",
+    results_dir: Path = DEFAULT_RESULTS_DIR,
     **kwargs: Any
 ) -> None:
 
@@ -43,12 +43,6 @@ def _run(
     if isinstance(benchmark, FunctionalBenchmark):
         benchmark = benchmark.description
 
-    if prior_path is not None:
-        with prior_path.open("r") as file:
-            prior = yaml.safe_load(file)
-    else:
-        prior = None
-
     problem = Problem.problem(
         optimizer = optimizer,
         optimizer_hyperparameters=optimizer_kwargs,
@@ -58,6 +52,11 @@ def _run(
         multi_objective_generation="mix_metric_cost",
     )
 
+    if prior_path is not None:
+        with prior_path.open("r") as file:
+            prior = yaml.safe_load(file)
+            optimizer_kwargs["priors"] = prior["config"]
+
     benchmark = benchmark.load(benchmark)
 
     logger.info(f"Running {optimizer_name} on {benchmark_name} with objectives {objectives}")
@@ -66,7 +65,8 @@ def _run(
         opt = optimizer(
             problem=problem,
             seed=seed,
-            root_dir=root_dir,
+            working_directory=results_dir,
+            **optimizer_kwargs
         )
         opt.optimize(kwargs)
 
@@ -74,7 +74,8 @@ def _run(
         opt = optimizer(
             problem=problem,
             seed=seed,
-            working_directory=root_dir/"Optimizers_cache",
+            working_directory=results_dir/"Optimizers_cache",
+            **optimizer_kwargs
         )
         for i in range(num_iterations):
             query = opt.ask()
@@ -97,11 +98,17 @@ if __name__ == "__main__":
         #     {}
         # ),
         optimizer = (
-            "NepsOptimizer",
+            "RandomSearchWithPriors",
             {
-                "searcher": "bayesian_optimization",
+                "mo_prior_sampling": "random",
             }
         ),
+        # optimizer = (
+        #     "NepsOptimizer",
+        #     {
+        #         "searcher": "bayesian_optimization",
+        #     }
+        # ),
         # optimizer = (
         #     "SMAC_ParEGO",
         #     {}
@@ -116,7 +123,7 @@ if __name__ == "__main__":
         # ),
         seed=1,
         num_iterations=10,
-        prior_path=None,
-        root_dir=DEFAULT_ROOT_DIR,
+        prior_path=DEFAULT_PRIORS_DIR/"MOMFPark_value1_good.yaml",
+        results_dir=DEFAULT_RESULTS_DIR,
     )
 
