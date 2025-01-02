@@ -5,11 +5,10 @@ from pathlib import Path
 from typing import Any, Literal
 
 import numpy as np
-from ConfigSpace import ConfigurationSpace
 from hpoglue import Config, Problem, Query, Result
 
+from momfpriors.csprior import CSNormalPrior
 from momfpriors.optimizer import Abstract_AskTellOptimizer
-from momfpriors.prior import Prior
 
 
 class RandomSearch(Abstract_AskTellOptimizer):
@@ -52,14 +51,14 @@ class RandomSearchWithPriors(Abstract_AskTellOptimizer):
         cost_awareness=(None),
         tabular=False
     )
-    def __init__(
+    def __init__(  # noqa: D107
         self,
         problem: Problem,
-        working_directory: str | Path,
+        working_directory: str | Path,  # noqa: ARG002
         priors: Mapping[str, Any] | list[Mapping[str, Any]],
         mo_prior_sampling: Literal["random", "50-50", "sequential"] = "random",
         seed: int = 0,
-        **kwargs: Any
+        **kwargs: Any  # noqa: ARG002
     ) -> None:
         self.config_space = problem.config_space
         self.config_space.seed(seed)
@@ -67,9 +66,10 @@ class RandomSearchWithPriors(Abstract_AskTellOptimizer):
         if isinstance(priors, Mapping):
             priors = [priors]
         self.priors = [
-            Prior(
-                config_space=self.config_space,
+            CSNormalPrior(
+                hyperparameters=list(self.config_space.values()),
                 prior_config=prior,
+                seed=seed
             )
             for prior in priors
         ]
@@ -94,7 +94,7 @@ class RandomSearchWithPriors(Abstract_AskTellOptimizer):
                 )
         config = Config(
             config_id=str(self._optmizer_unique_id),
-            values=dict(prior.distribution.sample_configuration()),
+            values=dict(prior.sample()),
         )
         return Query(config=config, fidelity=None)
 
