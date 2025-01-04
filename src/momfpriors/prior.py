@@ -1,0 +1,128 @@
+"""A module for defining prior distributions over Pipeline Space Hyperparameters."""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+from typing import TYPE_CHECKING
+
+import neps
+import numpy as np
+from ConfigSpace import Configuration, ConfigurationSpace
+from ConfigSpace.hyperparameters import (
+    CategoricalHyperparameter,
+    Constant,
+    FloatHyperparameter,
+    IntegerHyperparameter,
+    OrdinalHyperparameter,
+)
+from neps.search_spaces import SearchSpace
+
+from momfpriors.utils import pipeline_space_to_cs
+
+if TYPE_CHECKING:
+    from ConfigSpace.hyperparameters import Hyperparameter
+    from neps.search_spaces import Parameter
+
+
+CONFIDENCE_SCORES: Mapping[float, str] = {
+    0.5: "low",
+    0.25: "medium",
+    0.125: "high",
+}
+
+class Prior:
+    """A base class for creating prior distributions over Pipeline Space hyperparameters."""
+
+    hyperparameters: list[Hyperparameter] | list[Parameter]
+
+    prior_config: Mapping[str, float]
+
+    prior_space: SearchSpace
+
+    seed: int
+
+    def __init__(  # noqa: D107
+        self,
+        hyperparameters: list[Hyperparameter] | ConfigurationSpace | Mapping[str, Parameter],
+        prior_config: Mapping[str, float],
+        seed: int = 0,
+        std: float = 0.125,
+    )-> None:
+        self.hyperparameters = hyperparameters
+        self.prior_config = prior_config
+        self.seed = seed
+        self.confidence = CONFIDENCE_SCORES.get(std, 0.125)
+        np.random.seed(seed)  # noqa: NPY002
+        match hyperparameters:
+            case list() | ConfigurationSpace():
+                self.prior_space = self._cs_to_pipeline_space_with_priors(hyperparameters)
+            case Mapping():
+                self.prior_space = SearchSpace(**hyperparameters)
+            case _:
+                raise ValueError(
+                    "hyperparameters must be a list[Hyperparameter], ConfigurationSpace,"
+                    "or Mapping[Parameter]. "
+                    f"Got {type(hyperparameters)}"
+                )
+
+
+    def _cs_to_pipeline_space_with_priors(
+        self,
+        hyperparameters: list[Hyperparameter] | ConfigurationSpace,
+    ) -> SearchSpace:
+        """Convert a ConfigSpace to Pipeline Space with priors."""
+        if isinstance(hyperparameters, ConfigurationSpace):
+            hyperparameters = list(hyperparameters.values())
+        _pipeline_space: Mapping[str, Parameter] = {}
+        for hp in hyperparameters:
+            _default = self.prior_config[hp.name]
+            match hp:
+                case FloatHyperparameter():
+                    _pipeline_space[hp.name] = neps.Float(
+                        lower=hp.lower,
+                        upper=hp.upper,
+                        log=hp.log,
+                        default=_default,
+                        default_confidence=self.confidence,
+                    )
+                case IntegerHyperparameter():
+                    _pipeline_space[hp.name] = neps.Integer(
+                        lower=hp.lower,
+                        upper=hp.upper,
+                        log=hp.log,
+                        default=_default,
+                        default_confidence=self.confidence,
+                    )
+                case CategoricalHyperparameter() | OrdinalHyperparameter():
+                    _pipeline_space[hp.name] = neps.Categorical(
+                        choices=hp.choices,
+                        default=_default,
+                        default_confidence=self.confidence,
+                    )
+                case Constant():
+                    _pipeline_space[hp.name] = neps.Constant(
+                        value=hp.value,
+                    )
+                case _:
+                    raise ValueError(
+                        f"Unsupported hyperparameter type: {type(hp).__name__}"
+                    )
+        return SearchSpace(**_pipeline_space)
+
+    def sample(self) -> SearchSpace:
+        """Sample a Pipeline Space Configuration from the prior distribution."""
+        return self.prior_space.sample(user_priors=True)
+
+
+    def sample_cs(self) -> Configuration:
+        """Sample a ConfigSpace Configuration from the prior distribution."""
+        _config = self.sample()
+        _config = {
+                hp: _config[hp].value
+                for hp in _config
+            }
+        return Configuration(
+            configuration_space=pipeline_space_to_cs(self.prior_space),
+            values=_config,
+        )
+
