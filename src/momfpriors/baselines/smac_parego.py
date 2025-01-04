@@ -9,7 +9,7 @@ from hpoglue import Config, Problem, Query
 from hpoglue.budget import CostBudget, TrialBudget
 from hpoglue.env import Env
 
-from momfpriors.benchmarks.utils import objective_fn_wrapper
+from momfpriors.utils import objective_fn_wrapper
 from momfpriors.optimizer import Abstract_AskTellOptimizer
 
 if TYPE_CHECKING:

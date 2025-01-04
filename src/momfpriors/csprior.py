@@ -7,7 +7,6 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
 from ConfigSpace import (
-    Beta,
     BetaFloatHyperparameter,
     BetaIntegerHyperparameter,
     CategoricalHyperparameter,
@@ -16,7 +15,6 @@ from ConfigSpace import (
     Constant,
     Float,
     Integer,
-    Normal,
     NormalFloatHyperparameter,
     NormalIntegerHyperparameter,
     OrdinalHyperparameter,

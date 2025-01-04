@@ -8,12 +8,11 @@ from typing import Any
 
 import neps
 import numpy as np
-from ConfigSpace import Configuration, ConfigurationSpace
-from hpoglue import BenchmarkDescription, Config, Problem, Query, Result
+from hpoglue import Problem
 
-from momfpriors.benchmarks.utils import objective_fn_wrapper
 from momfpriors.constants import DEFAULT_RESULTS_DIR
 from momfpriors.optimizer import Abstract_NonAskTellOptimizer
+from momfpriors.utils import objective_fn_wrapper
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

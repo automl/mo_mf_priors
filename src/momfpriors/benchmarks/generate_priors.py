@@ -9,7 +9,7 @@ from hpoglue import FunctionalBenchmark, Result
 
 from momfpriors.benchmarks import BENCHMARKS
 from momfpriors.benchmarks.bbob_mo import bbob_function_definitions, create_bbob_mo_desc
-from momfpriors.benchmarks.utils import bench_first_fid, cs_random_sampling, get_prior_configs
+from momfpriors.utils import bench_first_fid, cs_random_sampling, get_prior_configs
 
 
 def generate_priors_wrt_obj(  # noqa: C901, PLR0912

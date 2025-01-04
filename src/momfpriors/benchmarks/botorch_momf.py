@@ -9,7 +9,7 @@ from hpoglue.fidelity import ContinuousFidelity
 from hpoglue.run_glue import run_glue
 
 from momfpriors.baselines.random_search import RandomSearch
-from momfpriors.benchmarks.utils import find_incumbent
+from momfpriors.utils import find_incumbent
 
 
 # MOMF Branin Currin
