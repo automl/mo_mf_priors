@@ -2,36 +2,42 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 from hpoglue import Config, Problem, Query, Result
 
-from momfpriors.csprior import CSNormalPrior
 from momfpriors.optimizer import Abstract_AskTellOptimizer
+
+if TYPE_CHECKING:
+    from momfpriors.csprior import CSPrior
 
 
 class RandomSearch(Abstract_AskTellOptimizer):
+    """Random search optimizer."""
+
     name = "RandomSearch"
+
     support = Problem.Support(
         objectives=("single", "many"),
         fidelities=(None),
         cost_awareness=(None),
         tabular=False
     )
-    def __init__(
+
+    def __init__(  # noqa: D107
         self,
         problem: Problem,
-        working_directory: str | Path,
+        working_directory: str | Path,  # noqa: ARG002
         seed: int = 0,
-        **kwargs: Any
+        **kwargs: Any  # noqa: ARG002
     ):
         self.config_space = problem.config_space
         self.config_space.seed(seed)
         self.problem = problem
         self._optmizer_unique_id = 0
 
-    def ask(self) -> Query:
+    def ask(self) -> Query:  # noqa: D102
         self._optmizer_unique_id += 1
         config = Config(
             config_id=str(self._optmizer_unique_id),
@@ -39,64 +45,76 @@ class RandomSearch(Abstract_AskTellOptimizer):
         )
         return Query(config=config, fidelity=None)
 
-    def tell(self, result: Result) -> None:
+    def tell(self, result: Result) -> None:  # noqa: ARG002, D102
         return
 
 
 class RandomSearchWithPriors(Abstract_AskTellOptimizer):
+    """Random search optimizer that incorporates priors for multi-objective optimization."""
+
     name = "RandomSearchWithPriors"
+
     support = Problem.Support(
         objectives=("single", "many"),
         fidelities=(None),
         cost_awareness=(None),
-        tabular=False
+        tabular=False,
     )
+
+    mem_req_mb = 1024
+
     def __init__(  # noqa: D107
         self,
         problem: Problem,
         working_directory: str | Path,  # noqa: ARG002
-        priors: Mapping[str, Any] | list[Mapping[str, Any]],
-        mo_prior_sampling: Literal["random", "50-50", "sequential"] = "random",
+        priors: Mapping[str, CSPrior],
+        mo_prior_sampling: Literal["random", "equal"] = "random",
         seed: int = 0,
         **kwargs: Any  # noqa: ARG002
     ) -> None:
         self.config_space = problem.config_space
         self.config_space.seed(seed)
         self.problem = problem
-        if isinstance(priors, Mapping):
-            priors = [priors]
-        self.priors = [
-            CSNormalPrior(
-                hyperparameters=list(self.config_space.values()),
-                prior_config=prior,
-                seed=seed
+        self.priors = priors
+        self._rng = np.random.default_rng(seed)
+        if mo_prior_sampling == "equal":
+            assert len(self.problem.get_objectives()) <= self.problem.budget.total, (
+                "When using `mo_prior_sampling='equal'` the number of objectives "
+                "should be less than or equal to the total budget."
             )
-            for prior in priors
-        ]
-        self.rng = np.random.default_rng(seed)
         self.mo_prior_sampling = mo_prior_sampling
         self._optmizer_unique_id = 0
+        self._priors_used = {key: 0 for key in priors}
 
-    def ask(self) -> Query:
+    def ask(self) -> Query:  # noqa: D102
         self._optmizer_unique_id += 1
-        match self.mo_prior_sampling:
-            case "random":
-                prior = self.rng.choice(self.priors)
-            case "50-50":
-                raise NotImplementedError
-            case "sequential":
-                raise NotImplementedError
-            case _:
-                raise ValueError(
-                    "Invalid value for `mo_prior_sampling`. "
-                    "Expected one of ['random', '50-50', 'sequential']."
-                    f"Got {self.mo_prior_sampling}."
-                )
+        if len(self.priors.items()) > 1:
+            match self.mo_prior_sampling:
+                case "random":
+                    prior = self._rng.choice(list(self.priors.values()))
+                case "equal":
+                    # raise NotImplementedError
+                    min_usage = min(self._priors_used.values())
+                    eligible_priors = [
+                        key for key, count in self._priors_used.items()
+                        if count == min_usage
+                    ]
+                    selected_prior_key = self._rng.choice(eligible_priors)
+                    prior = self.priors[selected_prior_key]
+                    self._priors_used[selected_prior_key] += 1
+                case _:
+                    raise ValueError(
+                        "Invalid value for `mo_prior_sampling`. "
+                        "Expected one of ['random', 'equal']."
+                        f"Got {self.mo_prior_sampling}."
+                    )
+        else:
+            prior = next(iter(self.priors.values()))
         config = Config(
             config_id=str(self._optmizer_unique_id),
             values=dict(prior.sample()),
         )
         return Query(config=config, fidelity=None)
 
-    def tell(self, result: Result) -> None:
+    def tell(self, result: Result) -> None:  # noqa: ARG002, D102
         return
