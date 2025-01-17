@@ -20,7 +20,6 @@ from neps.search_spaces import SearchSpace
 from momfpriors.utils import pipeline_space_to_cs
 
 if TYPE_CHECKING:
-    from ConfigSpace.hyperparameters import Hyperparameter
     from neps.search_spaces import Parameter
 
 
@@ -33,8 +32,6 @@ CONFIDENCE_SCORES: Mapping[float, str] = {
 class Prior:
     """A base class for creating prior distributions over Pipeline Space hyperparameters."""
 
-    hyperparameters: list[Hyperparameter] | list[Parameter]
-
     prior_config: Mapping[str, float]
 
     prior_space: SearchSpace
@@ -43,38 +40,35 @@ class Prior:
 
     def __init__(  # noqa: D107
         self,
-        hyperparameters: list[Hyperparameter] | ConfigurationSpace | Mapping[str, Parameter],
+        input_space: ConfigurationSpace | Mapping[str, Parameter],
         prior_config: Mapping[str, float],
         seed: int = 0,
         std: float = 0.125,
     )-> None:
-        self.hyperparameters = hyperparameters
         self.prior_config = prior_config
         self.seed = seed
         self.confidence = CONFIDENCE_SCORES.get(std, 0.125)
         np.random.seed(seed)  # noqa: NPY002
-        match hyperparameters:
-            case list() | ConfigurationSpace():
-                self.prior_space = self._cs_to_pipeline_space_with_priors(hyperparameters)
+        match input_space:
+            case ConfigurationSpace():
+                self.prior_space = self._cs_to_pipeline_space_with_priors(input_space)
             case Mapping():
-                self.prior_space = SearchSpace(**hyperparameters)
+                self.prior_space = SearchSpace(**input_space)
             case _:
                 raise ValueError(
                     "hyperparameters must be a list[Hyperparameter], ConfigurationSpace,"
                     "or Mapping[Parameter]. "
-                    f"Got {type(hyperparameters)}"
+                    f"Got {type(input_space).__name__}."
                 )
 
 
     def _cs_to_pipeline_space_with_priors(
         self,
-        hyperparameters: list[Hyperparameter] | ConfigurationSpace,
+        input_space: ConfigurationSpace
     ) -> SearchSpace:
         """Convert a ConfigSpace to Pipeline Space with priors."""
-        if isinstance(hyperparameters, ConfigurationSpace):
-            hyperparameters = list(hyperparameters.values())
         _pipeline_space: Mapping[str, Parameter] = {}
-        for hp in hyperparameters:
+        for hp in list(input_space.values()):
             _default = self.prior_config[hp.name]
             match hp:
                 case FloatHyperparameter():

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Mapping
-from typing import TYPE_CHECKING
+from typing import Any
 
 from ConfigSpace import (
     BetaFloatHyperparameter,
@@ -22,14 +22,9 @@ from ConfigSpace import (
     UniformIntegerHyperparameter,
 )
 
-if TYPE_CHECKING:
-    from ConfigSpace.hyperparameters import Hyperparameter
-
 
 class CSPrior:
     """A base class for creating prior distributions over ConfigSpace hyperparameters."""
-
-    hyperparameters: list[Hyperparameter]
 
     prior_config: Mapping[str, float]
 
@@ -39,18 +34,46 @@ class CSPrior:
 
     def __init__(  # noqa: D107
         self,
-        hyperparameters: list[Hyperparameter],
+        config_space: ConfigurationSpace,
         prior_config: Mapping[str, float],
         seed: int = 0,
     )-> None:
-        self.hyperparameters = hyperparameters
         self.prior_config = prior_config
         self.seed = seed
-        self.distribution = self._create_prior_distribution()
+        self.distribution = self._create_prior_distribution(config_space)
 
     @abstractmethod
-    def _create_prior_distribution(self) -> ConfigurationSpace:
+    def _create_prior_distribution(
+        self,
+        config_space: ConfigurationSpace,
+    ) -> ConfigurationSpace:
         ...
+
+
+    def pdf(self, config: Configuration) -> list[float]:
+        """Compute the probability density of a configuration.
+
+        Args:
+            config (Configuration): A configuration to compute the probability density.
+
+        Returns:
+            float: The probability density of the configuration.
+        """
+        return [hp.pdf_values(config[hp.name]) for hp in self.hyperparameters]
+
+
+    @abstractmethod
+    def log_pdf(self, config: Configuration) -> float:
+        """Compute the log probability density of a configuration.
+
+        Args:
+            config (Configuration): A configuration to compute the log probability density.
+
+        Returns:
+            float: The log probability density of the configuration.
+        """
+        ...
+
 
     def sample(self) -> Configuration:
         """Sample a configuration from the distribution.
@@ -61,6 +84,33 @@ class CSPrior:
         return self.distribution.sample_configuration()
 
 
+    def meta(self) -> Mapping[str, Any]:
+        """Return metadata about the prior distribution.
+
+        Returns:
+            Mapping[str, Any]: Metadata about the prior distribution.
+        """
+        _prior_type: str
+        _kwargs: Mapping[str, float] = {}
+        match type(self).__name__:
+            case "CSNormalPrior":
+                _prior_type = "normal"
+                _kwargs["sigma"] = self.sigma
+            case "CSUniformPrior":
+                _prior_type = "uniform"
+            case "CSBetaPrior":
+                _prior_type = "beta"
+                _kwargs["alpha"] = self.alpha
+                _kwargs["beta"] = self.beta
+        return {
+            "prior_type": _prior_type,
+            "distribution": self.distribution,
+            "prior_config": self.prior_config,
+            "seed": self.seed,
+            "kwargs": _kwargs,
+        }
+
+
 class CSNormalPrior(CSPrior):
     """A class to represent a normal prior distribution for hyperparameters
     in a configuration space.
@@ -68,8 +118,8 @@ class CSNormalPrior(CSPrior):
 
     Attributes:
     -----------
-    hyperparameters : list[Hyperparameter]
-        A list of hyperparameters to be used in the prior distribution.
+    config_space : ConfigurationSpace
+        A configuration space to create the prior distribution.
 
     prior_config : Mapping[str, float]
         A mapping of hyperparameter names to their default values.
@@ -83,24 +133,27 @@ class CSNormalPrior(CSPrior):
 
     Methods:
     --------
-    _create_prior_distribution() -> ConfigurationSpace:
+    _create_prior_distribution(self, config_space: ConfigurationSpace) -> ConfigurationSpace:
         Creates and returns a configuration space with the specified normal prior distribution
         for the hyperparameters.
     """
 
     def __init__(  # noqa: D107
         self,
-        hyperparameters: list[Hyperparameter],
+        config_space: ConfigurationSpace,
         prior_config: Mapping[str, float],
         seed: int = 0,
         sigma: float = 0.25,
     ) -> None:
         self.sigma = sigma
-        super().__init__(hyperparameters, prior_config, seed)
+        super().__init__(config_space, prior_config, seed)
 
-    def _create_prior_distribution(self) -> ConfigurationSpace:
+    def _create_prior_distribution(
+        self,
+        config_space: ConfigurationSpace,
+    ) -> ConfigurationSpace:
         distribution = ConfigurationSpace(seed=self.seed)
-        for hp in self.hyperparameters:
+        for hp in list(config_space.values()):
             _default = self.prior_config[hp.name]
             match hp:
                 case UniformFloatHyperparameter() | BetaFloatHyperparameter():
@@ -151,8 +204,8 @@ class CSUniformPrior(CSPrior):
 
     Attributes:
     -----------
-    hyperparameters : list[Hyperparameter]
-        A list of hyperparameters to be included in the configuration space.
+    config_space : ConfigurationSpace
+        A configuration space to create the prior distribution.
 
     prior_config : Mapping[str, float]
         A mapping of hyperparameter names to their default values.
@@ -163,22 +216,25 @@ class CSUniformPrior(CSPrior):
 
     Methods:
     --------
-    _create_prior_distribution() -> ConfigurationSpace:
+    _create_prior_distribution(self, config_space: ConfigurationSpace) -> ConfigurationSpace:
         Creates a configuration space with the specified uniform prior distribution
         for each hyperparameter.
     """
 
     def __init__(  # noqa: D107
         self,
-        hyperparameters: list[Hyperparameter],
+        config_space: ConfigurationSpace,
         prior_config: Mapping[str, float],
         seed: int = 0,
     ) -> None:
-        super().__init__(hyperparameters, prior_config, seed)
+        super().__init__(config_space, prior_config, seed)
 
-    def _create_prior_distribution(self) -> ConfigurationSpace:
+    def _create_prior_distribution(
+        self,
+        config_space: ConfigurationSpace,
+    ) -> ConfigurationSpace:
         distribution = ConfigurationSpace(seed=self.seed)
-        for hp in self.hyperparameters:
+        for hp in list(config_space.values()):
             _default = self.prior_config[hp.name]
             match hp:
                 case NormalFloatHyperparameter() | BetaFloatHyperparameter():
@@ -223,8 +279,8 @@ class CSBetaPrior(CSPrior):
 
     Attributes:
     -----------
-    hyperparameters : list[Hyperparameter]
-        A list of hyperparameters to be included in the configuration space.
+    config_space : ConfigurationSpace
+        A configuration space to create the prior distribution.
 
     prior_config : Mapping[str, float]
         A mapping of hyperparameter names to their default values.
@@ -241,14 +297,14 @@ class CSBetaPrior(CSPrior):
 
     Methods:
     --------
-    _create_prior_distribution() -> ConfigurationSpace:
+    _create_prior_distribution(self, config_space: ConfigurationSpace) -> ConfigurationSpace:
         Creates a configuration space with the specified Beta prior distribution
         for each hyperparameter.
     """
 
     def __init__(  # noqa: D107
         self,
-        hyperparameters: list[Hyperparameter],
+        config_space: ConfigurationSpace,
         prior_config: Mapping[str, float],
         seed: int = 0,
         alpha: float = 2,
@@ -256,11 +312,14 @@ class CSBetaPrior(CSPrior):
     ) -> None:
         self.alpha = alpha
         self.beta = beta
-        super().__init__(hyperparameters, prior_config, seed)
+        super().__init__(config_space, prior_config, seed)
 
-    def _create_prior_distribution(self) -> ConfigurationSpace:
+    def _create_prior_distribution(
+        self,
+        config_space: ConfigurationSpace,
+    ) -> ConfigurationSpace:
         distribution = ConfigurationSpace(seed=self.seed)
-        for hp in self.hyperparameters:
+        for hp in list(config_space.values()):
             _default = self.prior_config[hp.name]
             match hp:
                 case NormalFloatHyperparameter() | UniformFloatHyperparameter():

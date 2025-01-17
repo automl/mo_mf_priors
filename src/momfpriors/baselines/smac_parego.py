@@ -9,8 +9,8 @@ from hpoglue import Config, Problem, Query
 from hpoglue.budget import CostBudget, TrialBudget
 from hpoglue.env import Env
 
-from momfpriors.utils import objective_fn_wrapper
 from momfpriors.optimizer import Abstract_AskTellOptimizer
+from momfpriors.utils import objective_fn_wrapper
 
 if TYPE_CHECKING:
     from hpoglue import Result
@@ -22,13 +22,16 @@ def _dummy_target_function(*args: Any, budget: int | float, seed: int) -> NoRetu
 
 
 class SMAC_ParEGO(Abstract_AskTellOptimizer):
+
     name = "SMAC_ParEGO"
+
     support = Problem.Support(
         fidelities=(None,),
         objectives=("single", "many"),
         cost_awareness=(None,),
         tabular=False,
     )
+
     mem_req_mb = 1024
 
     env = Env(
