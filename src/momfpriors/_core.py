@@ -30,9 +30,10 @@ def _core(
     seed: int = 0,
     num_iterations: int = 1000,
     results_dir: Path = DEFAULT_RESULTS_DIR,
+    *,
+    core_verbose: bool = False,
     **kwargs: Any,
 ) -> list[Result] | None:
-
 
     benchmark = problem.benchmark.load(problem.benchmark)
     optimizer = problem.optimizer
@@ -41,6 +42,10 @@ def _core(
         f"Running {problem.optimizer.name} on {problem.benchmark.name}"
         f" with objectives {problem.get_objectives()}"
     )
+
+    if not core_verbose:
+        logger.setLevel(logging.ERROR)
+
     optimizer_kwargs = copy.deepcopy(problem.optimizer_hyperparameters)
     optimizer_kwargs["priors"] = priors
 

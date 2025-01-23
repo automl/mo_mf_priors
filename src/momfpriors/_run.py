@@ -180,6 +180,7 @@ class Run:
         self,
         *,
         on_error: Literal["raise", "continue"] = "raise",
+        core_verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         """Run the Run.
@@ -191,6 +192,8 @@ class Run:
 
                 * If "raise", raise an error.
                 * If "continue", log the error and continue.
+
+            core_verbose: Whether to log the core loop at INFO level.
 
             **kwargs: Additional keyword arguments to pass to the optimizer.
                 Usage example: Scalarization weights for Neps Random Scalarization MO.
@@ -226,6 +229,7 @@ class Run:
                 seed=self.seed,
                 num_iterations=self.problem.budget.total,
                 results_dir=self.working_dir,
+                core_verbose=core_verbose,
                 **kwargs,
             )
         except Exception as e:

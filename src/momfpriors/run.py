@@ -40,6 +40,8 @@ def exp(
     priors_dir: Path = DEFAULT_PRIORS_DIR,
     prior_distribution: Literal["normal", "uniform", "beta"] = "normal",
     exp_name: str | None = None,
+    *,
+    core_verbose: bool = False,
     **kwargs: Any
 ) -> None:
     """Run experiments with specified optimizers and benchmarks.
@@ -64,6 +66,8 @@ def exp(
         prior_distribution: Type of prior distribution to use. Default is "normal".
 
         exp_name: Name of the experiment.
+
+        core_verbose: Whether to log verbose information during the core loop.
 
         **kwargs: Additional keyword arguments to pass to the Run.generate_run method.
 
@@ -131,7 +135,9 @@ def exp(
     root_logger.info("Running the experiments")
 
     for run in runs:
-        run.run()
+        run.run(
+            core_verbose=core_verbose,
+        )
 
     root_logger.info("Runs Complete.")
 
@@ -288,6 +294,12 @@ if __name__ == "__main__":
         default=DEFAULT_PRIORS_DIR,
         help="Path to the directory containing the priors relative to the root dir."
     )
+    parser.add_argument(
+        "--core_verbose", "-cv",
+        action="store_true",
+        help="Whether to log verbose information during the core loop."
+    )
+
     args = parser.parse_args()
 
     if not isinstance(args.root_dir, Path):
@@ -326,5 +338,6 @@ if __name__ == "__main__":
             priors_dir=args.priors_dir or config.get("priors_dir", DEFAULT_PRIORS_DIR),
             prior_distribution=config.get("prior_distribution", "normal"),
             exp_name=args.exp_name,
+            core_verbose=args.core_verbose,
             **config.get("kwargs", {})
         )
