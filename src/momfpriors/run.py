@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import logging
 import traceback
+import warnings
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, Literal
@@ -17,8 +18,10 @@ from momfpriors.constants import DEFAULT_PRIORS_DIR, DEFAULT_RESULTS_DIR, DEFAUL
 GLOBAL_SEED = 42
 
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+root_logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 def exp(
@@ -36,41 +39,33 @@ def exp(
     results_dir: Path = DEFAULT_RESULTS_DIR,
     priors_dir: Path = DEFAULT_PRIORS_DIR,
     prior_distribution: Literal["normal", "uniform", "beta"] = "normal",
+    exp_name: str | None = None,
     **kwargs: Any
 ) -> None:
     """Run experiments with specified optimizers and benchmarks.
 
     Args:
-        optimizers : tuple or list of tuples
-            A tuple or list of tuples where each tuple contains
+        optimizers: A tuple or list of tuples where each tuple contains
             the optimizer name and its parameters.
 
-        benchmarks : tuple or list of tuples
-            A tuple or list of tuples where each tuple contains
+        benchmarks: A tuple or list of tuples where each tuple contains
             the benchmark name and its parameters.
 
-        seeds : int, list of int, or None, optional
-            A single seed, a list of seeds, or None to generate seeds automatically.
-            Default is None.
+        seeds: A single seed, a list of seeds, or None to generate seeds automatically.
 
-        num_seeds : int, optional
-            Number of seeds to generate if seeds are not provided.
-            Default is 1.
+        num_seeds: Number of seeds to generate if seeds are not provided.
 
-        num_iterations : int, optional
-            Number of iterations for each run. Default is 1000.
+        num_iterations: Number of iterations for each run. Default is 1000.
 
-        results_dir : Path, optional
-            Directory to store the results. Default is DEFAULT_RESULTS_DIR.
+        results_dir: Directory to store the results. Default is DEFAULT_RESULTS_DIR.
 
-        priors_dir : Path, optional
-            Directory to store the priors. Default is DEFAULT_PRIORS_DIR.
+        priors_dir: Directory to store the priors. Default is DEFAULT_PRIORS_DIR.
 
-        prior_distribution : Literal["normal", "uniform", "beta"], optional
-            Type of prior distribution to use. Default is "normal".
+        prior_distribution: Type of prior distribution to use. Default is "normal".
 
-        **kwargs : Any
-            Additional keyword arguments to pass to the Run.generate_run method.
+        exp_name: Name of the experiment.
+
+        **kwargs: Additional keyword arguments to pass to the Run.generate_run method.
 
     Returns:
         None
@@ -94,7 +89,8 @@ def exp(
     name_parts.append(";".join([f"{bench[0]}{bench[-1]}" for bench in benchmarks]))
     name_parts.append(f"seeds={seeds}")
     name_parts.append(f"budget={num_iterations}")
-    exp_name = hashlib.sha256((".".join(name_parts)).encode()).hexdigest()
+    if not exp_name:
+        exp_name = hashlib.sha256((".".join(name_parts)).encode()).hexdigest()
     exp_dir = results_dir / exp_name
     exp_yaml_path = exp_dir / "exp.yaml"
 
@@ -121,7 +117,7 @@ def exp(
         )
         logging.error(traceback.format_exc())
 
-    logger.info(f"Generated {len(runs)} runs.")
+    root_logger.info(f"Generated {len(runs)} runs.")
 
     write_yaml(
         yaml_path=exp_yaml_path,
@@ -132,12 +128,12 @@ def exp(
         budget=num_iterations,
     )
 
-    logger.info("Running the experiments")
+    root_logger.info("Running the experiments")
 
     for run in runs:
         run.run()
 
-    logger.info("Runs Complete.")
+    root_logger.info("Runs Complete.")
 
 def generate_seeds(
     num_seeds: int,
@@ -233,6 +229,12 @@ if __name__ == "__main__":
         help="Path to the YAML file containing the experiment config relative to the root dir."
     )
     parser.add_argument(
+        "--exp_name", "-e",
+        type=str,
+        default=None,
+        help="Name of the experiment."
+    )
+    parser.add_argument(
         "--optimizers", "-o",
         type=str,
         nargs="+",
@@ -323,5 +325,6 @@ if __name__ == "__main__":
             results_dir=args.results_dir or config.get("results_dir", DEFAULT_RESULTS_DIR),
             priors_dir=args.priors_dir or config.get("priors_dir", DEFAULT_PRIORS_DIR),
             prior_distribution=config.get("prior_distribution", "normal"),
+            exp_name=args.exp_name,
             **config.get("kwargs", {})
         )
