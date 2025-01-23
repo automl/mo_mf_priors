@@ -41,8 +41,7 @@ def plot_pareto(
     """
     logger.info(f"\nPlots for runs on benchmark: {benchmark}")
     plt.figure(figsize=(10, 10))
-    for instance, instance_data in data.items():
-        logger.info(f"Plotting pareto front for {instance}")
+    for _, instance_data in data.items():
         results = instance_data["results"]
         plot_title = instance_data["plot_title"]
         keys = list(results[0].keys())
@@ -51,9 +50,10 @@ def plot_pareto(
         pareto = np.array([list(res.values()) for res in results])[pareto]
         pareto = pareto[pareto[:, 0].argsort()]
         logger.info(f"Plotting pareto front for {plot_title}")
-        plt.plot(
+        plt.step(
             pareto[:, 0],
             pareto[:, 1],
+            where="post",
             marker="o",
             markersize=7,
             linewidth=1,
@@ -102,8 +102,7 @@ if __name__ == "__main__":
                 "optimizer": _df["optimizer"][0],
                 "opt_hps": _df["optimizer_hps"][0],
                 "plot_title": (
-                    f"{_df['optimizer'][0]}_"
-                    f"{_df['optimizer_hps'][0]}"
+                    f"{instance}"
                     f" on {benchmark}"
                 ),
             }
