@@ -40,6 +40,13 @@ license = { file = "LICENSE" }
 [project.optional-dependencies]
 dev = ["ruff", "mypy", "pre-commit"]
 
+# Install the following separately
+# First install neps: Downgrades CS version, then smac: Upgrades CS version
+
+neps = ["neural-pipeline-search"]
+smac = ["smac"]
+
+
 [project.urls]
 source = "https://github.com/automl/mo_mf_priors/"
 
