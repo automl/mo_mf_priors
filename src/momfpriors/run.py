@@ -13,6 +13,7 @@ import numpy as np
 import yaml
 
 from momfpriors._run import Run
+from momfpriors.baselines import OPTIMIZERS
 from momfpriors.constants import DEFAULT_PRIORS_DIR, DEFAULT_RESULTS_DIR, DEFAULT_ROOT_DIR
 
 GLOBAL_SEED = 42
@@ -24,7 +25,7 @@ logging.basicConfig(level=logging.INFO)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
-def exp(
+def exp(  # noqa: C901
     optimizers: (
         tuple[str, Mapping[str, Any]] |
         list[tuple[str, Mapping[str, Any]]]
@@ -99,10 +100,14 @@ def exp(
     exp_yaml_path = exp_dir / "exp.yaml"
 
     runs: list[Run] = []
+    _benchs_added: list[str] = []
     try:
-        for optimizer in optimizers:
-            for benchmark in benchmarks:
+        for benchmark in benchmarks:
+            for optimizer in optimizers:
                 for seed in seeds:
+                    _opt = OPTIMIZERS[optimizer[0]]
+                    if benchmark[0] in _benchs_added and not _opt.support.priors:
+                        continue
                     run = Run.generate_run(
                         optimizer=optimizer,
                         benchmark=benchmark,
@@ -113,7 +118,9 @@ def exp(
                         prior_distribution=prior_distribution,
                         **kwargs
                     )
+                    print(f"{optimizer[0]}, {benchmark[0]}")
                     runs.append(run)
+            _benchs_added.append(benchmark[0])
     except Exception:  # noqa: BLE001
         logging.error(
             "Error in generating runs for "
@@ -139,7 +146,7 @@ def exp(
             core_verbose=core_verbose,
         )
 
-    root_logger.info("Runs Complete.")
+    root_logger.info(f"Completed {len(runs)} runs.")
 
 def generate_seeds(
     num_seeds: int,
@@ -321,14 +328,14 @@ if __name__ == "__main__":
         exp(
             optimizers=[
                 (
-                    optimizer,
-                    config["optimizers"][optimizer]
+                    optimizer["name"],
+                    optimizer.get("hps", None)
                 ) for optimizer in config["optimizers"]
             ],
             benchmarks=[
                 (
-                    benchmark,
-                    config["benchmarks"][benchmark]
+                    benchmark["name"],
+                    benchmark.get("objs", None)
                 ) for benchmark in config["benchmarks"]
             ],
             seeds=config.get("seeds"),

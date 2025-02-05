@@ -1,0 +1,47 @@
+optimizers:
+  - name: RandomSearchWithPriors
+    hps:
+      mo_prior_sampling: random
+benchmarks:
+  - name: MOMFPark
+    objs:
+      value1: good
+      value2: good
+  - name: MOMFPark
+    objs:
+      value1: good
+      value2: bad
+  - name: MOMFPark
+    objs:
+      value1: good
+      value2: null
+  - name: MOMFPark
+    objs:
+      value1: bad
+      value2: null
+  - name: MOMFPark
+    objs:
+      value1: bad
+      value2: bad
+  - name: MOMFBraninCurrin
+    objs:
+      value1: good
+      value2: good
+  - name: MOMFBraninCurrin
+    objs:
+      value1: good
+      value2: bad
+  - name: MOMFBraninCurrin
+    objs:
+      value1: good
+      value2: null
+  - name: MOMFBraninCurrin
+    objs:
+      value1: bad
+      value2: null
+  - name: MOMFBraninCurrin
+    objs:
+      value1: bad
+      value2: bad
+seeds: 1
+num_iterations: 25
