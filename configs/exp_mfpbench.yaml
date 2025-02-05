@@ -7,13 +7,13 @@ optimizers:
   # - name: SMAC_ParEGO
   #   hps: null
 benchmarks:
-  # - name: pd1-cifar100-wide_resnet-2048
-  #   objs:
-  #     valid_error_rate: null
-  #     train_cost: null
-  - name: yahpo-lcbench-7593
+  - name: pd1-cifar100-wide_resnet-2048
     objs:
-      val_cross_entropy: null
-      time: null
+      valid_error_rate: null
+      train_cost: null
+  # - name: yahpo-lcbench-7593
+  #   objs:
+  #     val_cross_entropy: null
+  #     time: null
 seeds: 1
 num_iterations: 5
