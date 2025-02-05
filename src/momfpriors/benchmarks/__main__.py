@@ -6,7 +6,7 @@ import logging
 from momfpriors.benchmarks import BENCHMARKS
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 def main(
     list: str

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import warnings
 from collections.abc import Iterator
 from functools import partial
 from pathlib import Path
@@ -18,6 +19,9 @@ from hpoglue.result import Result
 
 if TYPE_CHECKING:
     from hpoglue.query import Query
+
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 def _get_surrogate_benchmark(
@@ -62,6 +66,88 @@ def _download_data_cmd(key: str, datadir: Path | None = None) -> tuple[str, ...]
     if datadir is not None:
         install_cmd += f" --data-dir {datadir.resolve()}"
     return tuple(install_cmd.split(" "))
+
+
+_lcbench_task_ids = (
+    "3945",
+    "7593",
+    "34539",
+    "126025",
+    "126026",
+    "126029",
+    "146212",
+    "167104",
+    "167149",
+    "167152",
+    "167161",
+    "167168",
+    "167181",
+    "167184",
+    "167185",
+    "167190",
+    "167200",
+    "167201",
+    "168329",
+    "168330",
+    "168331",
+    "168335",
+    "168868",
+    "168908",
+    "168910",
+    "189354",
+    "189862",
+    "189865",
+    "189866",
+    "189873",
+    "189905",
+    "189906",
+    "189908",
+    "189909",
+)
+
+
+def lcbench_surrogate(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
+    """Generates benchmark descriptions for the LCBench surrogate Benchmark.
+
+    Args:
+        datadir (Path | None): The directory where the data is stored.
+        If None, the default directory is used.
+
+    Yields:
+        Iterator[BenchmarkDescription]: An iterator over BenchmarkDescription objects
+        for each task in the LCBench surrogate Benchmark.
+    """
+    if datadir is not None and "yahpo" in os.listdir(datadir):
+        datadir = datadir / "yahpo"
+    import mfpbench
+    env = Env(
+        name="py310-mfpbench-1.9-yahpo",
+        requirements=("mf-prior-bench[yahpo]==1.9.0",),
+        post_install=_download_data_cmd("yahpo", datadir=datadir),
+    )
+    for task_id in _lcbench_task_ids:
+        yield BenchmarkDescription(
+            name=f"yahpo-lcbench-{task_id}",
+            config_space=mfpbench.get("lcbench", task_id=task_id).space,
+            load=partial(_get_surrogate_benchmark, task_id=task_id, datadir=datadir),
+            metrics={
+                "val_accuracy": Measure.metric((0.0, 100.0), minimize=False),
+                "val_cross_entropy": Measure.metric((0, np.inf), minimize=True),
+                "val_balanced_accuracy": Measure.metric((0, 100), minimize=False),
+            },
+            test_metrics={
+                "test_balanced_accuracy": Measure.test_metric((0, 100), minimize=False),
+                "test_cross_entropy": Measure.test_metric(bounds=(0, np.inf), minimize=True),
+            },
+            costs={
+                "time": Measure.cost((0, np.inf), minimize=True),
+            },
+            fidelities={
+                "epoch": RangeFidelity.from_tuple((1, 52, 1), supports_continuation=True),
+            },
+            env=env,
+            mem_req_mb=4096,
+        )
 
 
 def jahs(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
@@ -207,6 +293,7 @@ def mfpbench_benchmarks(datadir: Path | None = None) -> Iterator[BenchmarkDescri
         for each benchmark.
     """
     if datadir is None:
-        datadir=Path(__file__).parent.parent.parent.absolute() / "data"
+        datadir=Path(__file__).parent.parent.parent.parent.absolute() / "data"
     # yield from jahs(datadir)
+    # yield from lcbench_surrogate(datadir)
     yield from pd1(datadir)
