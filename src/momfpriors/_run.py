@@ -37,6 +37,7 @@ smac_logger.setLevel(logging.ERROR)
 
 
 if TYPE_CHECKING:
+    from ConfigSpace import ConfigurationSpace
     from hpoglue.benchmark import BenchmarkDescription
     from hpoglue.result import Result
 
@@ -90,8 +91,13 @@ class Run:
     benchmark: BenchmarkDescription = field(init=False)
     """The benchmark that the Problem was run on."""
 
-    priors: Mapping[str, type[CSPrior]] = field(default_factory=dict)
-    """The priors to use for the run."""
+    priors: Mapping[str, tuple[str, type[CSPrior]]] = field(default_factory=dict)
+    """The priors to use for the run.
+        Usage: {objective: (prior_annotation, prior_config)}
+        Example: {
+            "obj1": ("good", CSNormalPrior)
+            }
+    """
 
     prior_distribution: Literal["normal", "uniform", "beta"] = "normal"
     """The distribution in use for the priors."""
@@ -135,8 +141,14 @@ class Run:
             self.problem.name,
             f"seed={self.seed}",
         ]
+        if self.priors:
+            name_parts.append(
+                ".".join(
+                    f"{obj}={prior[0]}" for obj, prior in self.priors.items()
+                )
+            )
         self.name = ".".join(name_parts)
-        # self.optimizer.support.check_opt_support(who=self.optimizer.name, problem=self.problem) #TODO: Check if required
+        # self.optimizer.support.check_opt_support(who=self.optimizer.name, problem=self.problem) # TODO: Check if required
 
         match self.benchmark.env, self.optimizer.env:
             case (None, None):
@@ -217,6 +229,7 @@ class Run:
             )
         """
         state = self.state()
+        print("=================================================================")
         logger.info(f"Collecting {self.name} in state {state}")
         self.set_state(Run.State.PENDING)
         _hist: list[Result] = []
@@ -225,7 +238,6 @@ class Run:
             self.set_state(self.State.RUNNING)
             _hist = _core(
                 problem=self.problem,
-                priors=self.priors,
                 seed=self.seed,
                 num_iterations=self.problem.budget.total,
                 results_dir=self.working_dir,
@@ -247,7 +259,7 @@ class Run:
         logger.info(f"Saving {self.name} at {self.working_dir}")
         if _hist:
             self.create_df(history=_hist)
-            logger.info(f"Results dumped at {self.df_path.absolute()}")
+            logger.info(f"Results dumped at {self.df_path.absolute()}\n")
 
 
     def create_df(
@@ -257,16 +269,21 @@ class Run:
     ) -> pd.DataFrame:
         """Create a dataframe from the history."""
         _df = pd.DataFrame([res._to_dict() for res in history])
+        opt_hps = "default"
         if len(self.optimizer_hyperparameters) > 0:
-            _df["optimizer_hps"] = ",".join(
+            opt_hps = ",".join(
                 f"{k}={v}" for k, v in self.optimizer_hyperparameters.items()
             )
-        else:
-            _df["optimizer_hps"] = "default"
+        _prior_annots = ",".join(
+            f"{obj}={prior[0]}" for obj, prior in self.priors.items()
+        )
+        print(_prior_annots)
         _df = _df.assign(
             seed=self.seed,
             optimizer=self.optimizer.name,
+            optimizer_hyperparameters=opt_hps,
             benchmark=self.benchmark.name,
+            prior_annotations = _prior_annots,
             objectives=[self.problem.get_objectives()]*len(_df),
             fidelities=(
                 [self.problem.get_fidelities() * len(_df)]
@@ -339,7 +356,7 @@ class Run:
             "seed": self.seed,
             "prior_distribution": self.prior_distribution,
             "priors": {
-                obj: prior.meta()["prior_config"] for obj, prior in self.priors.items()
+                obj: prior.meta()["prior_config"] for obj, (_, prior) in self.priors.items()
             },
             "exp_dir": str(self.exp_dir),
         }
@@ -360,38 +377,24 @@ class Run:
         _problem = Problem.from_dict(data["problem"])
         _priors: Mapping[str, Any] = data["priors"]
         seed = data["seed"]
-        _prior_type: type[CSPrior]
-        _prior_kwargs: Mapping[str, Any] = {}
-        match data["prior_distribution"]:
-            case "normal":
-                _prior_type = CSNormalPrior
-                _prior_kwargs["sigma"] = data["kwargs"].get("sigma")
-            case "uniform":
-                _prior_type = CSUniformPrior
-            case "beta":
-                _prior_type = CSBetaPrior
-                _prior_kwargs["alpha"] = data["kwargs"].get("alpha")
-                _prior_kwargs["beta"] = data["kwargs"].get("beta")
-            case _:
-                raise ValueError(
-                    f"Invalid value for `prior_distribution`: {data['prior_distribution']}"
-                )
 
-        priors = {
-            obj: _prior_type(
-                config_space=_problem.config_space,
-                prior_config=prior,
-                seed=seed,
-                **_prior_kwargs,
-            )
-            for obj, prior in _priors.items()
-        }
+        priors = Run._construct_prior(
+            priors=_priors,
+            config_space=_problem.benchmark.config_space,
+            prior_distribution=data["prior_distribution"],
+            seed=seed,
+            **data["kwargs"] # TODO: TEST THIS!
+        )
 
         return Run(
             problem=_problem,
             seed=seed,
             prior_distribution=data["prior_distribution"],
-            priors=priors,
+            priors=(
+                {obj: prior[1] for obj, prior in priors.items()}
+                if _problem.priors  # TODO: Likely needs to be tested and changed
+                else {}
+            ),
             exp_dir=Path(data["expdir"]),
         )
 
@@ -419,11 +422,14 @@ class Run:
         _priors: Mapping[str, Any] = {}
         objectives = list(objs_with_priors.keys())
 
-        for obj, prior in objs_with_priors.items():
-            if prior is not None:
-                prior_path = priors_dir / f"{benchmark_name}_{obj}_{prior}.yaml"
+        for obj, prior_annot in objs_with_priors.items():
+            if prior_annot is not None:
+                prior_path = priors_dir / f"{benchmark_name}_{obj}_{prior_annot}.yaml"
                 with prior_path.open("r") as file:
-                    _priors[obj] = yaml.safe_load(file)["config"]
+                    _priors[obj] = (
+                        prior_annot,
+                        yaml.safe_load(file)["config"]
+                    )
 
 
         optimizer = OPTIMIZERS[optimizer_name]
@@ -433,6 +439,16 @@ class Run:
 
         optimizer_kwargs.pop("priors", None)
 
+        priors = cls._construct_prior(
+            priors=_priors,
+            config_space=benchmark.config_space,
+            prior_distribution=prior_distribution,
+            seed=seed,
+            **kwargs,
+        )
+
+        _priors = {obj: prior[1] for obj, prior in priors.items()}
+
         _problem = Problem.problem(
             optimizer = optimizer,
             optimizer_hyperparameters=optimizer_kwargs,
@@ -440,8 +456,32 @@ class Run:
             objectives=objectives,
             budget=num_iterations,
             multi_objective_generation="mix_metric_cost",
+            priors=_priors,
+            # NOTE: This Doesn't comply with Problem's Prior
+            # typing of Mapping[str, Config], but removes the
+            # need to create Prior objects everytime inside an
+            # Optimizer script. # There are no checks for the
+            # validity of the priors in Problem, so we can get
+            #  away with this.
         )
 
+        return Run(
+            problem=_problem,
+            seed=seed,
+            priors=priors if _problem.priors else {},
+            prior_distribution=prior_distribution if priors else None,
+            exp_dir=exp_dir,
+        )
+
+    @classmethod
+    def _construct_prior(
+        cls,
+        priors: Mapping[str, Any],
+        config_space: ConfigurationSpace,
+        prior_distribution: Literal["normal", "uniform", "beta"] = "normal",
+        seed: int = 0,
+        **kwargs: Any,
+    ):
         _prior_type: type[CSPrior]
         _prior_kwargs: Mapping[str, Any] = {}
         match prior_distribution:
@@ -457,23 +497,19 @@ class Run:
             case _:
                 raise ValueError(f"Invalid value for `prior_distribution`: {prior_distribution}")
 
-        priors = {
-            obj: _prior_type(
-                config_space=_problem.config_space,
-                prior_config=prior,
-                seed=seed,
-                **_prior_kwargs,
+        return {
+            obj: (
+                prior_annot,
+                _prior_type(
+                    config_space=config_space,
+                    prior_config=prior,
+                    seed=seed,
+                    **_prior_kwargs,
+                )
             )
-            for obj, prior in _priors.items()
+            for obj, (prior_annot, prior) in priors.items()
         }
 
-        return Run(
-            problem=_problem,
-            seed=seed,
-            priors=priors,
-            prior_distribution=prior_distribution if priors else None,
-            exp_dir=exp_dir,
-        )
 
     def state(self) -> Run.State:
         """Return the state of the run.
