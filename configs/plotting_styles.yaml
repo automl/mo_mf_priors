@@ -14,7 +14,7 @@ markers:
 
 
 colors:
-  SMAC_ParEGO: green
+  SMAC_ParEGO: blue
   RandomSearch: olivedrab
-  RandomSearchWithPriors: brown
+  RandomSearchWithPriors: red
   NepsOptimizer: coral
