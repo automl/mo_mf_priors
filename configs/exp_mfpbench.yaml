@@ -4,7 +4,7 @@ optimizers:
   #     mo_prior_sampling: random
   - name: RandomSearch
     # hps: null
-  # - name: SMAC_ParEGO
+  - name: SMAC_ParEGO
   #   hps: null
 benchmarks:
   - name: pd1-cifar100-wide_resnet-2048
@@ -23,9 +23,5 @@ benchmarks:
     objs:
       valid_error_rate: null
       train_cost: null
-  # - name: yahpo-lcbench-7593
-  #   objs:
-  #     val_cross_entropy: null
-  #     time: null
 seeds: 1
-num_iterations: 25
+num_iterations: 10
