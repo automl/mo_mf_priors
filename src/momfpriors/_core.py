@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import logging
-from collections.abc import Mapping
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -14,8 +14,6 @@ from momfpriors.optimizer import Abstract_AskTellOptimizer, Abstract_NonAskTellO
 if TYPE_CHECKING:
     from hpoglue import Problem, Result
 
-    from momfpriors.csprior import CSPrior
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -23,10 +21,11 @@ logger.setLevel(logging.INFO)
 smac_logger = logging.getLogger("smac")
 smac_logger.setLevel(logging.ERROR)
 
+warnings.filterwarnings("ignore", category=UserWarning)
+
 
 def _core(
     problem: Problem,
-    priors: Mapping[str, CSPrior] | None = None,
     seed: int = 0,
     num_iterations: int = 1000,
     results_dir: Path = DEFAULT_RESULTS_DIR,
@@ -47,7 +46,6 @@ def _core(
         logger.setLevel(logging.ERROR)
 
     optimizer_kwargs = copy.deepcopy(problem.optimizer_hyperparameters)
-    optimizer_kwargs["priors"] = priors
 
     if issubclass(optimizer, Abstract_NonAskTellOptimizer):
         opt = optimizer(

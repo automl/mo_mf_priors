@@ -22,7 +22,7 @@ class RandomSearch(Abstract_AskTellOptimizer):
         objectives=("single", "many"),
         fidelities=(None),
         cost_awareness=(None),
-        tabular=False
+        tabular=False,
     )
 
     def __init__(  # noqa: D107
@@ -59,6 +59,7 @@ class RandomSearchWithPriors(Abstract_AskTellOptimizer):
         fidelities=(None),
         cost_awareness=(None),
         tabular=False,
+        priors=True,
     )
 
     mem_req_mb = 1024
@@ -67,7 +68,6 @@ class RandomSearchWithPriors(Abstract_AskTellOptimizer):
         self,
         problem: Problem,
         working_directory: str | Path,  # noqa: ARG002
-        priors: Mapping[str, CSPrior],
         mo_prior_sampling: Literal["random", "equal"] = "random",
         seed: int = 0,
         **kwargs: Any  # noqa: ARG002
@@ -75,7 +75,7 @@ class RandomSearchWithPriors(Abstract_AskTellOptimizer):
         self.config_space = problem.config_space
         self.config_space.seed(seed)
         self.problem = problem
-        self.priors = priors
+        self.priors: Mapping[str, CSPrior] = problem.priors
         self._rng = np.random.default_rng(seed)
         if mo_prior_sampling == "equal":
             assert len(self.problem.get_objectives()) <= self.problem.budget.total, (
@@ -84,7 +84,7 @@ class RandomSearchWithPriors(Abstract_AskTellOptimizer):
             )
         self.mo_prior_sampling = mo_prior_sampling
         self._optmizer_unique_id = 0
-        self._priors_used = {key: 0 for key in priors}
+        self._priors_used = {key: 0 for key in self.priors}
 
     def ask(self) -> Query:  # noqa: D102
         self._optmizer_unique_id += 1
