@@ -240,7 +240,7 @@ class Run:
                 problem=self.problem,
                 seed=self.seed,
                 num_iterations=self.problem.budget.total,
-                results_dir=self.working_dir,
+                results_dir=self.exp_dir.parent.absolute(),
                 core_verbose=core_verbose,
                 **kwargs,
             )
