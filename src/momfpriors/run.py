@@ -100,14 +100,12 @@ def exp(  # noqa: C901
     exp_yaml_path = exp_dir / "exp.yaml"
 
     runs: list[Run] = []
+    run_names: list[str] = []
     _benchs_added: list[str] = []
     try:
         for benchmark in benchmarks:
             for optimizer in optimizers:
                 for seed in seeds:
-                    _opt = OPTIMIZERS[optimizer[0]]
-                    if benchmark[0] in _benchs_added and not _opt.support.priors:
-                        continue
                     run = Run.generate_run(
                         optimizer=optimizer,
                         benchmark=benchmark,
@@ -118,8 +116,10 @@ def exp(  # noqa: C901
                         prior_distribution=prior_distribution,
                         **kwargs
                     )
-                    print(f"{optimizer[0]}, {benchmark[0]}")
+                    if run.name in run_names:
+                        continue
                     runs.append(run)
+                    run_names.append(run.name)
             _benchs_added.append(benchmark[0])
     except Exception:  # noqa: BLE001
         logging.error(

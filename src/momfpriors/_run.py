@@ -411,7 +411,42 @@ class Run:
         prior_distribution: Literal["normal", "uniform", "beta"] = "normal",
         **kwargs: Any
         ) -> Run:
-        """Generate a run from the given parameters."""
+        """Generates a Run instance configured with the specified optimizer, benchmark, and priors.
+
+        Args:
+            optimizer: A tuple containing the optimizer name and its hyperparameters.
+
+            benchmark: A tuple containing the benchmark name and a mapping of
+                objectives to prior annotations.
+
+            seed: The random seed for reproducibility.
+
+            num_iterations: The number of iterations for the optimization process.
+
+            exp_dir: The directory where experiment results will be stored.
+
+            priors_dir: The directory where prior configurations are stored.
+
+            prior_distribution: The type of prior distribution to use.
+                Available options are: "normal", "uniform", "beta".
+
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            An instance of the Run class configured with the specified parameters.
+
+        Notes:
+            - `Run.generate_run()` reads prior configurations from YAML files
+                located in the priors_dir.
+            - The priors are constructed using the specified prior_distribution and
+                additional keyword arguments.
+            - `Run.generate_run()` creates a Problem instance with the specified
+                optimizer, benchmark and priors.
+            - The Run instance is returned with the configured problem, seed, priors,
+                prior distribution, and experiment directory.
+            - NOTE: `Run.generate_run()` only generates a Run object but does not write
+                anything to the disk. That can be done using the `Run.write_yaml()` method.
+        """
         optimizer_name, optimizer_kwargs = optimizer
         benchmark_name, objs_with_priors = benchmark
 
