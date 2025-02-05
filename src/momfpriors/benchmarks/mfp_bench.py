@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 def _get_surrogate_benchmark(
@@ -32,10 +33,12 @@ def _get_surrogate_benchmark(
     **kwargs: Any,
 ) -> SurrogateBenchmark:
 
-    if datadir is not None:
-        datadir = Path(datadir).absolute().resolve()
-        kwargs["datadir"] = datadir
-    bench = mfpbench.get(benchmark_name, **kwargs)
+    from momfpriors.utils import HiddenPrints
+    with HiddenPrints():        # NOTE: To stop yahpo-lcbench from printing garbage
+        if datadir is not None:
+            datadir = Path(datadir).absolute().resolve()
+            kwargs["datadir"] = datadir
+        bench = mfpbench.get(benchmark_name, **kwargs)
     query_function = partial(_mfpbench_surrogate_query_function, benchmark=bench)
     return SurrogateBenchmark(
         desc=description,
@@ -120,34 +123,47 @@ def lcbench_surrogate(datadir: Path | None = None) -> Iterator[BenchmarkDescript
     if datadir is not None and "yahpo" in os.listdir(datadir):
         datadir = datadir / "yahpo"
     import mfpbench
+
+    from momfpriors.utils import HiddenPrints
+
     env = Env(
         name="py310-mfpbench-1.9-yahpo",
-        requirements=("mf-prior-bench[yahpo]==1.9.0",),
+        requirements=(
+            "mf-prior-bench[yahpo]==1.9.0",
+            "ConfigSpace==0.6.1",
+            "xgboost>=1.7"
+        ),
         post_install=_download_data_cmd("yahpo", datadir=datadir),
     )
-    for task_id in _lcbench_task_ids:
-        yield BenchmarkDescription(
-            name=f"yahpo-lcbench-{task_id}",
-            config_space=mfpbench.get("lcbench", task_id=task_id).space,
-            load=partial(_get_surrogate_benchmark, task_id=task_id, datadir=datadir),
-            metrics={
-                "val_accuracy": Measure.metric((0.0, 100.0), minimize=False),
-                "val_cross_entropy": Measure.metric((0, np.inf), minimize=True),
-                "val_balanced_accuracy": Measure.metric((0, 100), minimize=False),
-            },
-            test_metrics={
-                "test_balanced_accuracy": Measure.test_metric((0, 100), minimize=False),
-                "test_cross_entropy": Measure.test_metric(bounds=(0, np.inf), minimize=True),
-            },
-            costs={
-                "time": Measure.cost((0, np.inf), minimize=True),
-            },
-            fidelities={
-                "epoch": RangeFidelity.from_tuple((1, 52, 1), supports_continuation=True),
-            },
-            env=env,
-            mem_req_mb=4096,
-        )
+    with HiddenPrints():        # NOTE: To stop yahpo-lcbench from printing garbage
+        for task_id in _lcbench_task_ids:
+            yield BenchmarkDescription(
+                name=f"yahpo-lcbench-{task_id}",
+                config_space=mfpbench.get("lcbench", task_id=task_id).space,
+                load=partial(
+                    _get_surrogate_benchmark,
+                    benchmark_name="lcbench",
+                    datadir=datadir,
+                    task_id=task_id
+                ),
+                metrics={
+                    "val_accuracy": Measure.metric((0.0, 100.0), minimize=False),
+                    "val_cross_entropy": Measure.metric((0, np.inf), minimize=True),
+                    "val_balanced_accuracy": Measure.metric((0, 100), minimize=False),
+                },
+                test_metrics={
+                    "test_balanced_accuracy": Measure.test_metric((0, 100), minimize=False),
+                    "test_cross_entropy": Measure.test_metric(bounds=(0, np.inf), minimize=True),
+                },
+                costs={
+                    "time": Measure.cost((0, np.inf), minimize=True),
+                },
+                fidelities={
+                    "epoch": RangeFidelity.from_tuple((1, 52, 1), supports_continuation=True),
+                },
+                env=env,
+                mem_req_mb=4096,
+            )
 
 
 def jahs(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
@@ -216,7 +232,9 @@ def pd1(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
     env = Env(
         name="py310-mfpbench-1.9-pd1",
         python_version="3.10",
-        requirements=("mf-prior-bench[pd1]==1.9.0",),
+        requirements=(
+            "mf-prior-bench[pd1]==1.9.0",
+        ),
         post_install=_download_data_cmd("pd1", datadir=datadir),
     )
     yield BenchmarkDescription(
@@ -295,5 +313,5 @@ def mfpbench_benchmarks(datadir: Path | None = None) -> Iterator[BenchmarkDescri
     if datadir is None:
         datadir=Path(__file__).parent.parent.parent.parent.absolute() / "data"
     # yield from jahs(datadir)
-    # yield from lcbench_surrogate(datadir)
+    yield from lcbench_surrogate(datadir)
     yield from pd1(datadir)

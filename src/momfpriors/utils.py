@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
+import os
+import sys
 from typing import Any
 
 import neps
@@ -315,3 +317,14 @@ def pipeline_space_to_cs(
             case _:
                 raise ValueError(f"Unsupported parameter type: {type(param)}")
     return cs
+
+
+class HiddenPrints:  # noqa: D101
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        from pathlib import Path
+        sys.stdout = Path(os.devnull).open("w")
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout

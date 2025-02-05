@@ -1,9 +1,9 @@
 optimizers:
-  - name: RandomSearchWithPriors:
+  - name: RandomSearchWithPriors
     hps: 
       mo_prior_sampling: random
 benchmarks:
-  - name: MOMFPark:
+  - name: MOMFPark
     objs: 
       value1: good
       value2: good
