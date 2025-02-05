@@ -9,11 +9,16 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import yaml
 
-from momfpriors.constants import DEFAULT_RESULTS_DIR
+from momfpriors.constants import DEFAULT_RESULTS_DIR, DEFAULT_ROOT_DIR
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
+
+with (DEFAULT_ROOT_DIR / "configs" / "plotting_styles.yaml").open("r") as f:
+    style_dict = yaml.safe_load(f)
 
 
 def pareto_front(
@@ -31,10 +36,21 @@ def pareto_front(
     return is_pareto
 
 
+def _get_style(opt: str, prior_annot: str) -> tuple[str, str]:
+    """Function to get the plotting style for a given instance."""
+    color = style_dict["colors"].get(opt, "black")
+    annotations = [a.split("=")[-1] for a in prior_annot.split(",")]
+    annotations = "-".join(annotations)
+    marker = style_dict["markers"].get(annotations, "o")
+    return marker, color
+
+
 def plot_pareto(
     data: Mapping[str, Mapping[str, Any]],
     exp_dir: Path,
     benchmark: str,
+    *,
+    is_single_opt: bool = False,
 ) -> None:
     """Function to plot the pareto front from a pandas Series
     of Results, i.e., Mapping[str, float] objects.
@@ -50,11 +66,16 @@ def plot_pareto(
         pareto = np.array([list(res.values()) for res in results])[pareto]
         pareto = pareto[pareto[:, 0].argsort()]
         logger.info(f"Plotting pareto front for {plot_title}")
+        marker, color = _get_style(
+            instance_data["optimizer"],
+            instance_data["prior_annotations"],
+        )
         plt.step(
             pareto[:, 0],
             pareto[:, 1],
             where="post",
-            marker="o",
+            marker=marker,
+            color=color if not is_single_opt else None,
             markersize=7,
             linewidth=1,
         )
@@ -94,20 +115,27 @@ if __name__ == "__main__":
     for benchmark in benchmarks_in_dir:
         for file in exp_dir.rglob("*.parquet"):
             if benchmark not in file.name:
-                continue 
+                continue
             _df = pd.read_parquet(file)
-            instance = _df["optimizer"][0] + "_" + _df["optimizer_hps"][0]
+            instance = (
+                _df["optimizer"][0] + ";" + _df["optimizer_hyperparameters"][0] + ";" +
+                _df["prior_annotations"][0]
+            )
             agg_dict[instance] = {
                 "results": _df["results"],
                 "optimizer": _df["optimizer"][0],
-                "opt_hps": _df["optimizer_hps"][0],
+                "prior_annotations": _df["prior_annotations"][0],
                 "plot_title": (
                     f"{instance}"
                     f" on {benchmark}"
                 ),
             }
+        is_single_opt = False
+        if len({agg_dict[instance]["optimizer"] for instance in agg_dict}) == 1:
+            is_single_opt = True
         plot_pareto(
             data=agg_dict,
             exp_dir=exp_dir,
             benchmark=benchmark,
+            is_single_opt=is_single_opt,
         )

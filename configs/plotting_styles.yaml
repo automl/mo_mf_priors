@@ -1,0 +1,20 @@
+markers:
+  good-good: "o"      # Circle
+  good-bad: "v"       # Triangle Down
+  good-medium: "s"    # Square
+  good: "h"      # Hexagon
+  bad-good: "^"       # Triangle Up
+  bad-bad: "x"        # X
+  bad-medium: "d"     # Diamond
+  bad: "P"       # Plus (Filled)
+  medium-good: "p"    # Pentagon
+  medium-bad: "*"     # Star
+  medium-medium: "+"  # Plus
+  medium: "8"    # Octagon
+
+
+colors:
+  SMAC_ParEGO: green
+  RandomSearch: olivedrab
+  RandomSearchWithPriors: brown
+  NepsOptimizer: coral
