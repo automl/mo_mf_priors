@@ -28,4 +28,4 @@ benchmarks:
   #     val_cross_entropy: null
   #     time: null
 seeds: 1
-num_iterations: 5
+num_iterations: 25
