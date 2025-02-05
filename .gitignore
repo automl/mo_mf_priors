@@ -6,3 +6,4 @@ dist/
 test_priors/
 *botorch_momf2.py
 *momf_branin_currin.py
+data/
