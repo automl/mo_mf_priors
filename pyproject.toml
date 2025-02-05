@@ -6,7 +6,7 @@ dependencies = [
   "pandas>=2,<3", # TODO: Check which package needs this specific version.
   "pyarrow",
   "scikit-learn==1.3.2",
-  "ConfigSpace>=1.0",
+  "ConfigSpace>=1.0", # TODO: 0.6.1 needed for mfpbench
   "botorch",
   "hpoglue",
   "coco-experiment",
