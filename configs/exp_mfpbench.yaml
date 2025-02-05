@@ -11,6 +11,18 @@ benchmarks:
     objs:
       valid_error_rate: null
       train_cost: null
+  - name: pd1-imagenet-resnet-512
+    objs:
+      valid_error_rate: null
+      train_cost: null
+  - name: pd1-lm1b-transformer-2048
+    objs:
+      valid_error_rate: null
+      train_cost: null
+  - name: pd1-translate_wmt-xformer_translate-64
+    objs:
+      valid_error_rate: null
+      train_cost: null
   # - name: yahpo-lcbench-7593
   #   objs:
   #     val_cross_entropy: null
