@@ -6,17 +6,11 @@ from botorch.test_functions.multi_objective_multi_fidelity import MOMFBraninCurr
 from ConfigSpace import ConfigurationSpace
 from hpoglue import FunctionalBenchmark, Measure, Query, Result
 from hpoglue.fidelity import ContinuousFidelity
-from hpoglue.run_glue import run_glue
-
-from momfpriors.baselines.random_search import RandomSearch
-from momfpriors.utils import find_incumbent
 
 
 # MOMF Branin Currin
 def _get_MOMFBC_space(seed: int = 0) -> ConfigurationSpace:
-    return ConfigurationSpace(
-        seed=seed,
-        space={
+    return ConfigurationSpace({
             f"x{i}": (0.0, 1.0) for i in range(2)
         }
     )
@@ -53,10 +47,8 @@ MOMFBC_Bench = FunctionalBenchmark(
 
 # MOMF Park
 
-def _get_MOMFPark_space(seed: int = 0) -> ConfigurationSpace:
-    return ConfigurationSpace(
-        seed=seed,
-        space={
+def _get_MOMFPark_space() -> ConfigurationSpace:
+    return ConfigurationSpace({
             f"x{i}": (0.0, 1.0) for i in range(4)
         }
     )
@@ -90,32 +82,3 @@ MOMFPark_Bench = FunctionalBenchmark(
     query=wrapped_MOMFPark
 )
 
-
-if __name__ == "__main__":
-    # bench = MOMFBC_Bench
-    bench = MOMFPark_Bench
-    _df = run_glue(
-        optimizer=RandomSearch,
-        benchmark=bench,
-        objectives=2,
-        seed=1,
-        budget=10
-    )
-    print(bench.desc.name)
-    print(_df)
-    print(
-        find_incumbent(
-            df=_df,
-            results_col="results",
-            objective="value1",
-            minimize=True
-        )
-    )
-    print(
-        find_incumbent(
-            df=_df,
-            results_col="results",
-            objective="value2",
-            minimize=True
-        )
-    )

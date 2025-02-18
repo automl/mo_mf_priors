@@ -1,23 +1,19 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Mapping
+import importlib.metadata
 import os
+import site
 import sys
+from collections.abc import Callable, Iterable, Mapping
+from pathlib import Path
 from typing import Any
 
 import neps
 import numpy as np
 import pandas as pd
-from ConfigSpace import (
-    CategoricalHyperparameter,
-    ConfigurationSpace,
-    Constant,
-    NormalFloatHyperparameter,
-    NormalIntegerHyperparameter,
-    UniformFloatHyperparameter,
-    UniformIntegerHyperparameter,
-)
+from ConfigSpace import ConfigurationSpace
 from hpoglue import BenchmarkDescription, Config, Query, Result
+from packaging import version
 
 DEFAULT_CONFIDENCE_SCORES: Mapping[str, float] = {
     "low": 0.5,
@@ -179,6 +175,15 @@ def perturb(  # noqa: C901, PLR0912
     Returns:
         Config: The perturbed configuration.
     """
+    from ConfigSpace import (
+        CategoricalHyperparameter,
+        ConfigurationSpace,
+        Constant,
+        NormalFloatHyperparameter,
+        NormalIntegerHyperparameter,
+        UniformFloatHyperparameter,
+        UniformIntegerHyperparameter,
+    )
     perturbed_val: dict[str, int | float] = {}
 
     for name, value in config.values.items():
@@ -221,13 +226,17 @@ def perturb(  # noqa: C901, PLR0912
                             _lower = hp.lower
                             _upper = hp.upper
                     case NormalIntegerHyperparameter():
-                        _lower = hp.nfhp._lower
-                        _upper = hp.nfhp._upper
+                        if hp.log:
+                            _lower = np.log(hp.lower)
+                            _upper = np.log(hp.upper)
+                        else:
+                            _lower = hp.lower
+                            _upper = hp.upper
                     case UniformFloatHyperparameter() | NormalFloatHyperparameter():
                         _lower = hp.lower_vectorized
                         _upper = hp.upper_vectorized
                     case _:
-                        raise TypeError("Weird TypeError")
+                        raise TypeError("Wut")
 
                 space_length = std * (_upper - _lower)
                 rescaled_std = std * space_length
@@ -272,6 +281,13 @@ def pipeline_space_to_cs(
     pipeline_space: Mapping[str, Any],
 )-> ConfigurationSpace:
     """Convert a Pipeline Space to ConfigSpace."""
+    from ConfigSpace import (
+        CategoricalHyperparameter,
+        ConfigurationSpace,
+        Constant,
+        NormalFloatHyperparameter,
+        NormalIntegerHyperparameter,
+    )
     cs = ConfigurationSpace()
     for name, param in pipeline_space.items():
         match param:
@@ -328,3 +344,68 @@ class HiddenPrints:  # noqa: D101
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout.close()
         sys.stdout = self._original_stdout
+
+
+def is_package_installed(package_name: str) -> bool:
+    """Check if a package is installed in the current virtual environment."""
+    # Extract version constraint if present
+    version_constraints = ["==", ">=", "<=", ">", "<"]
+    version_check = None
+    for constraint in version_constraints:
+        if constraint in package_name:
+            package_name, version_spec = package_name.split(constraint)
+            version_check = (constraint, version_spec)
+            break
+
+    # Normalize package name (replace hyphens with underscores)
+    package_name = package_name.replace("-", "_")
+
+    # Get the site-packages directory of the current virtual environment
+    venv_site_packages = site.getsitepackages() if hasattr(site, "getsitepackages") else []
+    venv_prefix = sys.prefix  # Virtual environment root
+
+    # Check if the package is installed in the virtual environment
+    for site_package_path in venv_site_packages:
+        package_path = Path(site_package_path) / package_name
+
+        # Check if the package exists in the site-packages directory
+        if package_path.exists() and venv_prefix in str(package_path):
+            installed_version = importlib.metadata.version(package_name)
+            if version_check:
+                constraint, required_version = version_check
+                return _check_package_version(installed_version, required_version, constraint)
+            return True
+
+        # Check if package is installed as different name (e.g., .dist-info or .egg-info)
+        dist_info_pattern = f"{package_name}*"
+        dist_info_paths = list(Path(site_package_path).glob(dist_info_pattern))
+        if dist_info_paths:
+            dist_info_name = dist_info_paths[0].name.replace(".dist-info", "") \
+                .replace(".egg-info", "")
+            installed_version = dist_info_name.split("-")[-1]
+            if version_check:
+                constraint, required_version = version_check
+                return _check_package_version(installed_version, required_version, constraint)
+            return True
+
+    return False
+
+def _check_package_version(
+    installed_version: str,
+    required_version: str,
+    check_key: str,
+):
+    """Check if the installed package version satisfies the required version."""
+    installed_version = version.parse(installed_version)
+    required_version = version.parse(required_version)
+    match check_key:
+        case "==":
+            return installed_version == required_version
+        case ">=":
+            return installed_version >= required_version
+        case "<=":
+            return installed_version <= required_version
+        case ">":
+            return installed_version > required_version
+        case "<":
+            return installed_version < required_version
