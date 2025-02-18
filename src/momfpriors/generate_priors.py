@@ -9,6 +9,7 @@ from hpoglue import FunctionalBenchmark, Result
 
 from momfpriors.benchmarks import BENCHMARKS
 from momfpriors.benchmarks.bbob_mo import bbob_function_definitions, create_bbob_mo_desc
+from momfpriors.constants import DEFAULT_PRIORS_DIR
 from momfpriors.utils import bench_first_fid, cs_random_sampling, get_prior_configs
 
 
@@ -68,7 +69,7 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
                 benchmark = BENCHMARKS[benchmark]
 
         if isinstance(benchmark, FunctionalBenchmark):
-            benchmark = benchmark.description
+            benchmark = benchmark.desc
 
         print(f"Generating priors for benchmark: {benchmark.name} and objective: {objective}")
 
@@ -156,8 +157,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--to",
-        type=Path,
-        default=Path("./src/priors"),
+        type=str | Path,
+        default=DEFAULT_PRIORS_DIR,
     )
     parser.add_argument(
         "--benchmarks",
@@ -218,6 +219,9 @@ if __name__ == "__main__":
                 else None,
             )
         )
+
+    if isinstance(args.to, str):
+        args.to = Path(args.to)
 
     generate_priors_wrt_obj(
         seed=args.seed,

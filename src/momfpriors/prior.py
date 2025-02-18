@@ -1,4 +1,5 @@
 """A module for defining prior distributions over Pipeline Space Hyperparameters."""
+#TODO: Update when Eddie releases the new version of neps
 
 from __future__ import annotations
 

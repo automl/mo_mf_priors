@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 from hpoglue import Config, Problem, Query, Result
 
+from momfpriors.csprior import construct_prior
 from momfpriors.optimizer import Abstract_AskTellOptimizer
 
 if TYPE_CHECKING:
@@ -70,12 +71,17 @@ class RandomSearchWithPriors(Abstract_AskTellOptimizer):
         working_directory: str | Path,  # noqa: ARG002
         mo_prior_sampling: Literal["random", "equal"] = "random",
         seed: int = 0,
-        **kwargs: Any  # noqa: ARG002
+        **kwargs: Any
     ) -> None:
         self.config_space = problem.config_space
         self.config_space.seed(seed)
         self.problem = problem
-        self.priors: Mapping[str, CSPrior] = problem.priors
+        self.priors: Mapping[str, CSPrior] = construct_prior(
+            priors=problem.priors[1],
+            config_space=self.config_space,
+            seed=seed,
+            **kwargs,
+        )
         self._rng = np.random.default_rng(seed)
         if mo_prior_sampling == "equal":
             assert len(self.problem.get_objectives()) <= self.problem.budget.total, (

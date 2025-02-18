@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from ConfigSpace import (
     BetaFloatHyperparameter,
@@ -21,6 +21,9 @@ from ConfigSpace import (
     UniformFloatHyperparameter,
     UniformIntegerHyperparameter,
 )
+
+if TYPE_CHECKING:
+    from hpoglue import Config
 
 
 class CSPrior:
@@ -361,3 +364,58 @@ class CSBetaPrior(CSPrior):
                         f"Unsupported hyperparameter type: {type(hp).__name__}"
                     )
         return distribution
+
+
+
+def construct_prior(
+    priors: Mapping[str, Mapping[str, Any] | Config],
+    config_space: ConfigurationSpace,
+    prior_distribution: Literal["normal", "uniform", "beta"] = "normal",
+    seed: int = 0,
+    **kwargs: Any,
+) -> Mapping[str, CSPrior]:
+    """Constructs a prior distribution for a given configuration space and prior values.
+
+    Parameters:
+    -----------
+    priors:
+        A mapping of prior configurations. The keys are the names of the objects,
+        and the values are either dictionaries of prior parameters or Config objects.
+    config_space:
+        The configuration space for which the prior is being constructed.
+    prior_distribution:
+        The type of prior distribution to construct. Default is "normal".
+    seed:
+        The random seed for reproducibility. Default is 0.
+    **kwargs:
+        Additional keyword arguments for specific prior distributions.
+
+    Returns:
+    --------
+        A dictionary where the keys are the names of the objects and the values
+        are instances of the constructed prior distributions.
+    """
+    _prior_type: type[CSPrior]
+    _prior_kwargs: Mapping[str, Any] = {}
+    match prior_distribution:
+        case "normal":
+            _prior_type = CSNormalPrior
+            _prior_kwargs["sigma"] = kwargs.get("sigma", 0.25)
+        case "uniform":
+            _prior_type = CSUniformPrior
+        case "beta":
+            _prior_type = CSBetaPrior
+            _prior_kwargs["alpha"] = kwargs.get("alpha", 2)
+            _prior_kwargs["beta"] = kwargs.get("beta", 2)
+        case _:
+            raise ValueError(f"Invalid value for `prior_distribution`: {prior_distribution}")
+
+    return {
+        obj: _prior_type(
+                config_space=config_space,
+                prior_config=prior if isinstance(prior, dict) else prior.values,
+                seed=seed,
+                **_prior_kwargs,
+            )
+        for obj, prior in priors.items()
+    }
