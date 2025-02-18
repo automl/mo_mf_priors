@@ -1,10 +1,10 @@
 optimizers:
   - name: RandomSearchWithPriors
-    hps: 
+    hyperparameters: 
       mo_prior_sampling: random
 benchmarks:
   - name: MOMFPark
-    objs: 
+    objectives: 
       value1: good
       value2: good
 seeds: 1

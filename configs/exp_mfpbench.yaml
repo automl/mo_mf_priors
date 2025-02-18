@@ -1,26 +1,21 @@
 optimizers:
-  # - name: RandomSearchWithPriors
-  #   hps:
-  #     mo_prior_sampling: random
   - name: RandomSearch
-    # hps: null
   - name: SMAC_ParEGO
-  #   hps: null
 benchmarks:
   - name: pd1-cifar100-wide_resnet-2048
-    objs:
+    objectives:
       valid_error_rate: null
       train_cost: null
   - name: pd1-imagenet-resnet-512
-    objs:
+    objectives:
       valid_error_rate: null
       train_cost: null
   - name: pd1-lm1b-transformer-2048
-    objs:
+    objectives:
       valid_error_rate: null
       train_cost: null
   - name: pd1-translate_wmt-xformer_translate-64
-    objs:
+    objectives:
       valid_error_rate: null
       train_cost: null
 seeds: 1

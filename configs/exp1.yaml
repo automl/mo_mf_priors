@@ -1,18 +1,18 @@
 optimizers:
   - name: RandomSearchWithPriors
-    hps:
+    hyperparameters:
       mo_prior_sampling: random
   - name: RandomSearch
-    hps: null
+    hyperparameters: null
   - name: SMAC_ParEGO
-    hps: null
+    hyperparameters: null
 benchmarks:
   - name: MOMFPark
-    objs:
+    objectives:
       value1: good
-      value2: good
+      value2: null
   - name: MOMFBraninCurrin
-    objs:
+    objectives:
       value1: good
       value2: good
 seeds: 1

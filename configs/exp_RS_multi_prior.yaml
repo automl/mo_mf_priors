@@ -1,46 +1,46 @@
 optimizers:
   - name: RandomSearchWithPriors
-    hps:
+    hyperparameters:
       mo_prior_sampling: random
 benchmarks:
   - name: MOMFPark
-    objs:
+    objectives:
       value1: good
       value2: good
   - name: MOMFPark
-    objs:
+    objectives:
       value1: good
       value2: bad
   - name: MOMFPark
-    objs:
+    objectives:
       value1: good
       value2: null
   - name: MOMFPark
-    objs:
+    objectives:
       value1: bad
       value2: null
   - name: MOMFPark
-    objs:
+    objectives:
       value1: bad
       value2: bad
   - name: MOMFBraninCurrin
-    objs:
+    objectives:
       value1: good
       value2: good
   - name: MOMFBraninCurrin
-    objs:
+    objectives:
       value1: good
       value2: bad
   - name: MOMFBraninCurrin
-    objs:
+    objectives:
       value1: good
       value2: null
   - name: MOMFBraninCurrin
-    objs:
+    objectives:
       value1: bad
       value2: null
   - name: MOMFBraninCurrin
-    objs:
+    objectives:
       value1: bad
       value2: bad
 seeds: 1
