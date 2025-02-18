@@ -13,7 +13,6 @@ import numpy as np
 import yaml
 
 from momfpriors._run import Run
-from momfpriors.baselines import OPTIMIZERS
 from momfpriors.constants import DEFAULT_PRIORS_DIR, DEFAULT_RESULTS_DIR, DEFAULT_ROOT_DIR
 
 GLOBAL_SEED = 42
@@ -207,7 +206,6 @@ def to_dict(
                     "name": run.benchmark.name,
                     "objectives": run.problem.get_objectives(),
                     "fidelities": run.problem.get_fidelities(),
-                    "costs": run.problem.get_costs(),
                 }
             )
 
@@ -325,19 +323,61 @@ if __name__ == "__main__":
 
         with Path(yaml_path).open() as file:
             config = yaml.safe_load(file)
+
+        _optimizers = []
+        for opt in config["optimizers"]:
+            match opt:
+                case Mapping():
+                    assert "name" in opt, f"Optimizer name not found in {opt}"
+                    assert "hyperparameters" in opt, f"Optimizer hyperparameters not found in {opt}"
+                    _optimizers.append(tuple(opt.values()))
+                case str():
+                    _optimizers.append((opt, {}))
+                case tuple():
+                    assert len(opt) == 2, "Each Optimizer must only have a name and hyperparameters"  # noqa: PLR2004
+                    assert isinstance(opt[0], str), "Expected str for optimizer name"
+                    assert isinstance(opt[1], Mapping), (
+                        "Expected Mapping for Optimizer hyperparameters"
+                    )
+                    _optimizers.append(opt)
+                case _:
+                    raise ValueError(
+                        f"Invalid type for optimizer: {type(opt)}. "
+                        "Expected Mapping, str or tuple"
+                    )
+
+        _benchmarks = []
+        for bench in config["benchmarks"]:
+            match bench:
+                case Mapping():
+                    assert "name" in bench, f"Benchmark name not found in {bench}"
+                    assert "objectives" in bench, f"Benchmark objectives not found in {bench}"
+                    _benchmarks.append(
+                        (
+                            bench["name"],
+                            {
+                                "objectives": bench["objectives"],
+                                "fidelities": bench.get("fidelities"),
+                            }
+                        )
+                    )
+                case tuple():
+                    assert len(bench) == 2, "Each Benchmark must only have a name and objectives"  # noqa: PLR2004
+                    assert isinstance(bench[0], str), "Expected str for benchmark name"
+                    assert isinstance(bench[1], Mapping), (
+                        "Expected Mapping for Benchmark objectives and fidelities"
+                    )
+                    _benchmarks.append(bench)
+                case _:
+                    raise ValueError(
+                        f"Invalid type for benchmark: {type(bench)}. "
+                        "Expected Mapping or tuple"
+                    )
+
+
         exp(
-            optimizers=[
-                (
-                    optimizer["name"],
-                    optimizer.get("hps", None)
-                ) for optimizer in config["optimizers"]
-            ],
-            benchmarks=[
-                (
-                    benchmark["name"],
-                    benchmark.get("objs", None)
-                ) for benchmark in config["benchmarks"]
-            ],
+            optimizers=_optimizers,
+            benchmarks=_benchmarks,
             seeds=config.get("seeds"),
             num_seeds=config.get("num_seeds", 1),
             num_iterations=config.get("num_iterations", 10),
