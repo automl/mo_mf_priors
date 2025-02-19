@@ -43,5 +43,5 @@ benchmarks:
     objectives:
       value1: bad
       value2: bad
-seeds: 1
+num_seeds: 1
 num_iterations: 25

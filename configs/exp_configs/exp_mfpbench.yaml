@@ -21,5 +21,5 @@ benchmarks:
     objectives:
       valid_error_rate: good
       train_cost: good
-seeds: 1
-num_iterations: 10
+num_seeds: 5
+num_iterations: 5
