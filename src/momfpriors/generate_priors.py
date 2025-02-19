@@ -76,12 +76,16 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
         if isinstance(benchmark, FunctionalBenchmark):
             benchmark = benchmark.desc
 
-        logger.info(
+
+        log_info = (
             f"Generating priors for benchmark: {benchmark.name}"
             f" and objective: {objective}"
             f" for spec: {prior_spec}"
-            f" with fidelity: {fidelity}" if fidelity is not None else ""
         )
+        if fidelity is not None:
+            log_info += f" with fidelity: {fidelity}"
+
+        logger.info(log_info)
 
 
         max_fidelity = bench_first_fid(benchmark).max
