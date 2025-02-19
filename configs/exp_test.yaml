@@ -7,5 +7,5 @@ benchmarks:
     objectives: 
       value1: good
       value2: good
-seeds: 1
+num_seeds: 3
 num_iterations: 10
