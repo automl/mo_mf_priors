@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 
@@ -8,10 +9,13 @@ import yaml
 from hpoglue import FunctionalBenchmark, Result
 
 from momfpriors.benchmarks import BENCHMARKS
-from momfpriors.benchmarks.bbob_mo import bbob_function_definitions, create_bbob_mo_desc
+
+# from momfpriors.benchmarks.bbob_mo import bbob_function_definitions, create_bbob_mo_desc
 from momfpriors.constants import DEFAULT_PRIORS_DIR
 from momfpriors.utils import bench_first_fid, cs_random_sampling, get_prior_configs
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 def generate_priors_wrt_obj(  # noqa: C901, PLR0912
     seed: int,
@@ -63,7 +67,8 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
         benchmark, objective = next(iter(benchmk.items()))
         if isinstance(benchmark, str):
             if benchmark.startswith("bbob"):
-                benchmark = create_bbob_mo_desc(func=benchmark)
+                # benchmark = create_bbob_mo_desc(func=benchmark)
+                pass
             else:
                 assert benchmark in BENCHMARKS, f"Unknown benchmark: {benchmark}"
                 benchmark = BENCHMARKS[benchmark]
@@ -71,7 +76,12 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
         if isinstance(benchmark, FunctionalBenchmark):
             benchmark = benchmark.desc
 
-        print(f"Generating priors for benchmark: {benchmark.name} and objective: {objective}")
+        logger.info(
+            f"Generating priors for benchmark: {benchmark.name}"
+            f" and objective: {objective}"
+            f" for spec: {prior_spec}"
+            f" with fidelity: {fidelity}" if fidelity is not None else ""
+        )
 
 
         max_fidelity = bench_first_fid(benchmark).max
@@ -109,7 +119,7 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
         for _, index, _, _ in prior_spec:
             prior_spec_results.append(_results[index])
 
-        print(".\n".join([str(res) for res in prior_spec_results]))
+        # print(".\n".join([str(res) for res in prior_spec_results]))
 
         prior_configs = get_prior_configs(
             results=results,
@@ -129,6 +139,7 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
                         "config": config.values,
                     }, f
                 )
+        logger.info(f"Priors saved to: {to}")
 
 
 
@@ -136,17 +147,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--seed",
+        "--seed", "-s",
         type=int,
         default=0
     )
     parser.add_argument(
-        "--nsamples",
+        "--nsamples", "-n",
         type=int,
         default=10
     )
     parser.add_argument(
-        "--prior_spec",
+        "--prior_spec", "-p",
         nargs="+",
         type=str,
         default=[
@@ -156,79 +167,109 @@ if __name__ == "__main__":
         ],
     )
     parser.add_argument(
-        "--to",
-        type=str | Path,
+        "--to", "-t",
+        type=str,
         default=DEFAULT_PRIORS_DIR,
     )
     parser.add_argument(
-        "--benchmarks",
+        "--benchmarks", "-b",
         nargs="+",
         type=str,
         default=[
-            "MOMFBraninCurrin:value1",
-            "MOMFBraninCurrin:value2",
             "MOMFPark:value1",
             "MOMFPark:value2",
         ],
     )
     parser.add_argument(
-        "--fidelity",
+        "--fidelity", "-f",
         type=float,
         default=None
     )
     parser.add_argument(
-        "--clean",
+        "--clean", "-c",
         action="store_true"
+    )
+    parser.add_argument(
+        "--yaml", "-y",
+        type=str,
+        default=None,
+        help="Path to a yaml file containing the prior specification."
     )
     args = parser.parse_args()
 
-    if isinstance(args.benchmarks, str):
-        args.benchmarks = [args.benchmarks]
+    if args.yaml:
+        with Path(args.yaml).open() as f:
+            prior_gen = yaml.safe_load(f)
+        _benchmarks = prior_gen["benchmarks"]
+        _prior_spec = prior_gen["prior_spec"]
+        _to = prior_gen.get("to", DEFAULT_PRIORS_DIR)
+        _fidelity = prior_gen.get("fidelity", args.fidelity)
+        _clean = prior_gen.get("clean", args.clean)
+        _seed = prior_gen.get("seed", args.seed)
+        _nsamples = prior_gen.get("nsamples", args.nsamples)
 
-    _benchmarks: list[Mapping[str, str]] = []
-    for benchmark in args.benchmarks:
-        if ":" not in benchmark:
-            raise ValueError(
-                "Invalid benchmark specification!"
-                "Expected format: 'benchmark:objective'"
-                f"Got: '{benchmark}'"
+        if not isinstance(_benchmarks, list):
+            _benchmarks = [_benchmarks]
+        if not isinstance(_prior_spec, list):
+            _prior_spec = [_prior_spec]
+        if isinstance(_to, str):
+            _to = Path(_to)
+
+    else:
+
+        if isinstance(args.benchmarks, str):
+            args.benchmarks = [args.benchmarks]
+
+        _benchmarks: list[Mapping[str, str]] = []
+        for benchmark in args.benchmarks:
+            if ":" not in benchmark:
+                raise ValueError(
+                    "Invalid benchmark specification!"
+                    "Expected format: 'benchmark:objective'"
+                    f"Got: '{benchmark}'"
+                )
+            bench_name, objective = benchmark.split(":")
+            _benchmarks.append({bench_name.strip(): objective.strip()}
             )
-        bench_name, objective = benchmark.split(":")
-        _benchmarks.append({bench_name.strip(): objective.strip()}
-        )
 
-    if isinstance(args.prior_spec, str):
-        args.prior_spec = [args.prior_spec]
+        if isinstance(args.prior_spec, str):
+            args.prior_spec = [args.prior_spec]
 
-    _prior_spec: list[tuple[str, int, float | None, float | None]] = []
-    for prior in args.prior_spec:
-        if ":" not in prior:
-            raise ValueError(
-                "Invalid prior specification!"
-                "Expected format: 'name:index:std:categorical_swap_chance'"
-                f"Got: '{prior}'"
+        _prior_spec: list[tuple[str, int, float | None, float | None]] = []
+        for prior in args.prior_spec:
+            if ":" not in prior:
+                raise ValueError(
+                    "Invalid prior specification!"
+                    "Expected format: 'name:index:std:categorical_swap_chance'"
+                    f"Got: '{prior}'"
+                )
+            name, index, std, categorical_swap_chance = prior.split(":")
+            _prior_spec.append(
+                (
+                    name.strip(),
+                    int(index.strip()),
+                    float(std.strip()) if std != "None" else None,
+                    float(categorical_swap_chance.strip())
+                    if categorical_swap_chance != "None"
+                    else None,
+                )
             )
-        name, index, std, categorical_swap_chance = prior.split(":")
-        _prior_spec.append(
-            (
-                name.strip(),
-                int(index.strip()),
-                float(std.strip()) if std != "None" else None,
-                float(categorical_swap_chance.strip())
-                if categorical_swap_chance != "None"
-                else None,
-            )
-        )
 
-    if isinstance(args.to, str):
-        args.to = Path(args.to)
+        if isinstance(args.to, str):
+            args.to = Path(args.to)
+        _seed = args.seed
+        _nsamples = args.nsamples
+        _to = args.to
+        _fidelity = args.fidelity
+        _clean = args.clean
+
 
     generate_priors_wrt_obj(
-        seed=args.seed,
-        nsamples=args.nsamples,
+        seed=_seed,
+        nsamples=_nsamples,
         prior_spec=_prior_spec,
-        to=args.to,
+        to=_to,
         benchmarks=_benchmarks,
-        fidelity=args.fidelity,
-        clean=args.clean,
+        fidelity=_fidelity,
+        clean=_clean,
     )
