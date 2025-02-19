@@ -7,19 +7,19 @@ optimizers:
 benchmarks:
   - name: pd1-cifar100-wide_resnet-2048
     objectives:
-      valid_error_rate: null
-      train_cost: null
+      valid_error_rate: good
+      train_cost: good
   - name: pd1-imagenet-resnet-512
     objectives:
-      valid_error_rate: null
-      train_cost: null
+      valid_error_rate: good
+      train_cost: good
   - name: pd1-lm1b-transformer-2048
     objectives:
-      valid_error_rate: null
-      train_cost: null
+      valid_error_rate: good
+      train_cost: good
   - name: pd1-translate_wmt-xformer_translate-64
     objectives:
-      valid_error_rate: null
-      train_cost: null
+      valid_error_rate: good
+      train_cost: good
 seeds: 1
 num_iterations: 10
