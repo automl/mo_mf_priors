@@ -1,19 +1,27 @@
 from __future__ import annotations
 
 import importlib.metadata
+import logging
 import os
 import site
 import sys
 from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import neps
 import numpy as np
-import pandas as pd
-from ConfigSpace import ConfigurationSpace
 from hpoglue import BenchmarkDescription, Config, Query, Result
 from packaging import version
+
+if TYPE_CHECKING:
+    import pandas as pd
+    from ConfigSpace import ConfigurationSpace
+
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 
 DEFAULT_CONFIDENCE_SCORES: Mapping[str, float] = {
     "low": 0.5,
@@ -90,9 +98,9 @@ def get_prior_configs(
 
     prior_spec = list(prior_spec)
 
-    print(" - Finished results")
+    logger.info(" - Finished results")
     results = sorted(results, key=lambda r: r.values[objective])
-    print(" - Finished sorting")
+    logger.info(" - Finished sorting")
 
     prior_configs = {
             name: (results[index].query.config, std, categorical_swap_chance)
@@ -269,6 +277,17 @@ def objective_fn_wrapper(
     objective_fn: Callable,
     **config: Mapping[str, Any]
 ) -> Mapping[str, Any]:
+    """Wraps an objective function to be called with a configuration.
+
+    Args:
+        objective_fn: The objective function to be called.
+            It should accept a Query object as its argument.
+
+        **config: Hyperparameter config to be passed to the objective function.
+
+    Returns:
+        The result values from the objective function.
+    """
     query = Query(
         config=Config(config_id=None, values=config),
         fidelity=None,
