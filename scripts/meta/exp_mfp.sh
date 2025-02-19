@@ -32,7 +32,7 @@ source ~/repos/momfp_env/bin/activate
 # Running the job
 start=`date +%s`
 
-python3 -m momfpriors.run -y configs/exp_mfpbench.yaml -e "mfpbench_pd1_10"
+python3 -m momfpriors.run -y configs/exp_configs/exp_mfpbench.yaml -e "mfpbench_pd1_10"
 
 end=`date +%s`
 runtime=$((end-start))
