@@ -329,17 +329,22 @@ if __name__ == "__main__":
             match opt:
                 case Mapping():
                     assert "name" in opt, f"Optimizer name not found in {opt}"
-                    assert "hyperparameters" in opt, f"Optimizer hyperparameters not found in {opt}"
-                    _optimizers.append(tuple(opt.values()))
+                    if len(opt) == 1 or not opt.get("hyperparameters"):
+                        _optimizers.append((opt["name"], {}))
+                    else:
+                        _optimizers.append(tuple(opt.values()))
                 case str():
                     _optimizers.append((opt, {}))
                 case tuple():
-                    assert len(opt) == 2, "Each Optimizer must only have a name and hyperparameters"  # noqa: PLR2004
+                    assert len(opt) <= 2, "Each Optimizer must only have a name and hyperparameters"  # noqa: PLR2004
                     assert isinstance(opt[0], str), "Expected str for optimizer name"
-                    assert isinstance(opt[1], Mapping), (
-                        "Expected Mapping for Optimizer hyperparameters"
-                    )
-                    _optimizers.append(opt)
+                    if len(opt) == 1:
+                        _optimizers.append((opt[0], {}))
+                    else:
+                        assert isinstance(opt[1], Mapping), (
+                            "Expected Mapping for Optimizer hyperparameters"
+                        )
+                        _optimizers.append(opt)
                 case _:
                     raise ValueError(
                         f"Invalid type for optimizer: {type(opt)}. "
