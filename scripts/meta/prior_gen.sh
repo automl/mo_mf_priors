@@ -17,7 +17,7 @@
 # Define the amount of memory required per node
 
 # Since using CPU Partion, define the number of cpus required per node
-#SBATCH --cpus-per-task 50
+#SBATCH --cpus-per-task 30
 
 echo "Workingdir: $PWD";
 echo "Started at $(date)";
