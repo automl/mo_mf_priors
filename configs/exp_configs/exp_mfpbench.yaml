@@ -1,4 +1,7 @@
 optimizers:
+  - name: RandomSearchWithPriors
+    hyperparameters: 
+      mo_prior_sampling: random
   - name: RandomSearch
   - name: SMAC_ParEGO
 benchmarks:
