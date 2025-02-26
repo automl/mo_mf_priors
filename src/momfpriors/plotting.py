@@ -25,6 +25,9 @@ reference_points_dict = {
     "pd1-imagenet-resnet-512": {"valid_error_rate": 1, "train_cost": 5000},
     "pd1-lm1b-transformer-2048": {"valid_error_rate": 1, "train_cost": 1000},
     "pd1-translate_wmt-xformer_translate-64": {"valid_error_rate": 1, "train_cost": 20000},
+    "jahs-CIFAR10": {"valid_acc": 0, "runtime": 20000},
+    "jahs-ColorectalHistology": {"valid_acc": 0, "runtime": 20000},
+    "jahs-FashionMNIST": {"valid_acc": 0, "runtime": 20000},
     "MOMFPark": {"value1": 1, "value2": 1},
 }
 

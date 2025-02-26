@@ -270,8 +270,8 @@ def jahs(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
         requirements=(
             "mf-prior-bench==1.9.0",
             "jahs-bench==1.1.0",
-            "pandas<1.4",
-            "ConfigSpace<=0.6.1",
+            # "pandas<1.4",
+            # "ConfigSpace<=0.6.1",
         ),
         post_install=_download_data_cmd("jahs", datadir=datadir),
     )
