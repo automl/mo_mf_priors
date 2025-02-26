@@ -4,6 +4,7 @@ import argparse
 import logging
 from collections.abc import Iterable, Mapping
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import yaml
 from hpoglue import FunctionalBenchmark, Result
@@ -13,6 +14,9 @@ from momfpriors.benchmarks import BENCHMARKS
 # from momfpriors.benchmarks.bbob_mo import bbob_function_definitions, create_bbob_mo_desc
 from momfpriors.constants import DEFAULT_PRIORS_DIR
 from momfpriors.utils import bench_first_fid, cs_random_sampling, get_prior_configs
+
+if TYPE_CHECKING:
+    from hpoglue import BenchmarkDescription
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -63,23 +67,32 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
     if isinstance(benchmarks, dict):
         benchmarks = [benchmarks]
 
+    benchmark_dict: Mapping[BenchmarkDescription, list[str]] = {}
+
     for benchmk in benchmarks:
         benchmark, objective = next(iter(benchmk.items()))
+        
+
+        benchmark_dict.setdefault(benchmark, []).append(objective)
+
+
+    for benchmark, objectives in benchmark_dict.items():
+
         if isinstance(benchmark, str):
             if benchmark.startswith("bbob"):
-                # benchmark = create_bbob_mo_desc(func=benchmark)
+                # _benchmark = create_bbob_mo_desc(func=benchmark)
                 pass
             else:
                 assert benchmark in BENCHMARKS, f"Unknown benchmark: {benchmark}"
-                benchmark = BENCHMARKS[benchmark]
+                _benchmark = BENCHMARKS[benchmark]
 
         if isinstance(benchmark, FunctionalBenchmark):
-            benchmark = benchmark.desc
+            _benchmark = benchmark.desc
 
 
         log_info = (
             f"Generating priors for benchmark: {benchmark.name}"
-            f" and objective: {objective}"
+            f" and objective(s): {objectives}"
             f" for spec: {prior_spec}"
         )
         if fidelity is not None:
@@ -117,35 +130,37 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
         ):
             results.append(bench.query(query))
 
-        prior_spec_results = []
-        _results = sorted(results, key=lambda r: r.values[objective])
+        for objective in objectives:
 
-        for _, index, _, _ in prior_spec:
-            prior_spec_results.append(_results[index])
+            prior_spec_results = []
+            _results = sorted(results, key=lambda r: r.values[objective])
 
-        # print(".\n".join([str(res) for res in prior_spec_results]))
+            for _, index, _, _ in prior_spec:
+                prior_spec_results.append(_results[index])
 
-        prior_configs = get_prior_configs(
-            results=results,
-            space=benchmark.config_space,
-            objective=objective,
-            seed=seed,
-            prior_spec=prior_spec,
-        )
+            # print(".\n".join([str(res) for res in prior_spec_results]))
 
-        print(" - Priors: ", prior_configs)
+            prior_configs = get_prior_configs(
+                results=results,
+                space=benchmark.config_space,
+                objective=objective,
+                seed=seed,
+                prior_spec=prior_spec,
+            )
 
-        for name, config in prior_configs.items():
-            with (to / f"{benchmark.name}_{objective}_{name}.yaml").open("w") as f:
-                yaml.dump(
-                    {
-                        "benchmark": benchmark.name,
-                        "prior_name": name,
-                        "objective": objective,
-                        "config": config.values,
-                    }, f
-                )
-        logger.info(f"Priors saved to: {to}")
+            print(" - Priors: ", prior_configs)
+
+            for name, config in prior_configs.items():
+                with (to / f"{benchmark.name}_{objective}_{name}.yaml").open("w") as f:
+                    yaml.dump(
+                        {
+                            "benchmark": benchmark.name,
+                            "prior_name": name,
+                            "objective": objective,
+                            "config": config.values,
+                        }, f
+                    )
+            logger.info(f"Priors saved to: {to}")
 
 
 
