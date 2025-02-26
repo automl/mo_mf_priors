@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
-def exp(  # noqa: C901
+def exp(  # noqa: C901, PLR0913
     optimizers: (
         tuple[str, Mapping[str, Any]] |
         list[tuple[str, Mapping[str, Any]]]
@@ -42,6 +42,7 @@ def exp(  # noqa: C901
     exp_name: str | None = None,
     *,
     core_verbose: bool = False,
+    overwrite: bool = False,
     **kwargs: Any
 ) -> None:
     """Run experiments with specified optimizers and benchmarks.
@@ -68,6 +69,8 @@ def exp(  # noqa: C901
         exp_name: Name of the experiment.
 
         core_verbose: Whether to log verbose information during the core loop.
+
+        overwrite: Whether to overwrite the results if they already exist.
 
         **kwargs: Additional keyword arguments to pass to the Run.generate_run method.
 
@@ -143,6 +146,7 @@ def exp(  # noqa: C901
     for run in runs:
         run.run(
             core_verbose=core_verbose,
+            overwrite=overwrite,
         )
 
     root_logger.info(f"Completed {len(runs)} runs.")
@@ -304,6 +308,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Whether to log verbose information during the core loop."
     )
+    parser.add_argument(
+        "--overwrite", "-ow",
+        action="store_true",
+        help="Whether to overwrite the results if they already exist."
+    )
 
     args = parser.parse_args()
 
@@ -391,5 +400,6 @@ if __name__ == "__main__":
             prior_distribution=config.get("prior_distribution", "normal"),
             exp_name=args.exp_name,
             core_verbose=args.core_verbose,
+            overwrite=args.overwrite,
             **config.get("kwargs", {})
         )

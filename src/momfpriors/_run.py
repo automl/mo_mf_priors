@@ -183,6 +183,7 @@ class Run:
         *,
         on_error: Literal["raise", "continue"] = "raise",
         core_verbose: bool = False,
+        overwrite: Run.State | bool | Iterable[Run.State | str] = False,
         **kwargs: Any,
     ) -> None:
         """Run the Run.
@@ -197,15 +198,26 @@ class Run:
 
             core_verbose: Whether to log the core loop at INFO level.
 
+            overwrite: Overwrite existing runs.
+
             **kwargs: Additional keyword arguments to pass to the optimizer.
                 Usage example: Scalarization weights for Neps Random Scalarization MO.
         """
+        print("=================================================================")
         if on_error not in ("raise", "continue"):
             raise ValueError(f"Invalid value for `on_error`: {on_error}")
 
+        overwrites = Run.State.collect(overwrite)
 
         state = self.state()
-        print("=================================================================")
+        if state in overwrites:
+            logger.info(f"Overwriting {self.name} in `{state=}` at {self.working_dir}.")
+            self.set_state(Run.State.PENDING)
+
+        if self.df_path.exists():
+            logger.info(f"Found run results for {self.name} in {self.working_dir}")
+            return
+
         logger.info(f"Collecting {self.name} in state {state}")
         self.set_state(Run.State.PENDING)
         _hist: list[Result] = []
