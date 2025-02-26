@@ -4,7 +4,7 @@
 #SBATCH --partition bosch_cpu-cascadelake    # short: -p bosch_cpu-cascadelake
 
 # Define a name for your job
-#SBATCH --job-name pd1_priors            #  short: -J pd1_priors
+#SBATCH --job-name jahs_priors            #  short: -J jahs_priors
 #SBATCH --time 10:00:00                      #  short: -t 10:00:00
 
 # Define the files to write the outputs of the job to.
@@ -32,7 +32,7 @@ source ~/repos/momfp_env/bin/activate
 # Running the job
 start=`date +%s`
 
-python3 -m momfpriors.generate_priors -y configs/prior_gen/pd1.yaml -n 100000
+python3 -m momfpriors.generate_priors -y configs/prior_gen/jahs.yaml -n 100000
 
 end=`date +%s`
 runtime=$((end-start))
