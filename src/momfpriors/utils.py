@@ -120,6 +120,7 @@ def get_prior_configs(
 
 
 def bench_first_fid(benchmark: BenchmarkDescription) -> int:
+    """Get the first fidelity value of the benchmark."""
     return benchmark.fidelities[
         next(iter(benchmark.fidelities.keys()))
     ]
@@ -159,7 +160,7 @@ def cs_random_sampling(
     ]
 
 
-def perturb(  # noqa: C901, PLR0912
+def perturb(  # noqa: C901, PLR0912, PLR0915
     config: Config,
     space: ConfigurationSpace,
     seed: int,
@@ -175,20 +176,19 @@ def perturb(  # noqa: C901, PLR0912
 
         seed: The seed for random number generation.
 
-        std: The standard deviation of the perturbation. Defaults to None.
+        std: The standard deviation of the perturbation.
 
         categorical_swap_chance: The chance of swapping a categorical value.
-            Defaults to None.
 
     Returns:
         Config: The perturbed configuration.
     """
     from ConfigSpace import (
         CategoricalHyperparameter,
-        ConfigurationSpace,
         Constant,
         NormalFloatHyperparameter,
         NormalIntegerHyperparameter,
+        OrdinalHyperparameter,
         UniformFloatHyperparameter,
         UniformIntegerHyperparameter,
     )
@@ -206,6 +206,35 @@ def perturb(  # noqa: C901, PLR0912
             rng = seed
 
         match hp:
+            case CategoricalHyperparameter():
+                 # We basically with (1 - std) choose the same value,
+                 # otherwise uniformly select at random
+
+                if categorical_swap_chance:
+                    std = categorical_swap_chance
+                if std:
+                    if rng.uniform() < 1 - std:
+                        return value
+
+                    choices = set(hp.choices) - {value}
+                    return rng.choice(list(choices))
+
+                return value
+
+            case OrdinalHyperparameter():
+                # We build a normal centered at the value
+
+                if rng.uniform() < 1 - std:
+                    return value
+
+                # [0, 1,  2, 3]                             # noqa: ERA001
+                #       ^  mean
+                index_value = hp.sequence.index(value)
+                index_std = std * len(hp.sequence)
+                normal_value = rng.normal(index_value, index_std)
+                index = int(np.rint(np.clip(normal_value, 0, len(hp.sequence))))
+                return hp.sequence[index]
+
             case Constant():
                 _val = value
 
@@ -265,7 +294,7 @@ def perturb(  # noqa: C901, PLR0912
                 perturbed_val[name] = _val
 
             case _:
-                raise TypeError(f"Unsupported hyperparameter type: {type(hp)}")
+                raise ValueError(f"Can't perturb hyperparameter: {hp}")
 
     return Config(
         config_id=config.config_id,
