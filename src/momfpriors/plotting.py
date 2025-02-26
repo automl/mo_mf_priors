@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-import sys
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -10,7 +9,8 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import proplot as pplt
+
+# import proplot as pplt
 import yaml
 from pymoo.indicators.hv import Hypervolume
 
@@ -18,6 +18,15 @@ from momfpriors.constants import DEFAULT_RESULTS_DIR, DEFAULT_ROOT_DIR
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
+
+reference_points_dict = {
+    "pd1-cifar100-wide_resnet-2048": {"valid_error_rate": 1, "train_cost": 100},
+    "pd1-imagenet-resnet-512": {"valid_error_rate": 1, "train_cost": 5000},
+    "pd1-lm1b-transformer-2048": {"valid_error_rate": 1, "train_cost": 1000},
+    "pd1-translate_wmt-xformer_translate-64": {"valid_error_rate": 1, "train_cost": 20000},
+    "MOMFPark": {"value1": 1, "value2": 1},
+}
 
 
 with (DEFAULT_ROOT_DIR / "configs" / "plotting_styles.yaml").open("r") as f:
@@ -53,6 +62,7 @@ def create_plots(  # noqa: PLR0915
     exp_dir: Path,
     benchmark: str,
     budget: int,
+    seed_for_pareto: int,
     *,
     is_single_opt: bool = False,
     pareto_seeds: bool = False,
@@ -61,14 +71,18 @@ def create_plots(  # noqa: PLR0915
     iterations and pareto fronts from a pandas Series
     of Results, i.e., Mapping[str, float] objects.
     """
-    logger.info(f"\nPlots for runs on benchmark: {benchmark}")
-    reference_point = np.array([-np.inf, -np.inf])
-    plt.figure(1, figsize=(7, 5))
-    plt.figure(2, figsize=(7, 5))
-    if len(agg_data) > 1:
-        plot_title = f"Optimizers on \n{benchmark}"
+    print("================================================")
+    logger.info(f"Plots for runs on benchmark: {benchmark}")
+    plt.figure(1, figsize=(10, 10))
+    plt.figure(2, figsize=(10, 10))
+    first_key = next(iter(agg_data.keys())) # gets the instance
+    second_key = next(iter(agg_data[first_key].keys())) # gets the seed
+    reference_point = np.array([
+        reference_points_dict[benchmark][obj]
+        for obj in agg_data[first_key][second_key]["results"][0]
+    ])
     for instance, instance_data in agg_data.items():
-        logger.info(f"\nPlots for instance: {instance}")
+        logger.info(f"Plots for instance: {instance}")
         seed_hv_dict = {}
         for seed, data in instance_data.items():
             results = data["results"]
@@ -79,10 +93,6 @@ def create_plots(  # noqa: PLR0915
             pareto = None
             hv_vals = []
             for costs in results:
-                # Update reference point
-                reference_point = np.maximum(
-                    reference_point,
-                    np.max(np.array(list(costs.values())), axis=0))
                 # Compute hypervolume
                 acc_costs.append(costs)
                 pareto = pareto_front(acc_costs)
@@ -106,22 +116,29 @@ def create_plots(  # noqa: PLR0915
                     where="post",
                     marker=marker,
                     color=color if not is_single_opt else None,
+                    label=f"{instance}_{seed}",
                     markersize=7,
                     linewidth=1,
                 )
                 plt.legend([f"{instance}_{seed}" for seed in instance_data])
+            elif seed == seed_for_pareto:
+                plt.figure(1)
+                plt.step(
+                    pareto[:, 0],
+                    pareto[:, 1],
+                    where="post",
+                    marker=marker,
+                    color=color if not is_single_opt else None,
+                    label=f"{instance}_{seed}",
+                    markersize=7,
+                    linewidth=1,
+                )
+                plt.legend()
+
+        if len(agg_data) > 1:
+            plot_title = f"Optimizers on \n{benchmark}"
+
         plt.figure(1)
-        if not pareto_seeds:
-            plt.step(
-                pareto[:, 0],
-                pareto[:, 1],
-                where="post",
-                marker=marker,
-                color=color if not is_single_opt else None,
-                markersize=7,
-                linewidth=1,
-            )
-            plt.legend(list(agg_data.keys()))
         plt.xlabel(keys[0])
         plt.ylabel(keys[1])
         plt.grid(visible=True)
@@ -129,17 +146,15 @@ def create_plots(  # noqa: PLR0915
         pareto_save_dir = exp_dir / "plots" / "pareto"
         pareto_save_dir.mkdir(parents=True, exist_ok=True)
 
-
+        # Aggregating Hypervolumes - calculating means, cumulative max and std_error
         seed_hv_df = pd.DataFrame(seed_hv_dict)
-        seed_hv_df = seed_hv_df.ffill(axis=0)
-        seed_hv_df = seed_hv_df.dropna(axis=0)
         means = pd.Series(seed_hv_df.mean(axis=1), name=f"means_{instance}")
-        std = pd.Series(seed_hv_df.std(axis=1), name=f"std_{instance}")
+        ste = pd.Series(seed_hv_df.sem(axis=1), name=f"std_{instance}")
         means = means.cummax()
         means = means.drop_duplicates()
-        std = std.loc[means.index]
+        ste = ste.loc[means.index]
         means[budget] = means.iloc[-1]
-        std[budget] = std.iloc[-1]
+        ste[budget] = ste.iloc[-1]
 
         # Plotting Hypervolumes
         plt.figure(2)
@@ -148,11 +163,12 @@ def create_plots(  # noqa: PLR0915
             marker=marker,
             color=color if not is_single_opt else None,
             linestyle="-",
+            label=instance,
         )
         plt.fill_between(
             means.index,
-            means - std,
-            means + std,
+            means - ste,
+            means + ste,
             alpha=0.2,
             color=color if not is_single_opt else None,
             edgecolor=color if not is_single_opt else None,
@@ -160,8 +176,8 @@ def create_plots(  # noqa: PLR0915
         )
         plt.xlabel("Iteration")
         plt.ylabel("Hypervolume")
+        plt.legend()
         plt.grid(visible=True)
-        plt.legend(list(agg_data.keys()))
         plt.title(f"Hypervolume over iterations plot for\n{plot_title}")
         hv_save_dir = exp_dir / "plots"/ "hypervolume"
         hv_save_dir.mkdir(parents=True, exist_ok=True)
@@ -188,15 +204,26 @@ def agg_data(
         (f.name.split("benchmark=")[-1].split(".")[0])
         for f in exp_dir.iterdir() if f.is_dir() and "benchmark=" in f.name]
     benchmarks_in_dir = list(set(benchmarks_in_dir))
+    benchmarks_in_dir.sort()
     logger.info(f"Found benchmarks: {benchmarks_in_dir}")
 
     budget: int = 0
 
+    with (exp_dir / "exp.yaml").open("r") as f:
+        exp_config = yaml.safe_load(f)
+
+    seed_for_pareto = exp_config.get("seeds")[0]
+
     for benchmark in benchmarks_in_dir:
+        # if "imagenet" not in benchmark:
+        #     continue
         for file in exp_dir.rglob("*.parquet"):
             if benchmark not in file.name:
                 continue
+            # if "SMAC" not in file.name:
+            #     continue
             _df = pd.read_parquet(file)
+            # print(file.name)
             instance = (
                 _df["optimizer"][0] + ";" + _df["optimizer_hyperparameters"][0] + ";" +
                 _df["prior_annotations"][0]
@@ -225,6 +252,7 @@ def agg_data(
             budget=budget,
             is_single_opt=is_single_opt,
             pareto_seeds=pareto_seeds,
+            seed_for_pareto=seed_for_pareto,
         )
 
 
@@ -232,22 +260,23 @@ def make_subplots(
     exp_dir: Path,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
-    num_plots = len(list(exp_dir.rglob("*.png")))
-    fig = pplt.figure(tight=True, refwidth="5em")
-    axs = fig.subplots(
-        nrows = 2 if num_plots > 2 else 1,  # noqa: PLR2004
-        ncols = num_plots // 2 if num_plots > 2 else num_plots, # noqa: PLR2004
-    )
-    for ax, file in zip(axs, exp_dir.rglob("*.png")):  # noqa: B905
-        if "pareto" not in file.name.lower():
-            continue
-        img = plt.imread(file)
-        ax.grid(visible=False)
-        ax.imshow(img)
-        ax.axis("off")
-    save_dir = exp_dir / "plots" / "subplots"
-    save_dir.mkdir(parents=True, exist_ok=True)
-    fig.savefig(save_dir / "all_pareto_subplots.png")
+    pass
+    # num_plots = len(list(exp_dir.rglob("*.png")))
+    # fig = pplt.figure(tight=True, refwidth="5em")
+    # axs = fig.subplots(
+    #     nrows = 2 if num_plots > 2 else 1,  # noqa: PLR2004
+    #     ncols = num_plots // 2 if num_plots > 2 else num_plots, # noqa: PLR2004
+    # )
+    # for ax, file in zip(axs, exp_dir.rglob("*.png")):  # noqa: B905
+    #     if "pareto" not in file.name.lower():
+    #         continue
+    #     img = plt.imread(file)
+    #     ax.grid(visible=False)
+    #     ax.imshow(img)
+    #     ax.axis("off")
+    # save_dir = exp_dir / "plots" / "subplots"
+    # save_dir.mkdir(parents=True, exist_ok=True)
+    # fig.savefig(save_dir / "all_pareto_subplots.png")
 
 
 if __name__ == "__main__":

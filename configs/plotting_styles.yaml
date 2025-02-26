@@ -17,4 +17,4 @@ colors:
   SMAC_ParEGO: blue
   RandomSearch: olivedrab
   RandomSearchWithPriors: red
-  NepsOptimizer: coral
+  NepsRW: coral
