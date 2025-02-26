@@ -214,26 +214,28 @@ def perturb(  # noqa: C901, PLR0912, PLR0915
                     std = categorical_swap_chance
                 if std:
                     if rng.uniform() < 1 - std:
-                        return value
+                        _val = value
+                    else:
+                        choices = set(hp.choices) - {value}
+                        _val = rng.choice(list(choices))
 
-                    choices = set(hp.choices) - {value}
-                    return rng.choice(list(choices))
-
-                return value
+                else:
+                    _val = value
 
             case OrdinalHyperparameter():
                 # We build a normal centered at the value
 
                 if rng.uniform() < 1 - std:
-                    return value
+                    _val = value
+                else:
 
-                # [0, 1,  2, 3]                             # noqa: ERA001
-                #       ^  mean
-                index_value = hp.sequence.index(value)
-                index_std = std * len(hp.sequence)
-                normal_value = rng.normal(index_value, index_std)
-                index = int(np.rint(np.clip(normal_value, 0, len(hp.sequence))))
-                return hp.sequence[index]
+                    # [0, 1,  2, 3]                             # noqa: ERA001
+                    #       ^  mean
+                    index_value = hp.sequence.index(value)
+                    index_std = std * len(hp.sequence)
+                    normal_value = rng.normal(index_value, index_std)
+                    index = int(np.rint(np.clip(normal_value, 0, len(hp.sequence))))
+                    _val = hp.sequence[index]
 
             case Constant():
                 _val = value
@@ -291,10 +293,10 @@ def perturb(  # noqa: C901, PLR0912, PLR0915
                 if isinstance(hp, UniformFloatHyperparameter | NormalFloatHyperparameter):
                     _val = float(sample)  # type: ignore
 
-                perturbed_val[name] = _val
-
             case _:
                 raise ValueError(f"Can't perturb hyperparameter: {hp}")
+
+        perturbed_val[name] = _val
 
     return Config(
         config_id=config.config_id,
