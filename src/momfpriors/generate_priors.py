@@ -133,6 +133,8 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
             prior_spec=prior_spec,
         )
 
+        print(" - Priors: ", prior_configs)
+
         for name, config in prior_configs.items():
             with (to / f"{benchmark.name}_{objective}_{name}.yaml").open("w") as f:
                 yaml.dump(
