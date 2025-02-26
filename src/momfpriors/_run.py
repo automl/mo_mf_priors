@@ -250,11 +250,9 @@ class Run:
             opt_hps = ",".join(
                 f"{k}={v}" for k, v in self.optimizer_hyperparameters.items()
             )
-        print(self.priors)
         _prior_annots = ",".join(
             f"{obj}={prior[0]}" for obj, prior in self.priors.items()
         )
-        print(_prior_annots)
         _df = _df.assign(
             seed=self.seed,
             optimizer=self.optimizer.name,
