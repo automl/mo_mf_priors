@@ -33,7 +33,7 @@ source ~/repos/jahs_env/bin/activate
 # Running the job
 start=`date +%s`
 
-python3 -m momfpriors.run -y configs/exp_configs/exp1.yaml -e "all_25"
+python3 -m momfpriors.run -y configs/exp_configs/exp_jahs.yaml -e "jahs_25"
 
 end=`date +%s`
 runtime=$((end-start))
