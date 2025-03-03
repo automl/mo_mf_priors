@@ -343,7 +343,7 @@ if __name__ == "__main__":
 
     if args.make_subplots:
         plots_dir = exp_dir / "plots"
-        match plots_dir.exists(), len(list(plots_dir.iterdir())):
+        match plots_dir.exists(), len(list((plots_dir/"pareto").rglob("*.png"))):
             case True, 1:
                 logger.info("Only one plot found. Exiting.")
             case _, 0:

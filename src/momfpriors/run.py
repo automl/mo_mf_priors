@@ -103,7 +103,6 @@ def exp(  # noqa: C901, PLR0913
 
     runs: list[Run] = []
     run_names: list[str] = []
-    _benchs_added: list[str] = []
     try:
         for benchmark in benchmarks:
             for optimizer in optimizers:
@@ -122,7 +121,6 @@ def exp(  # noqa: C901, PLR0913
                         continue
                     runs.append(run)
                     run_names.append(run.name)
-            _benchs_added.append(benchmark[0])
     except Exception:  # noqa: BLE001
         logging.error(
             "Error in generating runs for "
