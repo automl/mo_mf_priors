@@ -1,0 +1,81 @@
+benchmark: jahs-CIFAR10
+config:
+  Activation: !!python/object/apply:numpy.core.multiarray.scalar
+  - !!python/object/apply:numpy.dtype
+    args:
+    - U9
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - 36
+    - 4
+    - 8
+  - !!binary |
+    SAAAAGEAAAByAAAAZAAAAHMAAAB3AAAAaQAAAHMAAABoAAAA
+  LearningRate: 0.43889057279693844
+  N: 5
+  Op1: !!python/object/apply:numpy.core.multiarray.scalar
+  - &id001 !!python/object/apply:numpy.dtype
+    args:
+    - i8
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - -1
+    - -1
+    - 0
+  - !!binary |
+    AAAAAAAAAAA=
+  Op2: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    AQAAAAAAAAA=
+  Op3: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    AQAAAAAAAAA=
+  Op4: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    AQAAAAAAAAA=
+  Op5: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    AQAAAAAAAAA=
+  Op6: !!python/object/apply:numpy.core.multiarray.scalar
+  - *id001
+  - !!binary |
+    AwAAAAAAAAA=
+  Optimizer: SGD
+  Resolution: 1.0
+  TrivialAugment: !!python/object/apply:numpy.core.multiarray.scalar
+  - !!python/object/apply:numpy.dtype
+    args:
+    - b1
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - '|'
+    - null
+    - null
+    - null
+    - -1
+    - -1
+    - 0
+  - !!binary |
+    AQ==
+  W: 16
+  WeightDecay: 0.009084353264973892
+objective: valid_acc
+prior_name: medium
