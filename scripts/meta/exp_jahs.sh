@@ -4,15 +4,15 @@
 #SBATCH --partition bosch_cpu-cascadelake    # short: -p bosch_cpu-cascadelake
 
 # Define a name for your job
-#SBATCH --job-name ST_baselines1            #  short: -J ST_baselines1
+#SBATCH --job-name JAHS_baselines            #  short: -J JAHS_baselines
 #SBATCH --time 10:00:00                      #  short: -t 10:00:00
 
 # Define the files to write the outputs of the job to.
 # Please note the SLURM will not create this directory for you, and if it is missing, no logs will be saved.
 # You must create the directory yourself. In this case, that means you have to create the "logs" directory yourself.
 
-#SBATCH --output logs/%x-%A_meta.out   # STDOUT  %x and %A will be replaced by the job name and job id, respectively. short: -o logs/%x-%A-job_name.out
-#SBATCH --error logs/%x-%A_meta.err    # STDERR  short: -e logs/%x-%A-job_name.out
+#SBATCH --output logs/%x-%A_meta_jahs.out   # STDOUT  %x and %A will be replaced by the job name and job id, respectively. short: -o logs/%x-%A_meta_jahs.out
+#SBATCH --error logs/%x-%A_meta_jahs.err    # STDERR  short: -e logs/%x-%A_meta_jahs.err
 
 # Define the amount of memory required per node
 #SBATCH --mem 4GB
