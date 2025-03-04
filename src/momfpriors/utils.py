@@ -296,7 +296,7 @@ def perturb(  # noqa: C901, PLR0912, PLR0915
             case _:
                 raise ValueError(f"Can't perturb hyperparameter: {hp}")
 
-        perturbed_val[name] = sanitize_prior_vals(_val)
+        perturbed_val[name] = sanitize_numpy_prior_vals(_val)
 
     return Config(
         config_id=config.config_id,
@@ -304,11 +304,11 @@ def perturb(  # noqa: C901, PLR0912, PLR0915
     )
 
 
-def sanitize_prior_vals(
+def sanitize_numpy_prior_vals(
     val: Any,
 ) -> Any:
-    """Sanitize the perturbed prior values."""
-    if isinstance(val, np.object_):
+    """Convert numpy types to native Python types for readable YAMLs."""
+    if isinstance(val, np.generic):
         return val.item()
     return val
 

@@ -134,9 +134,6 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
             )
 
             logger.info(f" - Priors: {prior_configs}")
-            logger.info(prior_configs["good"].values)
-            logger.info(prior_configs["good"].values["Activation"])
-            logger.info(type(prior_configs["good"].values["Activation"]))
 
             for name, config in prior_configs.items():
                 with (to / f"{_benchmark.name}_{objective}_{name}.yaml").open("w") as f:
