@@ -62,6 +62,8 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
 
     to.mkdir(exist_ok=True)
 
+    logger.info(f"Priors generation with {seed=}, {nsamples=} and saving to {to=}")
+
     for benchmark, objectives in benchmarks.items():
 
         if benchmark.startswith("bbob"):
@@ -136,7 +138,8 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
             logger.info(f" - Priors: {prior_configs}")
 
             for name, config in prior_configs.items():
-                with (to / f"{_benchmark.name}_{objective}_{name}.yaml").open("w") as f:
+                save_path = to / f"{_benchmark.name}_{objective}_{name}.yaml"
+                with save_path.open("w") as f:
                     yaml.dump(
                         {
                             "benchmark": _benchmark.name,
@@ -145,7 +148,7 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
                             "config": config.values,
                         }, f
                     )
-            logger.info(f"Priors saved to: {to}")
+            logger.info(f"Priors saved to: {save_path}")
     logger.info("Done generating priors.")
 
 
