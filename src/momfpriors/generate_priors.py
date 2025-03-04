@@ -27,10 +27,8 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
     prior_spec: Iterable[tuple[str, int, float | None, float | None]],
     to: Path,
     benchmarks: (
-        Mapping[str, str]
-        | Mapping[FunctionalBenchmark, str]
-        | list[Mapping[str, str]]
-        | list[Mapping[FunctionalBenchmark, str]]
+        Mapping[str, str | list[str]]
+        | list[Mapping[str, str | list[str]]]
     ),
     fidelity: int | float | None = None,
     *,
@@ -64,34 +62,21 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
 
     to.mkdir(exist_ok=True)
 
-    if isinstance(benchmarks, dict):
-        benchmarks = [benchmarks]
+    for benchmark, objectives in benchmarks.items():
 
-    benchmark_dict: Mapping[BenchmarkDescription, list[str]] = {}
+        if benchmark.startswith("bbob"):
+            # _benchmark = create_bbob_mo_desc(func=benchmark)
+            pass
+        else:
+            assert benchmark in BENCHMARKS, f"Unknown benchmark: {benchmark}"
+            _benchmark = BENCHMARKS[benchmark]
 
-    for benchmk in benchmarks:
-        benchmark, objective = next(iter(benchmk.items()))
-        
-
-        benchmark_dict.setdefault(benchmark, []).append(objective)
-
-
-    for benchmark, objectives in benchmark_dict.items():
-
-        if isinstance(benchmark, str):
-            if benchmark.startswith("bbob"):
-                # _benchmark = create_bbob_mo_desc(func=benchmark)
-                pass
-            else:
-                assert benchmark in BENCHMARKS, f"Unknown benchmark: {benchmark}"
-                _benchmark = BENCHMARKS[benchmark]
-
-        if isinstance(benchmark, FunctionalBenchmark):
-            _benchmark = benchmark.desc
+        if isinstance(_benchmark, FunctionalBenchmark):
+            _benchmark = _benchmark.desc
 
 
         log_info = (
-            f"Generating priors for benchmark: {benchmark.name}"
+            f"Generating priors for benchmark: {_benchmark.name}"
             f" and objective(s): {objectives}"
             f" for spec: {prior_spec}"
         )
@@ -101,7 +86,7 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
         logger.info(log_info)
 
 
-        max_fidelity = bench_first_fid(benchmark).max
+        max_fidelity = bench_first_fid(_benchmark).max
 
         if fidelity is not None:
             if (
@@ -114,16 +99,16 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
             if type(fidelity) is not type(max_fidelity):
                 raise ValueError(
                     f"Cannot use fidelity {fidelity} (type={type(fidelity)}) with"
-                    f" benchmark {benchmark.name}",
+                    f" benchmark {_benchmark.name}",
                 )
             at = fidelity
         else:
             at = max_fidelity
 
         results: list[Result] = []
-        bench = benchmark.load(benchmark)
+        bench = _benchmark.load(_benchmark)
         for query in cs_random_sampling(
-            benchmark=benchmark,
+            benchmark=_benchmark,
             nsamples=nsamples,
             seed=seed,
             at=at,
@@ -142,7 +127,7 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
 
             prior_configs = get_prior_configs(
                 results=results,
-                space=benchmark.config_space,
+                space=_benchmark.config_space,
                 objective=objective,
                 seed=seed,
                 prior_spec=prior_spec,
@@ -151,10 +136,10 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
             print(" - Priors: ", prior_configs)
 
             for name, config in prior_configs.items():
-                with (to / f"{benchmark.name}_{objective}_{name}.yaml").open("w") as f:
+                with (to / f"{_benchmark.name}_{objective}_{name}2.yaml").open("w") as f:
                     yaml.dump(
                         {
-                            "benchmark": benchmark.name,
+                            "benchmark": _benchmark.name,
                             "prior_name": name,
                             "objective": objective,
                             "config": config.values,
@@ -229,8 +214,6 @@ if __name__ == "__main__":
         _seed = prior_gen.get("seed", args.seed)
         _nsamples = prior_gen.get("nsamples", args.nsamples)
 
-        if not isinstance(_benchmarks, list):
-            _benchmarks = [_benchmarks]
         if not isinstance(_prior_spec, list):
             _prior_spec = [_prior_spec]
         if isinstance(_to, str):

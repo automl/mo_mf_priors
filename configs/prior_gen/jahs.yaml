@@ -1,10 +1,13 @@
 benchmarks:
-  - jahs-CIFAR10: valid_acc
-  - jahs-CIFAR10: runtime
-  - jahs-ColorectalHistology: valid_acc
-  - jahs-ColorectalHistology: runtime
-  - jahs-FashionMNIST: valid_acc
-  - jahs-FashionMNIST: runtime
+  jahs-CIFAR10:
+    - valid_acc
+    - runtime
+  jahs-ColorectalHistology:
+    - valid_acc
+    - runtime
+  jahs-FashionMNIST:
+    - valid_acc
+    - runtime
 prior_spec:
   - [good, 0, 0.01, null]
   - [medium, 0, 0.125, null]
