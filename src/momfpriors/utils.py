@@ -296,12 +296,21 @@ def perturb(  # noqa: C901, PLR0912, PLR0915
             case _:
                 raise ValueError(f"Can't perturb hyperparameter: {hp}")
 
-        perturbed_val[name] = _val
+        perturbed_val[name] = sanitize_prior_vals(_val)
 
     return Config(
         config_id=config.config_id,
         values=perturbed_val,
     )
+
+
+def sanitize_prior_vals(
+    val: Any,
+) -> Any:
+    """Sanitize the perturbed prior values."""
+    if isinstance(val, np.object_):
+        return val.item()
+    return val
 
 
 def objective_fn_wrapper(
