@@ -4,7 +4,7 @@
 #SBATCH --partition bosch_cpu-cascadelake    # short: -p bosch_cpu-cascadelake
 
 # Define a name for your job
-#SBATCH --job-name prior_gen            #  short: -J prior_gen
+#SBATCH --job-name jahs_priors            #  short: -J jahs_priors
 
 # Define the files to write the outputs of the job to.
 # Please note the SLURM will not create this directory for you, and if it is missing, no logs will be saved.
@@ -24,12 +24,12 @@ echo "Running job $SLURM_JOB_NAME using $SLURM_JOB_CPUS_PER_NODE cpus per node w
 
 # Activate your environment
 # You can also comment out this line, and activate your environment in the login node before submitting the job
-source ~/repos/momfp_env/bin/activate
+source ~/repos/jahs_env/bin/activate
 
 # Running the job
 start=`date +%s`
 
-python3 -m momfpriors.generate_priors -y configs/prior_gen/pd1.yaml -n 100000
+python3 -m momfpriors.generate_priors -y configs/prior_gen/jahs.yaml -n 100000
 
 end=`date +%s`
 runtime=$((end-start))
