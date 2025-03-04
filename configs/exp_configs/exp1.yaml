@@ -3,17 +3,48 @@ optimizers:
     hyperparameters:
       mo_prior_sampling: random
   - name: RandomSearch
-    hyperparameters: null
   - name: SMAC_ParEGO
-    hyperparameters: null
+  - name: NepsRW
 benchmarks:
   - name: MOMFPark
     objectives:
       value1: good
-      value2: null
-  - name: MOMFBraninCurrin
-    objectives:
-      value1: good
       value2: good
-num_seeds: 1
-num_iterations: 5
+  - name: MOMFPark
+    objectives:
+      value1: bad
+      value2: bad
+  - name: pd1-cifar100-wide_resnet-2048
+    objectives:
+      valid_error_rate: good
+      train_cost: good
+  - name: pd1-imagenet-resnet-512
+    objectives:
+      valid_error_rate: good
+      train_cost: good
+  - name: pd1-lm1b-transformer-2048
+    objectives:
+      valid_error_rate: good
+      train_cost: good
+  - name: pd1-translate_wmt-xformer_translate-64
+    objectives:
+      valid_error_rate: good
+      train_cost: good
+  - name: pd1-cifar100-wide_resnet-2048
+    objectives:
+      valid_error_rate: bad
+      train_cost: bad
+  - name: pd1-imagenet-resnet-512
+    objectives:
+      valid_error_rate: bad
+      train_cost: bad
+  - name: pd1-lm1b-transformer-2048
+    objectives:
+      valid_error_rate: bad
+      train_cost: bad
+  - name: pd1-translate_wmt-xformer_translate-64
+    objectives:
+      valid_error_rate: bad
+      train_cost: bad
+num_seeds: 11
+num_iterations: 25

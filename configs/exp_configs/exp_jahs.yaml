@@ -1,0 +1,35 @@
+optimizers:
+  - name: RandomSearchWithPriors
+    hyperparameters:
+      mo_prior_sampling: random
+  - name: RandomSearch
+  - name: SMAC_ParEGO
+  - name: NepsRW
+benchmarks:
+  - name: jahs-CIFAR10
+    objectives:
+      valid_acc: good
+      runtime: good
+  - name: jahs-CIFAR10
+    objectives:
+      valid_acc: bad
+      runtime: bad
+  - name: jahs-ColorectalHistology
+    objectives:
+      valid_acc: good
+      runtime: good
+  - name: jahs-ColorectalHistology
+    objectives:
+      valid_acc: bad
+      runtime: bad
+  - name: jahs-FashionMNIST
+    objectives:
+      valid_acc: good
+      runtime: good
+  - name: jahs-FashionMNIST
+    objectives:
+      valid_acc: bad
+      runtime: bad
+num_seeds: 11
+num_iterations: 25
+ 

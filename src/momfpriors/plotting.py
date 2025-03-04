@@ -4,8 +4,9 @@ import argparse
 import logging
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
+import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -263,8 +264,43 @@ def make_subplots(
     exp_dir: Path,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
-    pass
-    # num_plots = len(list(exp_dir.rglob("*.png")))
+    pareto_plots_dir = exp_dir / "plots" / "pareto"
+    hv_plots_dir = exp_dir / "plots" / "hypervolume"
+    num_plots = len(list(pareto_plots_dir.rglob("*.png")))
+    assert num_plots == len(list(hv_plots_dir.rglob("*.png"))), "Number of plots do not match."
+
+
+    def plot_subplots(dir: Path, type: Literal["pareto", "hypervolume"]) -> None:
+        image_paths = list(dir.rglob("*.png"))
+        images = [mpimg.imread(img) for img in image_paths]
+        fig, axs = plt.subplots(
+            nrows = 2 if num_plots > 2 else 1,  # noqa: PLR2004
+            ncols = num_plots // 2 if num_plots > 2 else num_plots, # noqa: PLR2004
+            figsize=(20, 20),
+        )
+        axs = axs.flatten() if num_plots > 1 else [axs]
+        for i, img in enumerate(images):
+            axs[i].imshow(img)
+            axs[i].axis("off")
+
+        # for j in range(i + 1, len(axs)):
+        #     fig.delaxes(axs[j])
+
+        plt.tight_layout()
+        plt.suptitle(f"All {type} plots")
+        save_dir = dir.parent / "subplots"
+        save_dir.mkdir(parents=True, exist_ok=True)
+        plt.savefig(save_dir / f"all_{type}_subplots.png")
+        plt.show()
+
+    plot_subplots(pareto_plots_dir, "pareto")
+    plot_subplots(hv_plots_dir, "hypervolume")
+
+
+
+
+    # Using proplot
+
     # fig = pplt.figure(tight=True, refwidth="5em")
     # axs = fig.subplots(
     #     nrows = 2 if num_plots > 2 else 1,  # noqa: PLR2004
@@ -307,7 +343,7 @@ if __name__ == "__main__":
 
     if args.make_subplots:
         plots_dir = exp_dir / "plots"
-        match plots_dir.exists(), len(list(plots_dir.iterdir())):
+        match plots_dir.exists(), len(list((plots_dir/"pareto").rglob("*.png"))):
             case True, 1:
                 logger.info("Only one plot found. Exiting.")
             case _, 0:
@@ -320,4 +356,3 @@ if __name__ == "__main__":
             exp_dir=exp_dir,
             pareto_seeds=args.pareto_seeds
         )
-        # make_subplots(exp_dir)

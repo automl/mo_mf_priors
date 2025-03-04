@@ -1,9 +1,10 @@
 optimizers:
   - name: RandomSearchWithPriors
-    hyperparameters: 
+    hyperparameters:
       mo_prior_sampling: random
   - name: RandomSearch
   - name: SMAC_ParEGO
+  - name: NepsRW
 benchmarks:
   - name: pd1-cifar100-wide_resnet-2048
     objectives:
@@ -21,5 +22,21 @@ benchmarks:
     objectives:
       valid_error_rate: good
       train_cost: good
-num_seeds: 5
+  - name: pd1-cifar100-wide_resnet-2048
+    objectives:
+      valid_error_rate: bad
+      train_cost: bad
+  - name: pd1-imagenet-resnet-512
+    objectives:
+      valid_error_rate: bad
+      train_cost: bad
+  - name: pd1-lm1b-transformer-2048
+    objectives:
+      valid_error_rate: bad
+      train_cost: bad
+  - name: pd1-translate_wmt-xformer_translate-64
+    objectives:
+      valid_error_rate: bad
+      train_cost: bad
+num_seeds: 11
 num_iterations: 5
