@@ -62,7 +62,7 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
 
     to.mkdir(exist_ok=True)
 
-    logger.info(f"Priors generation with {seed=}, {nsamples=} and saving to {to=}")
+    logger.info(f"Priors generation with {seed=}, {nsamples=} and saving to {to.resolve()}")
 
     for benchmark, objectives in benchmarks.items():
 
@@ -148,7 +148,7 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
                             "config": config.values,
                         }, f
                     )
-            logger.info(f"Priors saved to: {save_path}")
+            logger.info(f"Priors saved to: {save_path.resolve()}")
     logger.info("Done generating priors.")
 
 
