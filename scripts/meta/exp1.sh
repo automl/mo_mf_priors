@@ -14,7 +14,7 @@
 #SBATCH --error logs/%x-%A_meta-exp1.err    # STDERR  short: -e logs/%x-%A_meta-exp1.out
 
 # Since using CPU Partion, define the number of cpus required per node
-#SBATCH --cpus-per-task 16
+#SBATCH --cpus-per-task 30
 
 echo "Workingdir: $PWD";
 echo "Started at $(date)";
