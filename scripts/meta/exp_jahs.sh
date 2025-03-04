@@ -5,7 +5,6 @@
 
 # Define a name for your job
 #SBATCH --job-name JAHS_baselines            #  short: -J JAHS_baselines
-#SBATCH --time 10:00:00                      #  short: -t 10:00:00
 
 # Define the files to write the outputs of the job to.
 # Please note the SLURM will not create this directory for you, and if it is missing, no logs will be saved.
@@ -13,9 +12,6 @@
 
 #SBATCH --output logs/%x-%A_meta_jahs.out   # STDOUT  %x and %A will be replaced by the job name and job id, respectively. short: -o logs/%x-%A_meta_jahs.out
 #SBATCH --error logs/%x-%A_meta_jahs.err    # STDERR  short: -e logs/%x-%A_meta_jahs.err
-
-# Define the amount of memory required per node
-#SBATCH --mem 4GB
 
 # Since using CPU Partion, define the number of cpus required per node
 #SBATCH --cpus-per-task 16
