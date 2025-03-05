@@ -103,10 +103,10 @@ def exp(  # noqa: C901, PLR0913
 
     runs: list[Run] = []
     run_names: list[str] = []
-    try:
-        for benchmark in benchmarks:
-            for optimizer in optimizers:
-                for seed in seeds:
+    for benchmark in benchmarks:
+        for optimizer in optimizers:
+            for seed in seeds:
+                try:
                     run = Run.generate_run(
                         optimizer=optimizer,
                         benchmark=benchmark,
@@ -121,12 +121,12 @@ def exp(  # noqa: C901, PLR0913
                         continue
                     runs.append(run)
                     run_names.append(run.name)
-    except Exception:  # noqa: BLE001
-        logging.error(
-            "Error in generating runs for "
-            f"{optimizer[0]} on {benchmark[0]} with seed {seed}"
-        )
-        logging.error(traceback.format_exc())
+                except Exception as e:  # noqa: BLE001
+                    logging.error(
+                        "Error in generating runs for "
+                        f"{optimizer[0]} on {benchmark[0]} with seed {seed}"
+                    )
+                    logging.error(e)
 
     root_logger.info(f"Generated {len(runs)} runs.")
 

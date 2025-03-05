@@ -265,6 +265,34 @@ class Run:
         _prior_annots = ",".join(
             f"{obj}={prior[0]}" for obj, prior in self.priors.items()
         )
+        _fidelities = None
+        fidelities = self.problem.get_fidelities()
+        if "fidelity" in _df.columns and isinstance(_df["fidelity"].iloc[0], tuple):
+            _df["fidelity"] = _df["fidelity"].apply(lambda x: x[1])
+
+        match fidelities:
+            case None:
+                pass
+            case str():
+                _fidelities = [fidelities] * len(_df)
+            case list():
+                _fidelities = fidelities * len(_df)
+            case _:
+                raise ValueError(f"Unsupported fidelities type: {type(fidelities)}")
+
+        _costs = None
+        costs = self.problem.get_costs()
+
+        match costs:
+            case None:
+                pass
+            case str():
+                _costs = [costs] * len(_df)
+            case list():
+                _costs = costs * len(_df)
+            case _:
+                raise ValueError(f"Unsupported costs type: {type(costs)}")
+
         _df = _df.assign(
             seed=self.seed,
             optimizer=self.optimizer.name,
@@ -272,12 +300,8 @@ class Run:
             benchmark=self.benchmark.name,
             prior_annotations = _prior_annots,
             objectives=[self.problem.get_objectives()]*len(_df),
-            fidelities=(
-                [self.problem.get_fidelities() * len(_df)]
-                if self.problem.get_fidelities()
-                else None
-            ),
-            costs=[self.problem.get_costs()*len(_df)] if self.problem.get_costs() else None,
+            fidelities=_fidelities,
+            costs=_costs,
         )
         self.set_state(Run.State.COMPLETE, df=_df)
 
@@ -393,7 +417,7 @@ class Run:
         exp_dir: Path = DEFAULT_RESULTS_DIR,
         priors_dir: Path = DEFAULT_PRIORS_DIR,
         prior_distribution: Literal["normal", "uniform", "beta"] = "normal",
-        **kwargs: Any
+        **kwargs: Any  # noqa: ARG003
         ) -> Run:
         """Generates a Run instance configured with the specified optimizer, benchmark, and priors.
 
@@ -442,6 +466,7 @@ class Run:
 
         _priors: Mapping[str, tuple[str, Mapping[str, Any]]] = {}
         objectives = list(objs_priors_fids["objectives"].keys())
+        fidelities = objs_priors_fids.get("fidelities", None)
 
         _prior_name = []
 
@@ -470,11 +495,30 @@ class Run:
         optimizer_kwargs.pop("priors", None)
 
 
+        match fidelities:
+            case None:
+                pass
+            case str():
+                if "single" not in optimizer.support.fidelities:
+                    fidelities = None
+            case list():
+                assert len(fidelities) == 1, (
+                    "Many-fidelity not yet implemented in momfpriors."
+                )
+                fidelities = fidelities[0]
+            case _:
+                raise ValueError(
+                    f"Unsupported fidelities type: {type(fidelities)}"
+                    "Expected None, str, or list."
+                )
+
+
         _problem = Problem.problem(
             optimizer = optimizer,
             optimizer_hyperparameters=optimizer_kwargs,
             benchmark=benchmark,
             objectives=objectives,
+            fidelities=fidelities,
             budget=num_iterations,
             multi_objective_generation="mix_metric_cost",
             priors=priors,
