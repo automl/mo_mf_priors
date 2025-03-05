@@ -5,6 +5,7 @@ optimizers:
   - name: RandomSearch
   - name: SMAC_ParEGO
   - name: NepsRW
+  - name: NepsHyperbandRW
 benchmarks:
   - name: MOMFPark
     objectives:

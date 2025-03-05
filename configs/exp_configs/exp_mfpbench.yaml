@@ -5,6 +5,7 @@ optimizers:
   - name: RandomSearch
   - name: SMAC_ParEGO
   - name: NepsRW
+  - name: NepsHyperbandRW
 benchmarks:
   - name: pd1-cifar100-wide_resnet-2048
     objectives:
