@@ -26,9 +26,9 @@ reference_points_dict = {
     "pd1-imagenet-resnet-512": {"valid_error_rate": 1, "train_cost": 5000},
     "pd1-lm1b-transformer-2048": {"valid_error_rate": 1, "train_cost": 1000},
     "pd1-translate_wmt-xformer_translate-64": {"valid_error_rate": 1, "train_cost": 20000},
-    "jahs-CIFAR10": {"valid_acc": 0, "runtime": 20000},
-    "jahs-ColorectalHistology": {"valid_acc": 0, "runtime": 20000},
-    "jahs-FashionMNIST": {"valid_acc": 0, "runtime": 20000},
+    "jahs-CIFAR10": {"valid_acc": 0, "runtime": 200000},
+    "jahs-ColorectalHistology": {"valid_acc": 0, "runtime": 200000},
+    "jahs-FashionMNIST": {"valid_acc": 0, "runtime": 200000},
     "MOMFPark": {"value1": 1, "value2": 1},
 }
 
@@ -61,16 +61,17 @@ def _get_style(opt: str, prior_annot: str) -> tuple[str, str]:
     return marker, color
 
 
-def create_plots(  # noqa: PLR0915
+def create_plots(  # noqa: C901, PLR0912, PLR0915
     agg_data: Mapping[str, Mapping[str, Any]],
     exp_dir: Path,
     benchmark: str,
+    objectives: list[str],
     budget: int,
     seed_for_pareto: int,
     iterations: int,
+    plot_opt: str | None = None,
     *,
     is_single_opt: bool = False,
-    pareto_seeds: bool = False,
 ) -> None:
     """Function to plot the dominated hypervolume over
     iterations and pareto fronts from a pandas Series
@@ -80,12 +81,13 @@ def create_plots(  # noqa: PLR0915
     logger.info(f"Plots for runs on benchmark: {benchmark}")
     plt.figure(1, figsize=(10, 10))
     plt.figure(2, figsize=(10, 10))
-    first_key = next(iter(agg_data.keys())) # gets the instance
-    second_key = next(iter(agg_data[first_key].keys())) # gets the seed
+
     reference_point = np.array([
         reference_points_dict[benchmark][obj]
-        for obj in agg_data[first_key][second_key]["results"][0]
+        for obj in objectives
     ])
+    if plot_opt:
+        plt.figure(3, figsize=(10, 10))
     for instance, instance_data in agg_data.items():
         logger.info(f"Plots for instance: {instance}")
         seed_hv_dict = {}
@@ -93,12 +95,13 @@ def create_plots(  # noqa: PLR0915
             results = data["results"]
             plot_title = data["plot_title"]
             keys = list(results[0].keys())
-            assert len(keys) == 2, "Can only plot pareto front for 2D cost space."  # noqa: PLR2004
             acc_costs = []
             pareto = None
             hv_vals = []
             for costs in results:
                 # Compute hypervolume
+                if "jahs" in benchmark:
+                    costs["valid_acc"] = -costs["valid_acc"]
                 acc_costs.append(costs)
                 pareto = pareto_front(acc_costs)
                 pareto = np.array([list(ac.values()) for ac in acc_costs])[pareto]
@@ -112,21 +115,46 @@ def create_plots(  # noqa: PLR0915
                 instance_data[seed]["optimizer"],
                 instance_data[seed]["prior_annotations"],
             )
-            if pareto_seeds:
+            match plot_opt:
+                case None:
+                    pass
+                case "all":
                 # Plotting Pareto fronts for each seed
-                plt.figure(1)
-                plt.step(
-                    pareto[:, 0],
-                    pareto[:, 1],
-                    where="post",
-                    marker=marker,
-                    color=color if not is_single_opt else None,
-                    label=f"{instance}_{seed}",
-                    markersize=7,
-                    linewidth=1,
-                )
-                plt.legend([f"{instance}_{seed}" for seed in instance_data])
-            elif seed == seed_for_pareto:
+                    plt.figure(3)
+                    plt.step(
+                        pareto[:, 0],
+                        pareto[:, 1],
+                        where="post",
+                        marker=marker,
+                        label=f"{instance}_{seed}",
+                        markersize=7,
+                        linewidth=1,
+                    )
+                    plt.legend([f"{instance}_{seed}" for seed in instance_data])
+                    plt.xlabel(keys[0])
+                    plt.ylabel(keys[1])
+                    plt.grid(visible=True)
+                    plt.title(f"Multiple seeds pareto plot for \n{instance}")
+                case str():
+                    if plot_opt in instance:
+                        plt.figure(3)
+                        plt.step(
+                            pareto[:, 0],
+                            pareto[:, 1],
+                            where="post",
+                            marker=marker,
+                            label=f"{instance}_{seed}",
+                            markersize=7,
+                            linewidth=1,
+                        )
+                        plt.legend()
+                        plt.xlabel(keys[0])
+                        plt.ylabel(keys[1])
+                        plt.grid(visible=True)
+                        plt.title(f"Pareto front for \n{plot_title}")
+                case _:
+                    raise ValueError(f"Invalid plot_opt: {plot_opt}.")
+            if seed == seed_for_pareto:
                 plt.figure(1)
                 plt.step(
                     pareto[:, 0],
@@ -139,6 +167,12 @@ def create_plots(  # noqa: PLR0915
                     linewidth=1,
                 )
                 plt.legend()
+        if plot_opt and (plot_opt == "all" or plot_opt in instance):
+            pareto_save_dir = exp_dir / "plots" / "pareto"
+            pareto_save_dir.mkdir(parents=True, exist_ok=True)
+            plt.figure(3)
+            plt.savefig(pareto_save_dir / f"Multiple seeds pareto plot for \n{instance}.png")
+            plt.clf()
 
         if len(agg_data) > 1:
             plot_title = f"Optimizers on \n{benchmark} for {iterations} iterations"
@@ -199,8 +233,7 @@ def create_plots(  # noqa: PLR0915
 
 def agg_data(
     exp_dir: Path,
-    *,
-    pareto_seeds: bool = False,
+    plot_opt: str | None = None,
 )-> None:
     """Function to aggregate data from all runs in the experiment directory."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
@@ -221,15 +254,24 @@ def agg_data(
     iterations = exp_config.get("budget")
 
     for benchmark in benchmarks_in_dir:
-        # if "imagenet" not in benchmark:
-        #     continue
+        objectives = []
         for file in exp_dir.rglob("*.parquet"):
             if benchmark not in file.name:
                 continue
-            # if "SMAC" not in file.name:
-            #     continue
             _df = pd.read_parquet(file)
-            # print(file.name)
+
+            objectives = _df["objectives"][0]
+
+            assert len(objectives) == 2, ( # noqa: PLR2004
+                "More than 2 objectives found in results file: "
+                f"{objectives}. "
+                "Can only plot pareto front for 2D cost space."
+            )
+
+            _results = _df["results"].apply(
+                lambda x, objectives=objectives: {k: x[k] for k in objectives}
+            )
+
             instance = (
                 _df["optimizer"][0] + ";" + _df["optimizer_hyperparameters"][0] + ";" +
                 _df["prior_annotations"][0]
@@ -238,7 +280,7 @@ def agg_data(
             if instance not in agg_dict:
                 agg_dict[instance] = {}
             agg_dict[instance][seed] = {
-                "results": _df["results"],
+                "results": _results,
                 "budget_used_total": _df["budget_used_total"],
                 "optimizer": _df["optimizer"][0],
                 "prior_annotations": _df["prior_annotations"][0],
@@ -251,16 +293,19 @@ def agg_data(
         is_single_opt = False
         if len(agg_dict) == 1:
             is_single_opt = True
+        assert len(objectives) > 0, "Objectives not found in results file."
         create_plots(
             agg_data=agg_dict,
             exp_dir=exp_dir,
             benchmark=benchmark,
             budget=budget,
             is_single_opt=is_single_opt,
-            pareto_seeds=pareto_seeds,
+            plot_opt=plot_opt,
             seed_for_pareto=seed_for_pareto,
             iterations=iterations,
+            objectives=objectives,
         )
+        agg_dict = {}
 
 
 def make_subplots(
@@ -335,9 +380,10 @@ if __name__ == "__main__":
         help="make subplot for all plots in the same experiment directory."
     )
     parser.add_argument(
-        "--pareto_seeds", "-p",
-        action="store_true",
-        help="plot pareto front for each seed."
+        "--plot_opt", "-o",
+        type=str,
+        default=None,
+        help="Plot all pareto fronts only for the given optimizer."
     )
     args = parser.parse_args()
     exp_dir: Path = DEFAULT_RESULTS_DIR / args.exp_dir
@@ -350,12 +396,16 @@ if __name__ == "__main__":
             case True, 1:
                 logger.info("Only one plot found. Exiting.")
             case _, 0:
-                agg_data(exp_dir)
+                agg_data(
+                    exp_dir=exp_dir,
+                    plot_opt=args.plot_opt
+
+                )
                 make_subplots(exp_dir)
             case _:
                 make_subplots(exp_dir)
     else:
         agg_data(
             exp_dir=exp_dir,
-            pareto_seeds=args.pareto_seeds
+            plot_opt=args.plot_opt
         )
