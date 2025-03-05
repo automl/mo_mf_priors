@@ -1,0 +1,18 @@
+benchmark: jahs-ColorectalHistology
+config:
+  Activation: ReLU
+  LearningRate: 0.9756638949067131
+  N: 5
+  Op1: 1
+  Op2: 1
+  Op3: 1
+  Op4: 2
+  Op5: 2
+  Op6: 4
+  Optimizer: SGD
+  Resolution: 1.0
+  TrivialAugment: true
+  W: 16
+  WeightDecay: 0.004852608431729552
+objective: valid_acc
+prior_name: good

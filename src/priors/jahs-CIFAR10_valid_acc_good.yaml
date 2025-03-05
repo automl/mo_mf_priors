@@ -1,0 +1,18 @@
+benchmark: jahs-CIFAR10
+config:
+  Activation: Hardswish
+  LearningRate: 0.4270338160686036
+  N: 5
+  Op1: 0
+  Op2: 1
+  Op3: 1
+  Op4: 1
+  Op5: 1
+  Op6: 3
+  Optimizer: SGD
+  Resolution: 1.0
+  TrivialAugment: true
+  W: 16
+  WeightDecay: 0.008838936814101786
+objective: valid_acc
+prior_name: good
