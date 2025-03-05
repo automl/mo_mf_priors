@@ -1,11 +1,17 @@
 optimizers:
   - name: RandomSearchWithPriors
-    hyperparameters: 
-      mo_prior_sampling: random
+  - name: NepsRW
+  - name: NepsHyperbandRW
 benchmarks:
   - name: MOMFPark
     objectives: 
-      value1: null
-      value2: null
-num_seeds: 5
-num_iterations: 10
+      value1: good
+      value2: good
+    fidelities: s
+  - name: MOMFPark
+    objectives: 
+      value1: bad
+      value2: bad
+    fidelities: s
+num_seeds: 11
+num_iterations: 25
