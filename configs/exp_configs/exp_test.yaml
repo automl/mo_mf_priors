@@ -2,6 +2,8 @@ optimizers:
   - name: RandomSearchWithPriors
   - name: NepsRW
   - name: NepsHyperbandRW
+    hyperparameters:
+      scalarization_weights: random
 benchmarks:
   - name: MOMFPark
     objectives: 

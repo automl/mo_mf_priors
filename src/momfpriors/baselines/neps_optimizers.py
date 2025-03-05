@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import neps
 import numpy as np
@@ -120,7 +120,7 @@ class NepsRW(NepsOptimizer):
         problem: Problem,
         seed: int = 0,
         working_directory: str | Path = DEFAULT_RESULTS_DIR,
-        scalarization_weights: Mapping[str, float] | None = None,
+        scalarization_weights: Literal["equal", "random"] | Mapping[str, float] = "random",
         searcher: str = "bayesian_optimization",
         **kwargs: Any,  # noqa: ARG002
     ) -> None:
@@ -142,11 +142,25 @@ class NepsRW(NepsOptimizer):
         )
 
         self.objectives = self.problem.get_objectives()
-        self.scalarization_weights = scalarization_weights
-        if not self.scalarization_weights:
-            self.scalarization_weights = {
-                obj: 1.0/len(self.objectives) for obj in self.objectives
-            }
+
+        self._rng = np.random.default_rng(seed=self.seed)
+        match scalarization_weights:
+            case Mapping():
+                self.scalarization_weights = scalarization_weights
+            case "equal":
+                self.scalarization_weights = {
+                    obj: 1.0/len(self.objectives) for obj in self.objectives
+                }
+            case "random":
+                weights = self._rng.uniform(size=len(self.objectives))
+                self.scalarization_weights = {
+                    obj: weight/sum(weights) for obj, weight in zip(self.objectives, weights)  # noqa: B905
+                }
+            case _:
+                raise ValueError(
+                    f"Invalid scalarization_weights: {scalarization_weights}. "
+                    "Expected 'equal', 'random', or a Mapping."
+                )
 
 
     def tell(self, result: Result) -> None:
@@ -186,7 +200,7 @@ class NepsHyperbandRW(NepsOptimizer):
         problem: Problem,
         seed: int = 0,
         working_directory: str | Path = DEFAULT_RESULTS_DIR,
-        scalarization_weights: Mapping[str, float] | None = None,
+        scalarization_weights: Literal["equal", "random"] | Mapping[str, float] = "random",
         searcher: str = "hyperband",
         **kwargs: Any,  # noqa: ARG002
     ) -> None:
@@ -244,11 +258,25 @@ class NepsHyperbandRW(NepsOptimizer):
         )
 
         self.objectives = self.problem.get_objectives()
-        self.scalarization_weights = scalarization_weights
-        if not self.scalarization_weights:
-            self.scalarization_weights = {
-                obj: 1.0/len(self.objectives) for obj in self.objectives
-            }
+        self._rng = np.random.default_rng(seed=self.seed)
+        match scalarization_weights:
+            case Mapping():
+                self.scalarization_weights = scalarization_weights
+            case "equal":
+                self.scalarization_weights = {
+                    obj: 1.0/len(self.objectives) for obj in self.objectives
+                }
+            case "random":
+                weights = self._rng.uniform(size=len(self.objectives))
+                self.scalarization_weights = {
+                    obj: weight/sum(weights) for obj, weight in zip(self.objectives, weights)  # noqa: B905
+                }
+            case _:
+                raise ValueError(
+                    f"Invalid scalarization_weights: {scalarization_weights}. "
+                    "Expected 'equal', 'random', or a Mapping."
+                )
+
 
     def tell(self, result: Result) -> None:
         """Tell the optimizer about the result of a trial."""
