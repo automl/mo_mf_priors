@@ -49,7 +49,9 @@ class Prior:
         self.prior_config = prior_config
         self.seed = seed
         self.confidence = CONFIDENCE_SCORES.get(std, 0.125)
-        np.random.seed(seed)  # noqa: NPY002
+        # np.random.seed(seed)  # noqa: NPY002
+        import torch
+        torch.manual_seed(seed)
         match input_space:
             case ConfigurationSpace():
                 self.prior_space = self._cs_to_pipeline_space_with_priors(input_space)

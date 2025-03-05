@@ -45,7 +45,7 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
         optimizer: AskAndTell,
         seed: int = 0,
         working_directory: str | Path = DEFAULT_RESULTS_DIR,
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ARG002
     ) -> None:
         """Initialize the optimizer."""
         self.problem = problem
@@ -56,7 +56,6 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
         self.seed = seed
         self.working_dir = working_directory
 
-        np.random.seed(self.seed)  # noqa: NPY002
         self.optimizer = optimizer
         self.trial_counter = 0
 
@@ -132,6 +131,8 @@ class NepsRW(NepsOptimizer):
             space = space
         )
         optimizer = AskAndTell(opt)
+        import torch
+        torch.manual_seed(seed)
 
         super().__init__(
             problem=problem,
@@ -248,6 +249,8 @@ class NepsHyperbandRW(NepsOptimizer):
             space = space
         )
         optimizer = AskAndTell(opt)
+        import torch
+        torch.manual_seed(seed)
 
         super().__init__(
             problem=problem,
