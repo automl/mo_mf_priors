@@ -4,7 +4,6 @@ import argparse
 import logging
 from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import yaml
 from hpoglue import FunctionalBenchmark, Result
@@ -14,9 +13,6 @@ from momfpriors.benchmarks import BENCHMARKS
 # from momfpriors.benchmarks.bbob_mo import bbob_function_definitions, create_bbob_mo_desc
 from momfpriors.constants import DEFAULT_PRIORS_DIR
 from momfpriors.utils import bench_first_fid, cs_random_sampling, get_prior_configs
-
-if TYPE_CHECKING:
-    from hpoglue import BenchmarkDescription
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -148,7 +144,7 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
                             "config": config.values,
                         }, f
                     )
-            logger.info(f"Priors saved to: {save_path.resolve()}")
+                logger.info(f"Priors saved to: {save_path.resolve()}")
     logger.info("Done generating priors.")
 
 

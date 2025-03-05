@@ -67,6 +67,7 @@ def create_plots(  # noqa: PLR0915
     benchmark: str,
     budget: int,
     seed_for_pareto: int,
+    iterations: int,
     *,
     is_single_opt: bool = False,
     pareto_seeds: bool = False,
@@ -140,7 +141,7 @@ def create_plots(  # noqa: PLR0915
                 plt.legend()
 
         if len(agg_data) > 1:
-            plot_title = f"Optimizers on \n{benchmark}"
+            plot_title = f"Optimizers on \n{benchmark} for {iterations} iterations"
 
         plt.figure(1)
         plt.xlabel(keys[0])
@@ -217,6 +218,7 @@ def agg_data(
         exp_config = yaml.safe_load(f)
 
     seed_for_pareto = exp_config.get("seeds")[0]
+    iterations = exp_config.get("budget")
 
     for benchmark in benchmarks_in_dir:
         # if "imagenet" not in benchmark:
@@ -257,6 +259,7 @@ def agg_data(
             is_single_opt=is_single_opt,
             pareto_seeds=pareto_seeds,
             seed_for_pareto=seed_for_pareto,
+            iterations=iterations,
         )
 
 
