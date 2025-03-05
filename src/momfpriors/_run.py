@@ -494,22 +494,25 @@ class Run:
 
         optimizer_kwargs.pop("priors", None)
 
-
-        match fidelities:
-            case None:
-                pass
-            case str():
-                if "single" not in optimizer.support.fidelities:
-                    fidelities = None
-            case list():
-                assert len(fidelities) == 1, (
-                    "Many-fidelity not yet implemented in momfpriors."
-                )
-                fidelities = fidelities[0]
+        match fidelities, benchmark.fidelities, optimizer.support.fidelities[0]:
+            case _, None, _:
+                fidelities = None
+            case _, _, None:
+                fidelities = None
+            case _, _, "many":
+                raise ValueError("Many-fidelity not yet implemented in momfpriors.")
+            case None, _, "single":
+                fidelities = 1
+            case str() | int() | list(), _, "single":
+                if isinstance(fidelities, list):
+                    assert len(fidelities) == 1, (
+                        "Many-fidelity not yet implemented in momfpriors."
+                    )
+                    fidelities = fidelities[0]
             case _:
                 raise ValueError(
-                    f"Unsupported fidelities type: {type(fidelities)}"
-                    "Expected None, str, or list."
+                    f"Invalid fidelity type: {type(fidelities)}. "
+                    f"Expected None, str, int or list"
                 )
 
 
