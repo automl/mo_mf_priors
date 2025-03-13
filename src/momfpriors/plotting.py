@@ -68,7 +68,6 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
     objectives: list[str],
     budget: int,
     seed_for_pareto: int,
-    iterations: int,
     plot_opt: str | None = None,
     *,
     is_single_opt: bool = False,
@@ -98,7 +97,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
             acc_costs = []
             pareto = None
             hv_vals = []
-            for costs in results:
+            for i, costs in enumerate(results, start=1):
                 # Compute hypervolume
                 if "jahs" in benchmark:
                     costs["valid_acc"] = -costs["valid_acc"]
@@ -109,7 +108,11 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
                 hv = Hypervolume(ref_point=reference_point)
                 hypervolume = hv.do(pareto)
                 hv_vals.append(hypervolume)
-            budget_list = data["budget_used_total"].values.astype(np.float64)
+
+                if i == budget:
+                    break
+
+            budget_list = data["budget_used_total"].values.astype(np.float64)[:budget]
             seed_hv_dict[seed] = pd.Series(hv_vals, index=budget_list)
             marker, color = _get_style(
                 instance_data[seed]["optimizer"],
@@ -168,21 +171,21 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
                 )
                 plt.legend()
         if plot_opt and (plot_opt == "all" or plot_opt in instance):
-            pareto_save_dir = exp_dir / "plots" / "pareto"
+            pareto_save_dir = exp_dir / "plots" / str(budget) /"pareto"
             pareto_save_dir.mkdir(parents=True, exist_ok=True)
             plt.figure(3)
             plt.savefig(pareto_save_dir / f"Multiple seeds pareto plot for \n{instance}.png")
             plt.clf()
 
         if len(agg_data) > 1:
-            plot_title = f"Optimizers on \n{benchmark} for {iterations} iterations"
+            plot_title = f"Optimizers on \n{benchmark} for {budget} iterations"
 
         plt.figure(1)
         plt.xlabel(keys[0])
         plt.ylabel(keys[1])
         plt.grid(visible=True)
         plt.title(f"Pareto front for\n{plot_title}")
-        pareto_save_dir = exp_dir / "plots" / "pareto"
+        pareto_save_dir = exp_dir / "plots" / str(budget) / "pareto"
         pareto_save_dir.mkdir(parents=True, exist_ok=True)
 
         # Aggregating Hypervolumes - calculating means, cumulative max and std_error
@@ -214,11 +217,12 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
             linewidth=2,
         )
         plt.xlabel("Iteration")
+        plt.xticks(np.arange(1, budget + 1, 1))     # TrialBudget
         plt.ylabel("Hypervolume")
         plt.legend()
         plt.grid(visible=True)
         plt.title(f"Hypervolume over iterations plot for\n{plot_title}")
-        hv_save_dir = exp_dir / "plots"/ "hypervolume"
+        hv_save_dir = exp_dir / "plots"/ str(budget) / "hypervolume"
         hv_save_dir.mkdir(parents=True, exist_ok=True)
 
 
@@ -234,6 +238,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
 def agg_data(
     exp_dir: Path,
     plot_opt: str | None = None,
+    plot_iters: list[int] | None = None,
 )-> None:
     """Function to aggregate data from all runs in the experiment directory."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
@@ -247,80 +252,101 @@ def agg_data(
 
     budget: int = 0
 
+
     with (exp_dir / "exp.yaml").open("r") as f:
         exp_config = yaml.safe_load(f)
 
     seed_for_pareto = exp_config.get("seeds")[0]
     iterations = exp_config.get("budget")
 
-    for benchmark in benchmarks_in_dir:
-        objectives = []
-        for file in exp_dir.rglob("*.parquet"):
-            if benchmark not in file.name:
-                continue
-            _df = pd.read_parquet(file)
+    print(type(plot_iters))
 
-            objectives = _df["objectives"][0]
+    if plot_iters and isinstance(plot_iters, int):
+        plot_iters = [plot_iters]
+    plot_iters = plot_iters if plot_iters else []
 
-            assert len(objectives) == 2, ( # noqa: PLR2004
-                "More than 2 objectives found in results file: "
-                f"{objectives}. "
-                "Can only plot pareto front for 2D cost space."
-            )
-
-            _results = _df["results"].apply(
-                lambda x, objectives=objectives: {k: x[k] for k in objectives}
-            )
-
-            instance = (
-                _df["optimizer"][0] + ";" + _df["optimizer_hyperparameters"][0] + ";" +
-                _df["prior_annotations"][0]
-            )
-            seed = int(_df["seed"][0])
-            if instance not in agg_dict:
-                agg_dict[instance] = {}
-            agg_dict[instance][seed] = {
-                "results": _results,
-                "budget_used_total": _df["budget_used_total"],
-                "optimizer": _df["optimizer"][0],
-                "prior_annotations": _df["prior_annotations"][0],
-                "plot_title": (
-                    f"{instance}"
-                    f" on \n{benchmark}"
-                ),
-            }
-            budget = _df["budget_used_total"].iloc[-1]
-        is_single_opt = False
-        if len(agg_dict) == 1:
-            is_single_opt = True
-        assert len(objectives) > 0, "Objectives not found in results file."
-        create_plots(
-            agg_data=agg_dict,
-            exp_dir=exp_dir,
-            benchmark=benchmark,
-            budget=budget,
-            is_single_opt=is_single_opt,
-            plot_opt=plot_opt,
-            seed_for_pareto=seed_for_pareto,
-            iterations=iterations,
-            objectives=objectives,
+    if iterations not in plot_iters:
+        assert any(plot_iters) < iterations, (
+            "Iterations to plot should be less than the total budget."
         )
-        agg_dict = {}
+        plot_iters.append(iterations)
+
+
+    for iteration in plot_iters:
+        logger.info(f"Plotting for iteration: {iteration}")
+
+        for benchmark in benchmarks_in_dir:
+            objectives = []
+            for file in exp_dir.rglob("*.parquet"):
+                if benchmark not in file.name:
+                    continue
+                _df = pd.read_parquet(file)
+
+                objectives = _df["objectives"][0]
+
+                assert len(objectives) == 2, ( # noqa: PLR2004
+                    "More than 2 objectives found in results file: "
+                    f"{objectives}. "
+                    "Can only plot pareto front for 2D cost space."
+                )
+
+                _results = _df["results"].apply(
+                    lambda x, objectives=objectives: {k: x[k] for k in objectives}
+                )
+
+                instance = (
+                    _df["optimizer"][0] + ";" + _df["optimizer_hyperparameters"][0] + ";" +
+                    _df["prior_annotations"][0]
+                )
+                seed = int(_df["seed"][0])
+                if instance not in agg_dict:
+                    agg_dict[instance] = {}
+                agg_dict[instance][seed] = {
+                    "results": _results,
+                    "budget_used_total": _df["budget_used_total"],
+                    "optimizer": _df["optimizer"][0],
+                    "prior_annotations": _df["prior_annotations"][0],
+                    "plot_title": (
+                        f"{instance}"
+                        f" on \n{benchmark}"
+                    ),
+                }
+                budget = _df["budget_used_total"].iloc[-1]
+            is_single_opt = False
+            if len(agg_dict) == 1:
+                is_single_opt = True
+            assert len(objectives) > 0, "Objectives not found in results file."
+            create_plots(
+                agg_data=agg_dict,
+                exp_dir=exp_dir,
+                benchmark=benchmark,
+                budget=iteration,
+                is_single_opt=is_single_opt,
+                plot_opt=plot_opt,
+                seed_for_pareto=seed_for_pareto,
+                objectives=objectives,
+            )
+            agg_dict = {}
 
 
 def make_subplots(
     exp_dir: Path,
+    iteration: int | None = None,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
-    pareto_plots_dir = exp_dir / "plots" / "pareto"
-    hv_plots_dir = exp_dir / "plots" / "hypervolume"
-    num_plots = len(list(pareto_plots_dir.rglob("*.png")))
-    assert num_plots == len(list(hv_plots_dir.rglob("*.png"))), "Number of plots do not match."
+    if isinstance(iteration, list):
+        iteration = iteration[0]
+    pareto_plots_dir = exp_dir / "plots" / str(iteration) / "pareto"
+    hv_plots_dir = exp_dir / "plots" / str(iteration) / "hypervolume"
+    str_to_match = "*iterations.png"
+    num_plots = len(list(pareto_plots_dir.rglob(str_to_match)))
+    assert num_plots == len(list(hv_plots_dir.rglob(str_to_match))), "Number of plots do not match."
 
 
     def plot_subplots(dir: Path, type: Literal["pareto", "hypervolume"]) -> None:
-        image_paths = list(dir.rglob("*.png"))
+        image_paths = list(dir.rglob(str_to_match))
         images = [mpimg.imread(img) for img in image_paths]
+        print(len(images))
         fig, axs = plt.subplots(
             nrows = 2 if num_plots > 2 else 1,  # noqa: PLR2004
             ncols = num_plots // 2 if num_plots > 2 else num_plots, # noqa: PLR2004
@@ -335,10 +361,10 @@ def make_subplots(
         #     fig.delaxes(axs[j])
 
         plt.tight_layout()
-        plt.suptitle(f"All {type} plots")
+        plt.suptitle(f"All {type} plots_{iteration=}")
         save_dir = dir.parent / "subplots"
         save_dir.mkdir(parents=True, exist_ok=True)
-        plt.savefig(save_dir / f"all_{type}_subplots.png")
+        plt.savefig(save_dir / f"all_{type}_subplots_{iteration=}.png")
         plt.show()
 
     plot_subplots(pareto_plots_dir, "pareto")
@@ -385,6 +411,13 @@ if __name__ == "__main__":
         default=None,
         help="Plot all pareto fronts only for the given optimizer."
     )
+    parser.add_argument(
+        "--plot_for_iterations", "-i",
+        type=int,
+        nargs="+",
+        default=None,
+        help="Plot pareto fronts and Hypervolumes for the given iterations."
+    )
     args = parser.parse_args()
     exp_dir: Path = DEFAULT_RESULTS_DIR / args.exp_dir
 
@@ -398,14 +431,15 @@ if __name__ == "__main__":
             case _, 0:
                 agg_data(
                     exp_dir=exp_dir,
-                    plot_opt=args.plot_opt
-
+                    plot_opt=args.plot_opt,
+                    plot_iters=args.plot_for_iterations
                 )
-                make_subplots(exp_dir)
+                make_subplots(exp_dir, args.plot_for_iterations)
             case _:
-                make_subplots(exp_dir)
+                make_subplots(exp_dir, args.plot_for_iterations)
     else:
         agg_data(
             exp_dir=exp_dir,
-            plot_opt=args.plot_opt
+            plot_opt=args.plot_opt,
+            plot_iters=args.plot_for_iterations
         )
