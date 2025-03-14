@@ -537,7 +537,7 @@ class Run:
             problem=_problem,
             seed=seed,
             priors=_priors if _problem.priors else {},
-            prior_distribution=prior_distribution if priors else None,
+            prior_distribution=prior_distribution if _problem.priors else None,
             exp_dir=exp_dir,
         )
 
