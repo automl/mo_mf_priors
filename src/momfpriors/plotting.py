@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any, Literal
 
@@ -10,8 +10,6 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-# import proplot as pplt
 import yaml
 from pymoo.indicators.hv import Hypervolume
 
@@ -52,13 +50,76 @@ def pareto_front(
     return is_pareto
 
 
-def _get_style(opt: str, prior_annot: str) -> tuple[str, str]:
+def _get_style(instance: str) -> tuple[str, str]:
     """Function to get the plotting style for a given instance."""
+    prior_annot = instance.split("priors=")[-1] if "priors=" in instance else None
+    opt = instance.split(";")[0]
     color = style_dict["colors"].get(opt, "black")
-    annotations = [a.split("=")[-1] for a in prior_annot.split(",")]
-    annotations = "-".join(annotations)
-    marker = style_dict["markers"].get(annotations, "o")
+    marker = style_dict["markers"].get(prior_annot, "o")
     return marker, color
+
+
+def plot_average_rank(ranks: dict, budget: int, exp_dir: Path):
+    """Plots the average rank of optimizers over iterations with standard error."""
+    def _mean(_dfs: Iterable[pd.DataFrame]) -> pd.DataFrame:
+            return pd.concat(_dfs).reset_index().groupby("index").mean()
+
+    def _sem(_dfs: Iterable[pd.DataFrame]) -> pd.DataFrame:
+        return pd.concat(_dfs).reset_index().groupby("index").sem()
+
+    # Get mean across all benchmarks, for each seed
+    ranks_per_seed_averaged_over_benchmarks = {
+        seed: _mean(ranks[seed].values()) for seed in ranks
+    }
+
+    # Average over all seeds
+    mean_ranks = _mean(ranks_per_seed_averaged_over_benchmarks.values())
+    sem_ranks = _sem(ranks_per_seed_averaged_over_benchmarks.values())
+
+    # Sort by the last iteration
+    mean_ranks = mean_ranks.sort_values(by=budget, axis=1, ascending=False)
+    sem_ranks = sem_ranks[mean_ranks.columns]
+
+    # Plot settings
+    plt.figure(figsize=(12, 6))
+
+    # Plotting
+    for instance in mean_ranks.columns:
+        means = mean_ranks[instance]
+        sems = sem_ranks[instance]
+
+        marker, color = _get_style(instance)
+        plt.plot(
+            means,
+            linestyle="-",
+            label=instance,
+            marker=marker,
+            color=color,
+        )
+        plt.fill_between(
+            means.index,
+            means - sems,
+            means + sems,
+            alpha=0.2,
+            linewidth=2,
+            color=color,
+            edgecolor=color,
+        )
+
+    # Labels and legend
+    plt.xlabel("Number of Iterations")
+    plt.ylabel("Average Rank (Lower is Better)")
+    plt.title("Optimizer Ranking Over Iterations")
+    plt.xticks(np.arange(1, budget + 1, step=10))  # Adjust tick spacing if needed
+    plt.legend(title="Optimizers")
+    plt.grid(linestyle="--", alpha=0.6)
+
+    # Save the plot
+    plt.savefig(exp_dir / "plots" / "average_rank_plot.png")
+    plt.show()
+
+
+
 
 
 def create_plots(  # noqa: C901, PLR0912, PLR0915
@@ -80,6 +141,9 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
     logger.info(f"Plots for runs on benchmark: {benchmark}")
     plt.figure(1, figsize=(10, 10))
     plt.figure(2, figsize=(10, 10))
+
+    seed_means_dict = {}
+    means_dict = {}
 
     reference_point = np.array([
         reference_points_dict[benchmark][obj]
@@ -114,10 +178,14 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
 
             budget_list = data["budget_used_total"].values.astype(np.float64)[:budget]
             seed_hv_dict[seed] = pd.Series(hv_vals, index=budget_list)
-            marker, color = _get_style(
-                instance_data[seed]["optimizer"],
-                instance_data[seed]["prior_annotations"],
-            )
+            marker, color = _get_style(instance)
+
+            # Accumulating incumbents for every optimizer instance per seed per benchmark
+            seed_incumbents = seed_hv_dict[seed].cummax()
+            if seed not in seed_means_dict:
+                seed_means_dict[seed] = {}
+            seed_means_dict[seed][instance] = seed_incumbents
+
             match plot_opt:
                 case None:
                     pass
@@ -232,16 +300,25 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
 
     plt.figure(2)
     plt.savefig(hv_save_dir / f"Hypervolume_plot_{plot_title.replace(' ', '_')}.png")
-    plt.show()
+
+    plt.close("all")
+
+    # Ranking every optimizer instance per seed per benchmark
+    for seed, instances in seed_means_dict.items():
+        _df = pd.DataFrame(instances)
+        _df = _df.rank(axis=1, method="average", ascending=False)
+        means_dict[seed] = _df
+    return means_dict
 
 
-def agg_data(
+def agg_data(  # noqa: C901
     exp_dir: Path,
     plot_opt: str | None = None,
     plot_iters: list[int] | None = None,
 )-> None:
     """Function to aggregate data from all runs in the experiment directory."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
+    means_dict = {}
 
     benchmarks_in_dir = [
         (f.name.split("benchmark=")[-1].split(".")[0])
@@ -294,9 +371,19 @@ def agg_data(
                     lambda x, objectives=objectives: {k: x[k] for k in objectives}
                 )
 
+                if _df["prior_annotations"][0] is not None:
+                    annotations = "-".join(
+                        [a.split("=")[-1] for a in _df["prior_annotations"][0].split(",")]
+                    )
+
                 instance = (
-                    _df["optimizer"][0] + ";" + _df["optimizer_hyperparameters"][0] + ";" +
-                    _df["prior_annotations"][0]
+                    _df["optimizer"][0] +
+                    (
+                        ";" + _df["optimizer_hyperparameters"][0]
+                        if "default" not in _df["optimizer_hyperparameters"][0]
+                        else ""
+                    ) +
+                    (f";priors={annotations}" if annotations else "")
                 )
                 seed = int(_df["seed"][0])
                 if instance not in agg_dict:
@@ -304,8 +391,6 @@ def agg_data(
                 agg_dict[instance][seed] = {
                     "results": _results,
                     "budget_used_total": _df["budget_used_total"],
-                    "optimizer": _df["optimizer"][0],
-                    "prior_annotations": _df["prior_annotations"][0],
                     "plot_title": (
                         f"{instance}"
                         f" on \n{benchmark}"
@@ -316,7 +401,7 @@ def agg_data(
             if len(agg_dict) == 1:
                 is_single_opt = True
             assert len(objectives) > 0, "Objectives not found in results file."
-            create_plots(
+            seed_dict_per_bench = create_plots(
                 agg_data=agg_dict,
                 exp_dir=exp_dir,
                 benchmark=benchmark,
@@ -327,6 +412,11 @@ def agg_data(
                 objectives=objectives,
             )
             agg_dict = {}
+            for _seed, rank_df in seed_dict_per_bench.items():
+                if _seed not in means_dict:
+                    means_dict[_seed] = {}
+                means_dict[_seed][benchmark] = rank_df
+    plot_average_rank(means_dict, budget, exp_dir)
 
 
 def make_subplots(
@@ -369,27 +459,6 @@ def make_subplots(
 
     plot_subplots(pareto_plots_dir, "pareto")
     plot_subplots(hv_plots_dir, "hypervolume")
-
-
-
-
-    # Using proplot
-
-    # fig = pplt.figure(tight=True, refwidth="5em")
-    # axs = fig.subplots(
-    #     nrows = 2 if num_plots > 2 else 1,  # noqa: PLR2004
-    #     ncols = num_plots // 2 if num_plots > 2 else num_plots, # noqa: PLR2004
-    # )
-    # for ax, file in zip(axs, exp_dir.rglob("*.png")):  # noqa: B905
-    #     if "pareto" not in file.name.lower():
-    #         continue
-    #     img = plt.imread(file)
-    #     ax.grid(visible=False)
-    #     ax.imshow(img)
-    #     ax.axis("off")
-    # save_dir = exp_dir / "plots" / "subplots"
-    # save_dir.mkdir(parents=True, exist_ok=True)
-    # fig.savefig(save_dir / "all_pareto_subplots.png")
 
 
 if __name__ == "__main__":
