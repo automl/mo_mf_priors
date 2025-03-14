@@ -5,7 +5,7 @@ optimizers:
   - name: RandomSearch
   - name: SMAC_ParEGO
   - name: NepsRW
-  - name: NepsHyperbandRW
+  # - name: NepsHyperbandRW
 benchmarks:
   - name: jahs-CIFAR10
     objectives:
@@ -33,4 +33,3 @@ benchmarks:
       runtime: bad
 num_seeds: 11
 num_iterations: 25
- 
