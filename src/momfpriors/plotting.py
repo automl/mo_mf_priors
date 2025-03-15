@@ -54,12 +54,18 @@ def _get_style(instance: str) -> tuple[str, str]:
     """Function to get the plotting style for a given instance."""
     prior_annot = instance.split("priors=")[-1] if "priors=" in instance else None
     opt = instance.split(";")[0]
-    color = style_dict["colors"].get(opt, "black")
-    marker = style_dict["markers"].get(prior_annot, "o")
+    color = style_dict["colors"].get(opt)
+    marker = style_dict["markers"].get(prior_annot, "s")
     return marker, color
 
 
-def plot_average_rank(ranks: dict, budget: int, exp_dir: Path):
+def plot_average_rank(
+    ranks: dict,
+    budget: int,
+    exp_dir: Path,
+    *,
+    no_save: bool = False,
+) -> None:
     """Plots the average rank of optimizers over iterations with standard error."""
     def _mean(_dfs: Iterable[pd.DataFrame]) -> pd.DataFrame:
             return pd.concat(_dfs).reset_index().groupby("index").mean()
@@ -110,12 +116,19 @@ def plot_average_rank(ranks: dict, budget: int, exp_dir: Path):
     plt.xlabel("Number of Iterations")
     plt.ylabel("Average Rank (Lower is Better)")
     plt.title("Optimizer Ranking Over Iterations")
-    plt.xticks(np.arange(1, budget + 1, step=10))  # Adjust tick spacing if needed
-    plt.legend(title="Optimizers")
+    plt.xticks(np.arange(5, budget + 1, step=5))
+    plt.legend(
+        loc="upper left",
+        bbox_to_anchor=(0, -0.05),
+        fontsize=12
+    )
+    plt.tight_layout()
+    plt.tight_layout()
     plt.grid(linestyle="--", alpha=0.6)
 
     # Save the plot
-    plt.savefig(exp_dir / "plots" / "average_rank_plot.png")
+    if not no_save:
+        plt.savefig(exp_dir / "plots" / "average_rank_plot.png")
     plt.show()
 
 
@@ -132,6 +145,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
     plot_opt: str | None = None,
     *,
     is_single_opt: bool = False,
+    no_save: bool = False,
 ) -> None:
     """Function to plot the dominated hypervolume over
     iterations and pareto fronts from a pandas Series
@@ -237,18 +251,24 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
                     markersize=7,
                     linewidth=1,
                 )
-                plt.legend()
         if plot_opt and (plot_opt == "all" or plot_opt in instance):
             pareto_save_dir = exp_dir / "plots" / str(budget) /"pareto"
             pareto_save_dir.mkdir(parents=True, exist_ok=True)
             plt.figure(3)
-            plt.savefig(pareto_save_dir / f"Multiple seeds pareto plot for \n{instance}.png")
+            if not no_save:
+                plt.savefig(pareto_save_dir / f"Multiple seeds pareto plot for {instance}.png")
             plt.clf()
 
         if len(agg_data) > 1:
             plot_title = f"Optimizers on \n{benchmark} for {budget} iterations"
 
         plt.figure(1)
+        plt.legend(
+            loc="upper left",
+            bbox_to_anchor=(0, -0.05),
+            fontsize=12
+        )
+        plt.tight_layout()
         plt.xlabel(keys[0])
         plt.ylabel(keys[1])
         plt.grid(visible=True)
@@ -284,10 +304,15 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
             edgecolor=color if not is_single_opt else None,
             linewidth=2,
         )
+        plt.legend(
+            loc="upper left",
+            bbox_to_anchor=(0, -0.05),
+            fontsize=12
+        )
+        plt.tight_layout()
         plt.xlabel("Iteration")
         plt.xticks(np.arange(1, budget + 1, 1))     # TrialBudget
         plt.ylabel("Hypervolume")
-        plt.legend()
         plt.grid(visible=True)
         plt.title(f"Hypervolume over iterations plot for\n{plot_title}")
         hv_save_dir = exp_dir / "plots"/ str(budget) / "hypervolume"
@@ -295,11 +320,13 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
 
 
     plot_title = plot_title.replace("\n", "")
-    plt.figure(1)
-    plt.savefig(pareto_save_dir / f"Pareto_plot_{plot_title.replace(' ', '_')}.png")
+    if not no_save:
+        plt.figure(1)
+        plt.savefig(pareto_save_dir / f"Pareto_plot_{plot_title.replace(' ', '_')}.png")
 
-    plt.figure(2)
-    plt.savefig(hv_save_dir / f"Hypervolume_plot_{plot_title.replace(' ', '_')}.png")
+        plt.figure(2)
+        plt.savefig(hv_save_dir / f"Hypervolume_plot_{plot_title.replace(' ', '_')}.png")
+    plt.show()
 
     plt.close("all")
 
@@ -315,6 +342,8 @@ def agg_data(  # noqa: C901
     exp_dir: Path,
     plot_opt: str | None = None,
     plot_iters: list[int] | None = None,
+    *,
+    no_save: bool = False,
 )-> None:
     """Function to aggregate data from all runs in the experiment directory."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
@@ -410,18 +439,21 @@ def agg_data(  # noqa: C901
                 plot_opt=plot_opt,
                 seed_for_pareto=seed_for_pareto,
                 objectives=objectives,
+                no_save=no_save,
             )
             agg_dict = {}
             for _seed, rank_df in seed_dict_per_bench.items():
                 if _seed not in means_dict:
                     means_dict[_seed] = {}
                 means_dict[_seed][benchmark] = rank_df
-    plot_average_rank(means_dict, budget, exp_dir)
+    plot_average_rank(means_dict, budget, exp_dir, no_save=no_save)
 
 
 def make_subplots(
     exp_dir: Path,
     iteration: int | None = None,
+    *,
+    no_save: bool = False,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     if isinstance(iteration, list):
@@ -436,11 +468,15 @@ def make_subplots(
     def plot_subplots(dir: Path, type: Literal["pareto", "hypervolume"]) -> None:
         image_paths = list(dir.rglob(str_to_match))
         images = [mpimg.imread(img) for img in image_paths]
-        print(len(images))
+        nrows = 2 if num_plots > 2 else 1 # noqa: PLR2004
+        ncols = num_plots // 2 if num_plots > 2 else num_plots # noqa: PLR2004
+        if ncols <1 or nrows < 1:
+            logger.error("Just one plot found. Exiting.")
+            return
         fig, axs = plt.subplots(
-            nrows = 2 if num_plots > 2 else 1,  # noqa: PLR2004
-            ncols = num_plots // 2 if num_plots > 2 else num_plots, # noqa: PLR2004
-            figsize=(20, 20),
+            nrows = nrows,
+            ncols = ncols,
+            figsize=(20, 10),
         )
         axs = axs.flatten() if num_plots > 1 else [axs]
         for i, img in enumerate(images):
@@ -454,7 +490,8 @@ def make_subplots(
         plt.suptitle(f"All {type} plots_{iteration=}")
         save_dir = dir.parent / "subplots"
         save_dir.mkdir(parents=True, exist_ok=True)
-        plt.savefig(save_dir / f"all_{type}_subplots_{iteration=}.png")
+        if not no_save:
+            plt.savefig(save_dir / f"all_{type}_subplots_{iteration=}.png", dpi = 150)
         plt.show()
 
     plot_subplots(pareto_plots_dir, "pareto")
@@ -487,28 +524,36 @@ if __name__ == "__main__":
         default=None,
         help="Plot pareto fronts and Hypervolumes for the given iterations."
     )
+    parser.add_argument(
+        "--no_save", "-ns",
+        action="store_true",
+        help="Do not save the plots."
+    )
     args = parser.parse_args()
     exp_dir: Path = DEFAULT_RESULTS_DIR / args.exp_dir
 
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
 
     if args.make_subplots:
-        plots_dir = exp_dir / "plots"
-        match plots_dir.exists(), len(list((plots_dir/"pareto").rglob("*.png"))):
+        assert args.plot_for_iterations, "Provide iterations to make subplots."
+        plots_dir = exp_dir / "plots" / str(args.plot_for_iterations[0])
+        match plots_dir.exists(), len(list((plots_dir/"hypervolume").rglob("*.png"))):
             case True, 1:
                 logger.info("Only one plot found. Exiting.")
             case _, 0:
                 agg_data(
                     exp_dir=exp_dir,
                     plot_opt=args.plot_opt,
-                    plot_iters=args.plot_for_iterations
+                    plot_iters=args.plot_for_iterations,
+                    no_save=args.no_save
                 )
-                make_subplots(exp_dir, args.plot_for_iterations)
+                make_subplots(exp_dir, args.plot_for_iterations, no_save=args.no_save)
             case _:
-                make_subplots(exp_dir, args.plot_for_iterations)
+                make_subplots(exp_dir, args.plot_for_iterations, no_save=args.no_save)
     else:
         agg_data(
             exp_dir=exp_dir,
             plot_opt=args.plot_opt,
-            plot_iters=args.plot_for_iterations
+            plot_iters=args.plot_for_iterations,
+            no_save=args.no_save
         )
