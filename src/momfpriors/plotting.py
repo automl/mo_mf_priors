@@ -177,8 +177,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
             hv_vals = []
             for i, costs in enumerate(results, start=1):
                 # Compute hypervolume
-                if "jahs" in benchmark:
-                    costs["valid_acc"] = -costs["valid_acc"]
+                # if "jahs" in benchmark:
+                #     costs["valid_acc"] = -costs["valid_acc"]
                 acc_costs.append(costs)
                 pareto = pareto_front(acc_costs)
                 pareto = np.array([list(ac.values()) for ac in acc_costs])[pareto]
@@ -396,8 +396,12 @@ def agg_data(  # noqa: C901
                     "Can only plot pareto front for 2D cost space."
                 )
 
+                minimize: dict[str, bool] = _df["minimize"][0]
+
                 _results = _df["results"].apply(
-                    lambda x, objectives=objectives: {k: x[k] for k in objectives}
+                    lambda x, objectives=objectives, minimize=minimize: {
+                        k: x[k] if minimize[k] else -x[k] for k in objectives
+                    }
                 )
 
                 if _df["prior_annotations"][0] is not None:
