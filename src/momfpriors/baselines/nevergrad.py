@@ -88,7 +88,10 @@ class NevergradOptimizer(Optimizer):
             case (name, _):
                 _values = result.values[name]
             case Mapping():
-                _values = [result.values[key] for key in self.problem.objectives]
+                _values = [
+                    obj.as_minimize(result.values[key])
+                    for key, obj in self.problem.objectives.items()
+                ]
             case _:
                 raise TypeError("Objective must be a string or a list of strings!")
 

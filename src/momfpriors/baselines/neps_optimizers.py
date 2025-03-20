@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from abc import abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, Literal
@@ -22,19 +23,6 @@ logger.setLevel(logging.INFO)
 class NepsOptimizer(Abstract_AskTellOptimizer):
     """Base class for Neps Optimizers."""
     name = "NepsOptimizer"
-
-    support = Problem.Support(
-        fidelities=(None,),
-        objectives=("many"),
-        cost_awareness=(None,),
-        tabular=False,
-    )
-
-    env = Env(
-        name="NEPS-0.12.3",
-        python_version="3.10",
-        requirements=("neural-pipeline-search==0.12.3",)
-    )
 
     mem_req_mb = 1024
 
@@ -62,8 +50,10 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
 
     def ask(self) -> Query:
         """Ask the optimizer for a new trial."""
+        import copy
         trial = self.optimizer.ask() # TODO: Figure out fidelity
         fidelity = None
+        _config = copy.deepcopy(trial.config)
         match self.problem.fidelities:
             case None:
                 pass
@@ -73,6 +63,7 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
                 # query with max fidelity for MF optimizers
                 _fid_value = self.problem.benchmark.fidelities[fid_name].max
                 fidelity = (fid_name, _fid_value)
+                _config.pop(fid_name)
             case _:
                 raise TypeError(
                     "Fidelity must be a tuple or a Mapping. \n"
@@ -80,20 +71,14 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
                 )
         self.trial_counter += 1
         return Query(
-            config = Config(config_id=self.trial_counter, values=trial.config),
+            config = Config(config_id=self.trial_counter, values=_config),
             fidelity=fidelity,
             optimizer_info=trial
         )
 
+    @abstractmethod
     def tell(self, result: Result) -> None:
         """Tell the optimizer about the result of a trial."""
-        # single objective tell(), must be overridden by multi-objective optimizers
-        costs = list(result.values.values())
-        self.optimizer.tell(
-            trial=result.query.optimizer_info,
-            result=costs
-        )
-
 
 class NepsRW(NepsOptimizer):
     """Random Weighted Scalarization of objectives using Bayesian Optimization in Neps."""
@@ -167,7 +152,10 @@ class NepsRW(NepsOptimizer):
 
     def tell(self, result: Result) -> None:
         """Tell the optimizer about the result of a trial."""
-        costs = {obj: result.values[obj] for obj in self.objectives}
+        costs = {
+            key: obj.as_minimize(result.values[key])
+            for key, obj in self.problem.objectives.items()
+        }
         scalarized_objective = sum(
             self.scalarization_weights[obj] * costs[obj] for obj in self.objectives
         )
@@ -224,14 +212,12 @@ class NepsHyperbandRW(NepsOptimizer):
                 max_fidelity = fidelity.max
                 match _fid.kind:
                     case _ if _fid.kind is int:
-                        import neps
                         space.fidelities = {
                             f"{fid_name}": neps.Integer(
                                 lower=min_fidelity, upper=max_fidelity, is_fidelity=True
                             )
                         }
                     case _ if _fid.kind is float:
-                        import neps
                         space.fidelities = {
                             f"{fid_name}": neps.Float(
                                 lower=min_fidelity, upper=max_fidelity, is_fidelity=True
@@ -284,7 +270,10 @@ class NepsHyperbandRW(NepsOptimizer):
 
     def tell(self, result: Result) -> None:
         """Tell the optimizer about the result of a trial."""
-        costs = {obj: result.values[obj] for obj in self.objectives}
+        costs = {
+            key: obj.as_minimize(result.values[key])
+            for key, obj in self.problem.objectives.items()
+        }
         scalarized_objective = sum(
             self.scalarization_weights[obj] * costs[obj] for obj in self.objectives
         )
