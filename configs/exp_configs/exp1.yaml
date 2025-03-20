@@ -1,11 +1,10 @@
 optimizers:
   - name: RandomSearchWithPriors
-    hyperparameters:
-      mo_prior_sampling: random
   - name: RandomSearch
   - name: SMAC_ParEGO
   - name: NepsRW
-  # - name: NepsHyperbandRW
+  - name: NepsHyperbandRW
+  - name: Nevergrad_EvolutionStrategy
 benchmarks:
   - name: MOMFPark
     objectives:
@@ -47,5 +46,5 @@ benchmarks:
     objectives:
       valid_error_rate: bad
       train_cost: bad
-num_seeds: 11
+num_seeds: 25
 num_iterations: 25
