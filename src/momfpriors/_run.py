@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 import pandas as pd
 import yaml
 from hpoglue import FunctionalBenchmark, Problem
+from hpoglue._run import _run
 from hpoglue.env import (
     GLUE_PYPI,
     Env,
@@ -224,13 +225,19 @@ class Run:
         try:
 
             self.set_state(self.State.RUNNING)
-            _hist = _core(
+            # _hist = _core(
+            #     problem=self.problem,
+            #     seed=self.seed,
+            #     num_iterations=self.problem.budget.total,
+            #     results_dir=self.exp_dir.parent.absolute(),
+            #     core_verbose=core_verbose,
+            #     **kwargs,
+            # )
+            _hist = _run(
                 problem=self.problem,
                 seed=self.seed,
-                num_iterations=self.problem.budget.total,
-                results_dir=self.exp_dir.parent.absolute(),
-                core_verbose=core_verbose,
-                **kwargs,
+                run_name=self.name,
+                on_error=on_error,
             )
         except Exception as e:
             self.set_state(Run.State.CRASHED, err_tb=(e, traceback.format_exc()))
@@ -270,6 +277,10 @@ class Run:
         if "fidelity" in _df.columns and isinstance(_df["fidelity"].iloc[0], tuple):
             _df["fidelity"] = _df["fidelity"].apply(lambda x: x[1])
 
+        minimize = {
+            obj: metric.minimize for obj, metric in self.problem.objectives.items()
+        }
+
         match fidelities:
             case None:
                 pass
@@ -300,6 +311,7 @@ class Run:
             benchmark=self.benchmark.name,
             prior_annotations = _prior_annots,
             objectives=[self.problem.get_objectives()]*len(_df),
+            minimize=[minimize]*len(_df),
             fidelities=_fidelities,
             costs=_costs,
         )
