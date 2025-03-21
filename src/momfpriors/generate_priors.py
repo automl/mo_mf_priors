@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import logging
 from collections.abc import Iterable, Mapping
 from pathlib import Path
@@ -113,18 +114,31 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
         ):
             results.append(bench.query(query))
 
+        logger.info(" - Finished results")
+
+        print("==========================================================")
+
         for objective in objectives:
 
-            prior_spec_results = []
-            _results = sorted(results, key=lambda r: r.values[objective])
+            logger.info(f" - Objective: {objective}")
 
-            for _, index, _, _ in prior_spec:
-                prior_spec_results.append(_results[index])
+            processed_results = []
+            for result in results:
+                if objective in _benchmark.metrics:
+                    res = _benchmark.metrics[objective].as_minimize(result.values[objective])
+                elif objective in _benchmark.test_metrics:
+                    res = _benchmark.test_metrics[objective].as_minimize(result.values[objective])
+                elif objective in _benchmark.costs:
+                    res = _benchmark.costs[objective].as_minimize(result.values[objective])
+                else:
+                    raise ValueError(f"Unknown objective: {objective}")
 
-            # print(".\n".join([str(res) for res in prior_spec_results]))
+                _result = copy.deepcopy(result)
+                _result.values[objective] = res
+                processed_results.append(_result)
 
             prior_configs = get_prior_configs(
-                results=results,
+                results=processed_results,
                 space=_benchmark.config_space,
                 objective=objective,
                 seed=seed,

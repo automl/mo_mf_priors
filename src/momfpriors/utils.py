@@ -97,8 +97,6 @@ def get_prior_configs(
         )
 
     prior_spec = list(prior_spec)
-
-    logger.info(" - Finished results")
     results = sorted(results, key=lambda r: r.values[objective])
     logger.info(" - Finished sorting")
 
