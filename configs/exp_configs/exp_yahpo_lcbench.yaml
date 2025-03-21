@@ -6,43 +6,43 @@ optimizers:
   - name: NepsHyperbandRW
   - name: Nevergrad_EvolutionStrategy
 benchmarks:
-  - name: yahoo-lcbench-126026
+  - name: yahpo-lcbench-126026
     objectives:
       val_cross_entropy: good
       time: good
-  - name: yahoo-lcbench-126026
+  - name: yahpo-lcbench-126026
     objectives:
       val_cross_entropy: bad
       time: bad
-  - name: yahoo-lcbench-167190
+  - name: yahpo-lcbench-167190
     objectives:
       val_cross_entropy: good
       time: good
-  - name: yahoo-lcbench-167190
+  - name: yahpo-lcbench-167190
     objectives:
       val_cross_entropy: bad
       time: bad
-  - name: yahoo-lcbench-168330
+  - name: yahpo-lcbench-168330
     objectives:
       val_cross_entropy: good
       time: good
-  - name: yahoo-lcbench-168330
+  - name: yahpo-lcbench-168330
     objectives:
       val_cross_entropy: bad
       time: bad
-  - name: yahoo-lcbench-168910
+  - name: yahpo-lcbench-168910
     objectives:
       val_cross_entropy: good
       time: good
-  - name: yahoo-lcbench-168910
+  - name: yahpo-lcbench-168910
     objectives:
       val_cross_entropy: bad
       time: bad
-  - name: yahoo-lcbench-189906
+  - name: yahpo-lcbench-189906
     objectives:
       val_cross_entropy: good
       time: good
-  - name: yahoo-lcbench-189906
+  - name: yahpo-lcbench-189906
     objectives:
       val_cross_entropy: bad
       time: bad
