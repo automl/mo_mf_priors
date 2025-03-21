@@ -1,0 +1,51 @@
+optimizers:
+  - name: RandomSearchWithPriors
+  - name: RandomSearch
+  - name: SMAC_ParEGO
+  - name: NepsRW
+  - name: NepsHyperbandRW
+  - name: Nevergrad_EvolutionStrategy
+benchmarks:
+  - name: yahoo-lcbench-126026
+    objectives:
+      val_cross_entropy: good
+      time: good
+  - name: yahoo-lcbench-126026
+    objectives:
+      val_cross_entropy: bad
+      time: bad
+  - name: yahoo-lcbench-167190
+    objectives:
+      val_cross_entropy: good
+      time: good
+  - name: yahoo-lcbench-167190
+    objectives:
+      val_cross_entropy: bad
+      time: bad
+  - name: yahoo-lcbench-168330
+    objectives:
+      val_cross_entropy: good
+      time: good
+  - name: yahoo-lcbench-168330
+    objectives:
+      val_cross_entropy: bad
+      time: bad
+  - name: yahoo-lcbench-168910
+    objectives:
+      val_cross_entropy: good
+      time: good
+  - name: yahoo-lcbench-168910
+    objectives:
+      val_cross_entropy: bad
+      time: bad
+  - name: yahoo-lcbench-189906
+    objectives:
+      val_cross_entropy: good
+      time: good
+  - name: yahoo-lcbench-189906
+    objectives:
+      val_cross_entropy: bad
+      time: bad
+
+num_seeds: 25
+num_iterations: 25
