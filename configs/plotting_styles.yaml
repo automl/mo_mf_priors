@@ -19,3 +19,4 @@ colors:
   RandomSearchWithPriors: red
   NepsRW: lightseagreen
   NepsHyperbandRW: darkgreen
+  Nevergrad_EvolutionStrategy: orange
