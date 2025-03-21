@@ -141,7 +141,8 @@ def exp(  # noqa: C901, PLR0913
 
     root_logger.info("Running the experiments")
 
-    for run in runs:
+    for i, run in enumerate(runs):
+        root_logger.info(f"Running {i + 1}/{len(runs)} runs.")
         run.run(
             core_verbose=core_verbose,
             overwrite=overwrite,
