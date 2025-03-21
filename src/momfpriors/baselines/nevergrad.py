@@ -8,9 +8,11 @@ from typing import TYPE_CHECKING
 import ConfigSpace as CS  # noqa: N817
 import nevergrad as ng
 import numpy as np
-from hpoglue import Config, Optimizer, Problem, Query
+from hpoglue import Config, Problem, Query
 from hpoglue.env import Env
 from nevergrad.parametrization import parameter
+
+from momfpriors.optimizer import Abstract_AskTellOptimizer
 
 if TYPE_CHECKING:
     from hpoglue import Result
@@ -32,7 +34,7 @@ ext_opts = {
 }
 
 
-class NevergradOptimizer(Optimizer):
+class NevergradOptimizer(Abstract_AskTellOptimizer):
     """The Nevergrad Optimizer base class."""
 
     def __init__(
