@@ -8,3 +8,4 @@ test_priors/
 *momf_branin_currin.py
 data/
 logs/
+Optimizers_cache
