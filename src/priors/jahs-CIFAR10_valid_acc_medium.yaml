@@ -1,18 +1,18 @@
 benchmark: jahs-CIFAR10
 config:
-  Activation: Hardswish
-  LearningRate: 0.43889057279693844
+  Activation: ReLU
+  LearningRate: 0.2550665312295185
   N: 5
-  Op1: 0
-  Op2: 1
-  Op3: 1
-  Op4: 1
-  Op5: 1
+  Op1: 2
+  Op2: 2
+  Op3: 0
+  Op4: 2
+  Op5: 2
   Op6: 3
   Optimizer: SGD
   Resolution: 1.0
   TrivialAugment: true
   W: 16
-  WeightDecay: 0.009084353264973892
+  WeightDecay: 0.0002742343817696262
 objective: valid_acc
 prior_name: medium
