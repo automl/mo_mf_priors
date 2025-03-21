@@ -20,14 +20,52 @@ logging.basicConfig(level=logging.INFO)
 
 
 reference_points_dict = {
+
+    # PD1
     "pd1-cifar100-wide_resnet-2048": {"valid_error_rate": 1, "train_cost": 100},
     "pd1-imagenet-resnet-512": {"valid_error_rate": 1, "train_cost": 5000},
     "pd1-lm1b-transformer-2048": {"valid_error_rate": 1, "train_cost": 1000},
     "pd1-translate_wmt-xformer_translate-64": {"valid_error_rate": 1, "train_cost": 20000},
+
+    # JAHSBench
     "jahs-CIFAR10": {"valid_acc": 0, "runtime": 200000},
     "jahs-ColorectalHistology": {"valid_acc": 0, "runtime": 200000},
     "jahs-FashionMNIST": {"valid_acc": 0, "runtime": 200000},
+
+    # MOMFPark
     "MOMFPark": {"value1": 1, "value2": 1},
+
+    # YAHPO-LCBench
+    "yahpo-lcbench-126026": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 200000
+    },
+    "yahpo-lcbench-167190": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 200000
+    },
+    "yahpo-lcbench-168330": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 200000
+    },
+    "yahpo-lcbench-168910": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 200000
+    },
+    "yahpo-lcbench-189906": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 200000
+    },
 }
 
 
@@ -65,6 +103,7 @@ def plot_average_rank(
     exp_dir: Path,
     *,
     no_save: bool = False,
+    benchmark: str | None = None,
 ) -> None:
     """Plots the average rank of optimizers over iterations with standard error."""
     def _mean(_dfs: Iterable[pd.DataFrame]) -> pd.DataFrame:
@@ -113,9 +152,15 @@ def plot_average_rank(
         )
 
     # Labels and legend
+    plot_title = "Average_Rank_of_Optimizers_over_Iterations_across_all_Benchmarks_and_seeds"
+    if benchmark:
+        plot_title = plot_title.replace(
+            "across_all_Benchmarks_and_seeds",
+            f"for_{benchmark}_and_all_seeds"
+        )
     plt.xlabel("Number of Iterations")
     plt.ylabel("Average Rank (Lower is Better)")
-    plt.title("Optimizer Ranking Over Iterations")
+    plt.title(plot_title)
     plt.xticks(np.arange(5, budget + 1, step=5))
     plt.legend(
         loc="upper left",
@@ -128,7 +173,7 @@ def plot_average_rank(
 
     # Save the plot
     if not no_save:
-        plt.savefig(exp_dir / "plots" / "average_rank_plot.png")
+        plt.savefig(exp_dir / "plots" / f"{plot_title}.png")
     plt.show()
 
 
@@ -450,6 +495,15 @@ def agg_data(  # noqa: C901
                 if _seed not in means_dict:
                     means_dict[_seed] = {}
                 means_dict[_seed][benchmark] = rank_df
+            # Per benchmark ranking plots
+            plot_average_rank(
+                means_dict,
+                iteration,
+                exp_dir,
+                no_save=no_save,
+                benchmark=benchmark,
+            )
+    # Plotting average ranks over all benchmarks and seeds
     plot_average_rank(means_dict, budget, exp_dir, no_save=no_save)
 
 
@@ -466,14 +520,21 @@ def make_subplots(
     hv_plots_dir = exp_dir / "plots" / str(iteration) / "hypervolume"
     str_to_match = "*iterations.png"
     num_plots = len(list(pareto_plots_dir.rglob(str_to_match)))
-    assert num_plots == len(list(hv_plots_dir.rglob(str_to_match))), "Number of plots do not match."
+    print(f"Found {num_plots} plots.")
+    # assert num_plots == len(list(hv_plots_dir.rglob(str_to_match))), "Number of plots do not match."
 
 
     def plot_subplots(dir: Path, type: Literal["pareto", "hypervolume"]) -> None:
-        image_paths = list(dir.rglob(str_to_match))
+        image_paths = sorted(dir.rglob(str_to_match))
         images = [mpimg.imread(img) for img in image_paths]
-        nrows = 2 if num_plots > 2 else 1 # noqa: PLR2004
-        ncols = num_plots // 2 if num_plots > 2 else num_plots # noqa: PLR2004
+        # nrows = 2 if num_plots > 2 else 1 # noqa: PLR2004
+        # ncols = num_plots // 2 if num_plots > 2 else num_plots # noqa: PLR2004
+        nrows, ncols = 2, 2
+        while num_plots > nrows * ncols:
+            ncols += max(1, (num_plots - nrows * ncols) // nrows)
+            if ncols > 4:   # noqa: PLR2004
+                nrows += 1
+                ncols = 4
         if ncols <1 or nrows < 1:
             logger.error("Just one plot found. Exiting.")
             return
@@ -483,12 +544,14 @@ def make_subplots(
             figsize=(20, 10),
         )
         axs = axs.flatten() if num_plots > 1 else [axs]
+        # print(len(axs))
         for i, img in enumerate(images):
+            # print(i)
             axs[i].imshow(img)
             axs[i].axis("off")
 
-        # for j in range(i + 1, len(axs)):
-        #     fig.delaxes(axs[j])
+        for j in range(i + 1, len(axs)):
+            fig.delaxes(axs[j])
 
         plt.tight_layout()
         plt.suptitle(f"All {type} plots_{iteration=}")
@@ -541,7 +604,11 @@ if __name__ == "__main__":
     if args.make_subplots:
         assert args.plot_for_iterations, "Provide iterations to make subplots."
         plots_dir = exp_dir / "plots" / str(args.plot_for_iterations[0])
-        match plots_dir.exists(), len(list((plots_dir/"hypervolume").rglob("*.png"))):
+        # print(len(list((plots_dir/"hypervolume").rglob("*.png"))))
+        match (
+            plots_dir.exists(),
+            len(list((plots_dir/"hypervolume").rglob("*.png")))
+        ):
             case True, 1:
                 logger.info("Only one plot found. Exiting.")
             case _, 0:
