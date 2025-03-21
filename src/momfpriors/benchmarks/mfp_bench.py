@@ -155,11 +155,10 @@ def lcbench_surrogate(datadir: Path | None = None) -> Iterator[BenchmarkDescript
     from momfpriors.utils import HiddenPrints
 
     env = Env(
-        name="py310-mfpbench-1.9-yahpo",
+        name="py310-mfpbench-1.10-yahpo",
         requirements=(
-            "mf-prior-bench==1.9.0",
-            "yahpo-gym==1.0.1",
-            "ConfigSpace==0.6.1",
+            "mf-prior-bench==1.10.0",
+            # "yahpo-gym==1.0.2",
             "xgboost>=1.7"
         ),
         post_install=_download_data_cmd("yahpo", datadir=datadir),
@@ -186,10 +185,10 @@ def lcbench_surrogate(datadir: Path | None = None) -> Iterator[BenchmarkDescript
                 metrics={
                     "val_accuracy": Measure.metric((0.0, 100.0), minimize=False),
                     "val_cross_entropy": Measure.metric((0, np.inf), minimize=True),
-                    "val_balanced_accuracy": Measure.metric((0, 100), minimize=False),
+                    "val_balanced_accuracy": Measure.metric((0, 1), minimize=False),
                 },
                 test_metrics={
-                    "test_balanced_accuracy": Measure.test_metric((0, 100), minimize=False),
+                    "test_balanced_accuracy": Measure.test_metric((0, 1), minimize=False),
                     "test_cross_entropy": Measure.test_metric(bounds=(0, np.inf), minimize=True),
                 },
                 costs={
@@ -216,9 +215,9 @@ def mfh() -> Iterator[BenchmarkDescription]:
     """
     import mfpbench
     env = Env(
-        name="py310-mfpbench-1.9-mfh",
+        name="py310-mfpbench-1.10-mfh",
         python_version="3.10",
-        requirements=("mf-prior-bench==1.9.0",),
+        requirements=("mf-prior-bench==1.10.0",),
         post_install=(),
     )
     for req in env.requirements:
@@ -265,11 +264,11 @@ def jahs(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
     import mfpbench
     task_ids = ("CIFAR10", "ColorectalHistology", "FashionMNIST")
     env = Env(
-        name="py310-mfpbench-1.9-jahs",
+        name="py310-mfpbench-1.10-jahs",
         python_version="3.10",
         requirements=(
-            "mf-prior-bench==1.9.0",
-            "jahs-bench==1.1.0",
+            "mf-prior-bench==1.10.0",
+            "jahs-bench==1.2.0",
             # "pandas<1.4",
             # "ConfigSpace<=0.6.1",
         ),
@@ -328,9 +327,9 @@ def pd1(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
         datadir = datadir / "pd1"
     import mfpbench
     env = Env(
-        name="py310-mfpbench-1.9-pd1",
+        name="py310-mfpbench-1.10-pd1",
         python_version="3.10",
-        requirements=("mf-prior-bench==1.9.0","xgboost>=1.7"),
+        requirements=("mf-prior-bench==1.10.0","xgboost>=1.7"),
         post_install=_download_data_cmd("pd1", datadir=datadir),
     )
     for req in env.requirements:
@@ -413,7 +412,6 @@ def mfpbench_benchmarks(datadir: Path | None = None) -> Iterator[BenchmarkDescri
     if datadir is None:
         datadir=Path(__file__).parent.parent.parent.parent.absolute() / "data"
     yield from lcbench_surrogate(datadir)
-    # yield from lcbench_tabular(datadir)
     yield from mfh()
     yield from jahs(datadir)
     yield from pd1(datadir)
