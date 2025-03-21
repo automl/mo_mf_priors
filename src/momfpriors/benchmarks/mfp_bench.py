@@ -158,14 +158,17 @@ def lcbench_surrogate(datadir: Path | None = None) -> Iterator[BenchmarkDescript
         name="py310-mfpbench-1.10-yahpo",
         requirements=(
             "mf-prior-bench==1.10.0",
-            # "yahpo-gym==1.0.2",
+            # "yahpo-gym==1.0.2",   # Use editable install
             "xgboost>=1.7"
         ),
         post_install=_download_data_cmd("yahpo", datadir=datadir),
     )
     for req in env.requirements:
         if not is_package_installed(req):
-            mfp_logger.error(f"Please install the required package: {req}", stacklevel=2)
+            mfp_logger.error(
+                f"Please install the required package for yahpo-lcbench: {req}",
+                stacklevel=2
+            )
             return
     with HiddenPrints():        # NOTE: To stop yahpo-lcbench from printing garbage
         for task_id in _lcbench_task_ids:
@@ -222,7 +225,7 @@ def mfh() -> Iterator[BenchmarkDescription]:
     )
     for req in env.requirements:
         if not is_package_installed(req):
-            mfp_logger.error(f"Please install the required package: {req}", stacklevel=2)
+            mfp_logger.error(f"Please install the required package for mfh: {req}", stacklevel=2)
             return
     for correlation in ("bad", "good", "moderate", "terrible"):
         for dims in (3, 6):
@@ -276,7 +279,7 @@ def jahs(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
     )
     for req in env.requirements:
         if not is_package_installed(req):
-            mfp_logger.error(f"Please install the required package: {req}", stacklevel=2)
+            mfp_logger.error(f"Please install the required package for jahs: {req}", stacklevel=2)
             return
     for task_id in task_ids:
         name = f"jahs-{task_id}"
@@ -334,7 +337,7 @@ def pd1(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
     )
     for req in env.requirements:
         if not is_package_installed(req):
-            mfp_logger.error(f"Please install the required package: {req}", stacklevel=2)
+            mfp_logger.error(f"Please install the required package for pd1: {req}", stacklevel=2)
             return
     yield BenchmarkDescription(
         name="pd1-cifar100-wide_resnet-2048",
