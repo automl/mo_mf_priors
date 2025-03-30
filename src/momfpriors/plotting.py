@@ -66,7 +66,182 @@ reference_points_dict = {
         "val_cross_entropy": 1,
         "time": 1000
     },
+    "yahpo-lcbench-3945": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-7593": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-34539": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-126025": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-126029": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-146212": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-167104": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-167149": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-167152": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-167161": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-167168": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-167181": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-167184": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-167185": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-167200": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-167201": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-168329": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-168331": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-168335": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-168868": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-168908": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-189354": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-189862": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-189865": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-189866": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-189873": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-189905": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-189908": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    },
+    "yahpo-lcbench-189909": {
+        "val_accuracy": 0,
+        "val_balanced_accuracy": 0,
+        "val_cross_entropy": 1,
+        "time": 10000
+    }
 }
+
 
 
 with (DEFAULT_ROOT_DIR / "configs" / "plotting_styles.yaml").open("r") as f:
