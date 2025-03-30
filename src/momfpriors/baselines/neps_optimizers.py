@@ -59,7 +59,7 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
                 pass
             case Mapping():
                 raise NotImplementedError("Many-fidelity not yet implemented for NepsOptimizer.")
-            case (fid_name, fidelity):
+            case (fid_name, _):
                 # query with max fidelity for MF optimizers
                 _fid_value = self.problem.benchmark.fidelities[fid_name].max
                 fidelity = (fid_name, _fid_value)
