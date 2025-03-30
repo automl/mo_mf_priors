@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from momfpriors.baselines.momfbo import MOMFBO_Optimizer
 from momfpriors.baselines.neps_optimizers import NepsHyperbandRW, NepsRW
 from momfpriors.baselines.nevergrad import yield_nevergrad_optimizers
 from momfpriors.baselines.random_search import RandomSearch, RandomSearchWithPriors
@@ -11,6 +12,7 @@ OPTIMIZERS = {
     NepsRW.name: NepsRW,
     NepsHyperbandRW.name: NepsHyperbandRW,
     SMAC_ParEGO.name: SMAC_ParEGO,
+    MOMFBO_Optimizer.name: MOMFBO_Optimizer,
 }
 
 for opt in yield_nevergrad_optimizers():
