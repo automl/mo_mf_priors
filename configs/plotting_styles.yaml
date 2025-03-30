@@ -20,3 +20,4 @@ colors:
   NepsRW: lightseagreen
   NepsHyperbandRW: darkgreen
   Nevergrad_EvolutionStrategy: orange
+  MOMFBO: purple
