@@ -40,31 +40,31 @@ reference_points_dict = {
         "val_accuracy": 0,
         "val_balanced_accuracy": 0,
         "val_cross_entropy": 1,
-        "time": 200000
+        "time": 200
     },
     "yahpo-lcbench-167190": {
         "val_accuracy": 0,
         "val_balanced_accuracy": 0,
         "val_cross_entropy": 1,
-        "time": 200000
+        "time": 200
     },
     "yahpo-lcbench-168330": {
         "val_accuracy": 0,
         "val_balanced_accuracy": 0,
         "val_cross_entropy": 1,
-        "time": 200000
+        "time": 20000
     },
     "yahpo-lcbench-168910": {
         "val_accuracy": 0,
         "val_balanced_accuracy": 0,
         "val_cross_entropy": 1,
-        "time": 200000
+        "time": 10000
     },
     "yahpo-lcbench-189906": {
         "val_accuracy": 0,
         "val_balanced_accuracy": 0,
         "val_cross_entropy": 1,
-        "time": 200000
+        "time": 1000
     },
 }
 
@@ -427,6 +427,7 @@ def agg_data(  # noqa: C901
         logger.info(f"Plotting for iteration: {iteration}")
 
         for benchmark in benchmarks_in_dir:
+            bench_dict= {}
             objectives = []
             for file in exp_dir.rglob("*.parquet"):
                 if benchmark not in file.name:
@@ -495,14 +496,18 @@ def agg_data(  # noqa: C901
                 if _seed not in means_dict:
                     means_dict[_seed] = {}
                 means_dict[_seed][benchmark] = rank_df
-            # Per benchmark ranking plots
+                if _seed not in bench_dict:
+                    bench_dict[_seed] = {}
+                bench_dict[_seed][benchmark] = rank_df
             plot_average_rank(
-                means_dict,
-                iteration,
-                exp_dir,
+                bench_dict,
+                budget=iteration,
+                exp_dir=exp_dir,
                 no_save=no_save,
                 benchmark=benchmark,
             )
+            bench_dict = {}
+            # Per benchmark ranking plots
     # Plotting average ranks over all benchmarks and seeds
     plot_average_rank(means_dict, budget, exp_dir, no_save=no_save)
 
@@ -532,9 +537,9 @@ def make_subplots(
         nrows, ncols = 2, 2
         while num_plots > nrows * ncols:
             ncols += max(1, (num_plots - nrows * ncols) // nrows)
-            if ncols > 4:   # noqa: PLR2004
+            if ncols > 5:   # noqa: PLR2004
                 nrows += 1
-                ncols = 4
+                ncols = 5
         if ncols <1 or nrows < 1:
             logger.error("Just one plot found. Exiting.")
             return
