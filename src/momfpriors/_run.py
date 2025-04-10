@@ -272,8 +272,6 @@ class Run:
         _prior_annots = ",".join(
             f"{obj}={prior[0]}" for obj, prior in self.priors.items()
         )
-        _fidelities = None
-        fidelities = self.problem.get_fidelities()
         if "fidelity" in _df.columns and isinstance(_df["fidelity"].iloc[0], tuple):
             _df["fidelity"] = _df["fidelity"].apply(lambda x: x[1])
 
@@ -281,40 +279,50 @@ class Run:
             obj: metric.minimize for obj, metric in self.problem.objectives.items()
         }
 
-        match fidelities:
-            case None:
-                pass
-            case str():
-                _fidelities = [fidelities] * len(_df)
-            case list():
-                _fidelities = fidelities * len(_df)
-            case _:
-                raise ValueError(f"Unsupported fidelities type: {type(fidelities)}")
-
-        _costs = None
-        costs = self.problem.get_costs()
-
-        match costs:
-            case None:
-                pass
-            case str():
-                _costs = [costs] * len(_df)
-            case list():
-                _costs = costs * len(_df)
-            case _:
-                raise ValueError(f"Unsupported costs type: {type(costs)}")
-
         _df = _df.assign(
             seed=self.seed,
+            budget_total=self.problem.budget.total,
             optimizer=self.optimizer.name,
             optimizer_hyperparameters=opt_hps,
             benchmark=self.benchmark.name,
             prior_annotations = _prior_annots,
             objectives=[self.problem.get_objectives()]*len(_df),
             minimize=[minimize]*len(_df),
-            fidelities=_fidelities,
-            costs=_costs,
         )
+
+        match self.problem.fidelities:
+            case None:
+                _df["problem.fidelity.count"] = 0
+            case (name, fid):
+                _df["problem.fidelity.count"] = 1
+                _df["problem.fidelity.1.name"] = name
+                _df["problem.fidelity.1.min"] = fid.min
+                _df["problem.fidelity.1.max"] = fid.max
+            case Mapping():
+                _df["problem.fidelity.count"] = len(self.problem.get_fidelities())
+                for i, (name, fid) in enumerate(self.problem.fidelities.items(), start=1):
+                    _df[f"problem.fidelity.{i}.name"] = name
+                    _df[f"problem.fidelities.{i}.min"] = fid.min
+                    _df[f"problem.fidelities.{i}.max"] = fid.max
+
+        match self.benchmark.fidelities:
+            case None:
+                _df["benchmark.fidelity.count"] = 0
+            case (name, fid):
+                _df["benchmark.fidelity.count"] = 1
+                _df["benchmark.fidelity.1.name"] = name
+                _df["benchmark.fidelity.1.min"] = fid.min
+                _df["benchmark.fidelity.1.max"] = fid.max
+            case Mapping():
+                list(self.benchmark.fidelities)
+                _df["benchmark.fidelity.count"] = len(self.benchmark.fidelities)
+                for i, (k, v) in enumerate(self.benchmark.fidelities.items(), start=1):
+                    _df[f"benchmark.fidelity.{i}.name"] = k
+                    _df[f"benchmark.fidelity.{i}.min"] = v.min
+                    _df[f"benchmark.fidelity.{i}.max"] = v.max
+            case _:
+                raise TypeError("Must be a tuple (name, fidelitiy) or a mapping")
+
         self.set_state(Run.State.COMPLETE, df=_df)
 
 
