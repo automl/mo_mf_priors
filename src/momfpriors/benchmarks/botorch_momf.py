@@ -5,7 +5,7 @@ import torch
 from botorch.test_functions.multi_objective_multi_fidelity import MOMFBraninCurrin, MOMFPark
 from ConfigSpace import ConfigurationSpace
 from hpoglue import FunctionalBenchmark, Measure, Query, Result
-from hpoglue.fidelity import ContinuousFidelity
+from hpoglue.fidelity import RangeFidelity
 
 
 # MOMF Branin Currin
@@ -19,7 +19,7 @@ def wrapped_MOMFBC(
     query: Query,
 ) -> Result:
     config = query.config.values
-    fidelity = query.fidelity[-1] if query.fidelity else 1.0
+    fidelity = float(query.fidelity[-1]/100) if query.fidelity else 1.0
     X = torch.Tensor(np.array([config["x0"], config["x1"], fidelity]))
     out = MOMFBraninCurrin()(X).tolist()
 
@@ -39,7 +39,7 @@ MOMFBC_Bench = FunctionalBenchmark(
         "value2": Measure.metric((-np.inf, np.inf), minimize=True)
     },
     fidelities={
-        "s": ContinuousFidelity.from_tuple((0, 1))
+        "s": RangeFidelity.from_tuple((1, 100, 1))
     },
     query=wrapped_MOMFBC
 )
@@ -57,7 +57,7 @@ def wrapped_MOMFPark(
     query: Query,
 ) -> Result:
     config = query.config.values
-    fidelity = query.fidelity[-1] if query.fidelity else 1.0
+    fidelity = float(query.fidelity[-1]/100) if query.fidelity else 1.0
     X = torch.Tensor(np.array([config[f"x{i}"] for i in range(4)] + [fidelity]))
     out = MOMFPark()(X).tolist()
 
@@ -77,7 +77,7 @@ MOMFPark_Bench = FunctionalBenchmark(
         "value2": Measure.metric((-np.inf, np.inf), minimize=True)
     },
     fidelities={
-        "s": ContinuousFidelity.from_tuple((0, 1))
+        "s": RangeFidelity.from_tuple((1, 100, 1))
     },
     query=wrapped_MOMFPark
 )
