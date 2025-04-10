@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import logging
-import traceback
 import warnings
 from collections.abc import Mapping
 from pathlib import Path
@@ -11,6 +10,7 @@ from typing import Any, Literal
 
 import numpy as np
 import yaml
+from hpoglue.utils import configpriors_to_dict
 
 from momfpriors._run import Run
 from momfpriors.constants import DEFAULT_PRIORS_DIR, DEFAULT_RESULTS_DIR, DEFAULT_ROOT_DIR
@@ -183,43 +183,82 @@ def write_yaml(
 
 
 def to_dict(
-        runs: list[Run],
-        exp_dir: Path,
-        seeds: int | list[int],
-        num_seeds: int,
-        budget: int,
-    ) -> dict[str, Any]:
+    runs: list[Run],
+    exp_dir: Path,
+    seeds: int | list[int],
+    num_seeds: int,
+    budget: int,
+) -> dict[str, Any]:
     """Convert the Experiment to a dictionary."""
     optimizers = []
     benchmarks = []
+    continuations = 0
+    bench_keys = {}
+    opt_keys = []
     for run in runs:
         run.write_yaml()
-        opt_keys = [opt["name"] for opt in optimizers if optimizers]
-        if not opt_keys or run.optimizer.name not in opt_keys:
+        continuations += run.problem.continuations
+        opt_name = run.name.split("benchmark")[0]
+        if opt_name not in opt_keys:
             optimizers.append(
-                {
-                    "name": run.optimizer.name,
-                    "hyperparameters": run.optimizer_hyperparameters or {},
-                }
+                (
+                    run.optimizer,
+                    run.optimizer_hyperparameters or {},
+                )
             )
-        bench_keys = [bench["name"] for bench in benchmarks if benchmarks]
-        if not bench_keys or run.benchmark.name not in bench_keys:
-            benchmarks.append(
-                {
-                    "name": run.benchmark.name,
-                    "objectives": run.problem.get_objectives(),
-                    "fidelities": run.problem.get_fidelities(),
-                }
+            opt_keys.append(opt_name)
+
+        _store_val = {
+            "objectives": run.problem.get_objectives(),
+            "fidelities": run.problem.get_fidelities(),
+            "costs": run.problem.get_costs(),
+            "priors": run.problem.priors,
+        }
+
+        bench = bench_keys.setdefault(run.benchmark.name, (run.benchmark, []))
+
+        if _store_val not in bench[1]:
+            for variant in bench[1]:
+                if variant["objectives"] == _store_val["objectives"]:
+                    for key in ["fidelities", "costs", "priors"]:
+                        variant[key] = variant[key] or _store_val[key]
+                    break
+            else:
+                bench[1].append(_store_val)
+
+    for _, v in bench_keys.items():
+        [benchmarks.append(
+            (
+                v[0],
+                var,
             )
+        ) for var in v[1]]
+    _optimizers = [{"name": opt[0].name, "hyperparameters": opt[1]} for opt in optimizers]
+    _benchmarks = []
+    for bench in benchmarks:
+        _priors = None
+        if bench[1]["priors"]:
+            _priors = configpriors_to_dict(bench[1]["priors"])
+            _priors = list(_priors)
+        _benchmarks.append(
+            {
+                "name": bench[0].name,
+                "objectives": bench[1]["objectives"],
+                "fidelities": bench[1]["fidelities"],
+                "costs": bench[1]["costs"],
+                "priors": _priors,
+            }
+        )
 
     return {
         "name": exp_dir.name,
         "output_dir": str(exp_dir),
-        "optimizers": optimizers,
-        "benchmarks": benchmarks,
+        "optimizers": _optimizers,
+        "benchmarks": _benchmarks,
         "seeds": seeds,
         "num_seeds": num_seeds,
         "budget": budget,
+        "continuations": continuations > 0,
     }
 
 
