@@ -61,7 +61,8 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
                 raise NotImplementedError("Many-fidelity not yet implemented for NepsOptimizer.")
             case (fid_name, _):
                 # query with max fidelity for MF optimizers
-                _fid_value = self.problem.benchmark.fidelities[fid_name].max
+                # _fid_value = self.problem.benchmark.fidelities[fid_name].max
+                _fid_value = _config[fid_name]
                 fidelity = (fid_name, _fid_value)
                 _config.pop(fid_name)
             case _:
@@ -79,6 +80,18 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
     @abstractmethod
     def tell(self, result: Result) -> None:
         """Tell the optimizer about the result of a trial."""
+
+
+def set_seed(seed: int) -> None:
+    """Set the seed for the optimizer."""
+    import random
+
+    import numpy as np
+    import torch
+
+    torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)  # noqa: NPY002
 
 class NepsRW(NepsOptimizer):
     """Random Weighted Scalarization of objectives using Bayesian Optimization in Neps."""
@@ -117,8 +130,7 @@ class NepsRW(NepsOptimizer):
             space = space
         )
         optimizer = AskAndTell(opt)
-        import torch
-        torch.manual_seed(seed)
+        set_seed(seed)
 
         super().__init__(
             problem=problem,
@@ -236,8 +248,7 @@ class NepsHyperbandRW(NepsOptimizer):
             space = space
         )
         optimizer = AskAndTell(opt)
-        import torch
-        torch.manual_seed(seed)
+        set_seed(seed)
 
         super().__init__(
             problem=problem,
@@ -280,4 +291,100 @@ class NepsHyperbandRW(NepsOptimizer):
         self.optimizer.tell(
             trial=result.query.optimizer_info,
             result=scalarized_objective
+        )
+
+
+class NepsMOASHA(NepsOptimizer):
+    """NepsMOASHA."""
+
+    name = "NepsMOASHA"
+
+    support = Problem.Support(
+        fidelities=("single",),
+        objectives=("many"),
+        cost_awareness=(None,),
+        tabular=False,
+    )
+
+    env = Env(
+        name="Neps-0.12.2",
+        python_version="3.10",
+        requirements=("neural-pipeline-search==0.12.2",)
+    )
+
+    mem_req_mb = 1024
+
+    def __init__(
+        self,
+        problem: Problem,
+        seed: int = 0,
+        working_directory: str | Path = DEFAULT_RESULTS_DIR,
+        mo_selector: Literal["nsga2", "epsnet"] = "epsnet",
+        **kwargs: Any,  # noqa: ARG002
+    ) -> None:
+        """Initialize the optimizer."""
+        space = convert_configspace(problem.config_space)
+
+        _fid = None
+        min_fidelity: int | float
+        max_fidelity: int | float
+        match problem.fidelities:
+            case None:
+                raise ValueError("NepsMOASHA requires a fidelity.")
+            case Mapping():
+                raise NotImplementedError("Many-fidelity not yet implemented for NepsMOASHA.")
+            case (fid_name, fidelity):
+                _fid = fidelity
+                min_fidelity = fidelity.min
+                max_fidelity = fidelity.max
+                match _fid.kind:
+                    case _ if _fid.kind is int:
+                        space.fidelities = {
+                            f"{fid_name}": neps.Integer(
+                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
+                            )
+                        }
+                    case _ if _fid.kind is float:
+                        space.fidelities = {
+                            f"{fid_name}": neps.Float(
+                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
+                            )
+                        }
+                    case _:
+                        raise TypeError(
+                            f"Invalid fidelity type: {type(_fid.kind).__name__}. "
+                            "Expected int or float."
+                        )
+            case _:
+                raise TypeError("Fidelity must be a tuple or a Mapping.")
+
+
+        opt = algorithms.PredefinedOptimizers["moasha"](
+            space = space,
+            mo_selector = mo_selector,
+        )
+        optimizer = AskAndTell(opt)
+        set_seed(seed)
+
+        super().__init__(
+            problem=problem,
+            space=space,
+            optimizer=optimizer,
+            seed=seed,
+            working_directory=working_directory,
+        )
+
+        self.objectives = self.problem.get_objectives()
+        self._rng = np.random.default_rng(seed=self.seed)
+
+
+    def tell(self, result: Result) -> None:
+        """Tell the optimizer about the result of a trial."""
+        costs = {
+            key: obj.as_minimize(result.values[key])
+            for key, obj in self.problem.objectives.items()
+        }
+        self.optimizer.tell(
+            trial=result.query.optimizer_info,
+            result=list(costs.values())
         )
