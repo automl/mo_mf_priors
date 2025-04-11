@@ -46,6 +46,16 @@ if TYPE_CHECKING:
 MC_SAMPLES = 128  # Number of Monte Carlo samples
 
 
+def set_seed(seed: int) -> None:
+    """Set the seed for the optimizer."""
+    import random
+
+    import numpy as np
+    import torch
+
+    torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)  # noqa: NPY002
 
 
 @dataclass
@@ -100,8 +110,6 @@ class MOMF_BO:
 
     mc_samples: int | None = field(default=MC_SAMPLES)
 
-    reference_point: np.array | torch.Tensor = field(default_factory=np.array)
-
     rng: torch.Generator = field(init=False)
 
     seed: int | None = field(default=0)
@@ -128,13 +136,6 @@ class MOMF_BO:
 
         self.exp_arg = torch.tensor(4,**self.tkwargs)
 
-        if isinstance(self.reference_point, np.ndarray):
-            self.reference_point = torch.tensor(self.reference_point,**self.tkwargs)
-        self.reference_point = torch.cat(
-            (self.reference_point, torch.tensor([self.max_fidelity], **self.tkwargs)),
-        )
-        self.reference_point = self.reference_point.to(**self.tkwargs)
-
         self.sampler = SobolQMCNormalSampler(  # Initialize Sampler
             sample_shape=torch.Size([self.mc_samples])
         )
@@ -147,7 +148,6 @@ class MOMF_BO:
         space: neps.SearchSpace,
         min_fidelity: float,
         max_fidelity: float,
-        reference_point: np.array,
         exp_arg_init: float = 4.0,
         mc_samples: int = MC_SAMPLES,
         initial_design_size: int | None = None,
@@ -161,15 +161,25 @@ class MOMF_BO:
             config_encoder=config_encoder,
             min_fidelity=min_fidelity,
             max_fidelity=max_fidelity,
-            reference_point=reference_point,
             exp_arg_init=exp_arg_init,
             mc_samples=mc_samples,
             initial_design_size=initial_design_size,
         )
 
 
-    @classmethod
-    def cost_func(cls, x, A):   # noqa: N803
+    @staticmethod
+    def _get_reference_point(loss_vals: np.ndarray) -> np.ndarray:
+        """Get the reference point from the completed Trials.
+        Source: https://github.com/optuna/optuna/blob/master/optuna/samplers/_tpe/sampler.py#L609 .
+        """
+        worst_point = np.max(loss_vals, axis=0)
+        reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
+        reference_point[reference_point == 0] = 1e-12
+        return reference_point
+
+
+    @staticmethod
+    def cost_func(x, A):   # noqa: N803
         """A simple exponential cost function."""
         return torch.exp(A * x)
 
@@ -226,6 +236,13 @@ class MOMF_BO:
 
     def initialize_gp_model(self, train_x, train_obj):
         """Initializes a SingleTaskGP with Matern 5/2 Kernel and returns the model and its MLL."""
+        ref_point = self._get_reference_point(
+                np.vstack(
+                    [trial.y.cpu().numpy() for trial in self.trials.values() if trial.complete],
+                    dtype=np.float64
+                )
+            )
+        ref_point = np.append(ref_point, self.max_fidelity)
         self.model = SingleTaskGP(train_x,
                             train_obj,
                             outcome_transform=Standardize(m=train_obj.shape[-1]))
@@ -233,12 +250,12 @@ class MOMF_BO:
 
         partitioning = FastNondominatedPartitioning(
             ref_point=torch.tensor(
-                self.reference_point,**self.tkwargs), Y=train_obj
+                ref_point,**self.tkwargs), Y=train_obj
         )
 
         self.acquisition_function = MOMF(
             model=self.model,
-            ref_point=self.reference_point,  # use known reference point
+            ref_point=ref_point,
             partitioning=partitioning,
             sampler=self.sampler,
             cost_call=partial(self.cost_callable, exp_arg=self.exp_arg),
@@ -461,9 +478,9 @@ class MOMFBO_Optimizer(Abstract_AskTellOptimizer):
             space=self.space,
             min_fidelity=min_fidelity,
             max_fidelity=max_fidelity,
-            reference_point=np.array([1.0, 1000.0]),
             initial_design_size=5,
         )
+        set_seed(self.seed)
 
         self.trial_counter = 0
 
@@ -475,8 +492,7 @@ class MOMFBO_Optimizer(Abstract_AskTellOptimizer):
         assert isinstance(self.problem.fidelities, tuple)
         fid_name, _ = self.problem.fidelities
 
-        # query with max fidelity for MF optimizers
-        _fid_value = self.problem.benchmark.fidelities[fid_name].max
+        _fid_value = trial.fidelity
         fidelity = (fid_name, _fid_value)
         self.trial_counter += 1
         return Query(
