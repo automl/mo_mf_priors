@@ -21,7 +21,7 @@ echo "Workingdir: $PWD";
 echo "Started at $(date)";
 
 # A few SLURM variables
-echo "Running job $SLURM_JOB_NAME using $SLURM_JOB_CPUS_PER_NODE cpus per node, $SLURM_JOB_GPUS_PER_NODE gpus per node with given JID $SLURM_JOB_ID on queue $SLURM_JOB_PARTITION";
+echo "Running job $SLURM_JOB_NAME using $SLURM_JOB_CPUS_PER_NODE cpus per node, $SLURM_GPUS gpus with given JID $SLURM_JOB_ID on queue $SLURM_JOB_PARTITION";
 
 # Activate your environment
 # You can also comment out this line, and activate your environment in the login node before submitting the job
