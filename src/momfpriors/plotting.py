@@ -19,6 +19,22 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
+SEED_COL = "seed"
+OPTIMIZER_COL = "optimizer"
+BENCHMARK_COL = "benchmark"
+HP_COL = "optimizer_hyperparameters"
+OBJECTIVES_COL = "objectives"
+OBJECTIVES_MINIMIZE_COL = "minimize"
+BUDGET_USED_COL = "budget_used_total"
+BUDGET_TOTAL_COL = "budget_total"
+FIDELITY_COL = "fidelity"
+BENCHMARK_COUNT_FIDS = "benchmark.fidelity.count"
+BENCH_FIDELITY_NAME = "benchmark.fidelity.1.name"
+BENCH_FIDELITY_MIN_COL = "benchmark.fidelity.1.min"
+BENCH_FIDELITY_MAX_COL = "benchmark.fidelity.1.max"
+CONTINUATIONS_COL = "continuations_cost"
+
+
 reference_points_dict = {
 
     # PD1
@@ -249,12 +265,13 @@ with (DEFAULT_ROOT_DIR / "configs" / "plotting_styles.yaml").open("r") as f:
 
 
 def pareto_front(
-    costs: pd.Series | list[Mapping[str, float]]
+    costs: pd.Series | list[Mapping[str, float]] | np.array,
 ) -> np.array:
     """Function to calculate the pareto front from a pandas Series
     of Results, i.e., Mapping[str, float] objects.
     """
-    costs: np.array = np.array([list(cost.values()) for cost in costs])
+    if not isinstance(costs, np.ndarray):
+        costs: np.array = np.array([list(cost.values()) for cost in costs])
     is_pareto = np.ones(costs.shape[0], dtype=bool)
     for i, c in enumerate(costs):
         if is_pareto[i]:
@@ -268,6 +285,8 @@ def _get_style(instance: str) -> tuple[str, str]:
     prior_annot = instance.split("priors=")[-1] if "priors=" in instance else None
     opt = instance.split(";")[0]
     color = style_dict["colors"].get(opt)
+    if prior_annot:
+        color = style_dict["colors"].get(f"{opt}-{prior_annot}")
     marker = style_dict["markers"].get(prior_annot, "s")
     return marker, color
 
@@ -275,6 +294,7 @@ def _get_style(instance: str) -> tuple[str, str]:
 def plot_average_rank(
     ranks: dict,
     budget: int,
+    budget_type: str,
     exp_dir: Path,
     *,
     no_save: bool = False,
@@ -313,7 +333,7 @@ def plot_average_rank(
             means,
             linestyle="-",
             label=instance,
-            marker=marker,
+            # marker=marker,
             color=color,
         )
         plt.fill_between(
@@ -333,10 +353,15 @@ def plot_average_rank(
             "across_all_Benchmarks_and_seeds",
             f"for_{benchmark}_and_all_seeds"
         )
-    plt.xlabel("Number of Iterations")
+    match budget_type:
+        case "TrialBudget":
+            plt.xlabel("Number of Iterations")
+            plt.xticks(np.arange(5, budget + 1, step=5))
+        case "FidelityBudget":
+            plt.xlabel("Fidelity Budget")
+            plt.xticks(np.arange(means.index[0], budget + 1, step=500))
     plt.ylabel("Average Rank (Lower is Better)")
     plt.title(plot_title)
-    plt.xticks(np.arange(5, budget + 1, step=5))
     plt.legend(
         loc="upper left",
         bbox_to_anchor=(0, -0.05),
@@ -352,20 +377,19 @@ def plot_average_rank(
     plt.show()
 
 
-
-
-
-def create_plots(  # noqa: C901, PLR0912, PLR0915
+def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     agg_data: Mapping[str, Mapping[str, Any]],
     exp_dir: Path,
     benchmark: str,
     objectives: list[str],
-    budget: int,
     seed_for_pareto: int,
+    cut_off_iteration: int | None = None,
+    fidelity: str | None = None,
     plot_opt: str | None = None,
     *,
     is_single_opt: bool = False,
     no_save: bool = False,
+    aggregate_pareto_fronts: bool = False,
 ) -> None:
     """Function to plot the dominated hypervolume over
     iterations and pareto fronts from a pandas Series
@@ -377,7 +401,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
     plt.figure(2, figsize=(10, 10))
 
     seed_means_dict = {}
-    means_dict = {}
+    rank_means_dict = {}
 
     reference_point = np.array([
         reference_points_dict[benchmark][obj]
@@ -385,32 +409,70 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
     ])
     if plot_opt:
         plt.figure(3, figsize=(10, 10))
+    if aggregate_pareto_fronts:
+        plt.figure(4, figsize=(10, 10))
     for instance, instance_data in agg_data.items():
+        agg_pareto_costs = []
+        agg_pareto_front = []
+        budget=0
         logger.info(f"Plots for instance: {instance}")
         seed_hv_dict = {}
         for seed, data in instance_data.items():
-            results = data["results"]
+            results: dict = data["results"]
+            _df = data["_df"]
             plot_title = data["plot_title"]
             keys = list(results[0].keys())
             acc_costs = []
             pareto = None
             hv_vals = []
+            minimize: dict[str, bool] = _df["minimize"][0]
+            budget_type = "TrialBudget" if fidelity is None else "FidelityBudget"
+            match budget_type:
+                case "FidelityBudget":
+                    assert FIDELITY_COL in _df.columns
+                    # hposuite FidelityBudget code
+                    if _df[FIDELITY_COL].iloc[0] is not None:
+                        budget_list = _df[FIDELITY_COL].values.astype(np.float64)
+                        budget_list = np.cumsum(budget_list)
+                        budget_type = "FidelityBudget"
+                    else:
+                        budget_list = np.cumsum(
+                            _df[BENCH_FIDELITY_MAX_COL].values.astype(np.float64)
+                        )
+                case "TrialBudget":
+                    budget_list = _df[BUDGET_USED_COL].values.astype(np.float64)
+                case _:
+                    raise NotImplementedError(f"Budget type {budget_type} not implemented")
+            budget = max(budget, budget_list[-1])
+
+            results = _df["results"].apply(
+                lambda x, objectives=objectives, minimize=minimize: {
+                    k: x[k] if minimize[k] else -x[k] for k in objectives
+                }
+            )
             for i, costs in enumerate(results, start=1):
                 # Compute hypervolume
-                # if "jahs" in benchmark:
-                #     costs["valid_acc"] = -costs["valid_acc"]
                 acc_costs.append(costs)
                 pareto = pareto_front(acc_costs)
                 pareto = np.array([list(ac.values()) for ac in acc_costs])[pareto]
                 pareto = pareto[pareto[:, 0].argsort()]
+                if aggregate_pareto_fronts:
+                    agg_pareto_costs.extend(pareto)
+                if budget_type == "FidelityBudget" and _df[FIDELITY_COL][0] is not None:
+                    fidelity_queried = _df[FIDELITY_COL].iloc[i-1]
+                    if float(fidelity_queried) != float(_df[BENCH_FIDELITY_MAX_COL].iloc[0]):
+                        if hv_vals:
+                            hv_vals.append(hv_vals[-1])
+                        else:
+                            hv_vals.append(np.nan)
+                        continue
                 hv = Hypervolume(ref_point=reference_point)
                 hypervolume = hv.do(pareto)
                 hv_vals.append(hypervolume)
 
-                if i == budget:
-                    break
-
-            budget_list = data["budget_used_total"].values.astype(np.float64)[:budget]
+                # if i == cut_off_iteration and budget_type == "TrialBudget":
+                #     break
+            # budget_list = _df[BUDGET_USED_COL].values.astype(np.float64)[:budget]
             seed_hv_dict[seed] = pd.Series(hv_vals, index=budget_list)
             marker, color = _get_style(instance)
 
@@ -419,6 +481,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
             if seed not in seed_means_dict:
                 seed_means_dict[seed] = {}
             seed_means_dict[seed][instance] = seed_incumbents
+
+            plot_dir = exp_dir / "plots" / budget_type / str(budget)
 
             match plot_opt:
                 case None:
@@ -440,6 +504,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
                     plt.ylabel(keys[1])
                     plt.grid(visible=True)
                     plt.title(f"Multiple seeds pareto plot for \n{instance}")
+                    plt.tight_layout()
                 case str():
                     if plot_opt in instance:
                         plt.figure(3)
@@ -471,8 +536,9 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
                     markersize=7,
                     linewidth=1,
                 )
+
         if plot_opt and (plot_opt == "all" or plot_opt in instance):
-            pareto_save_dir = exp_dir / "plots" / str(budget) /"pareto"
+            pareto_save_dir = plot_dir /"pareto"
             pareto_save_dir.mkdir(parents=True, exist_ok=True)
             plt.figure(3)
             if not no_save:
@@ -480,7 +546,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
             plt.clf()
 
         if len(agg_data) > 1:
-            plot_title = f"Optimizers on \n{benchmark} for {budget} iterations"
+            plot_title = f"Optimizers on \n{benchmark} for {budget} {budget_type}"
 
         plt.figure(1)
         plt.legend(
@@ -493,11 +559,15 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
         plt.ylabel(keys[1])
         plt.grid(visible=True)
         plt.title(f"Pareto front for\n{plot_title}")
-        pareto_save_dir = exp_dir / "plots" / str(budget) / "pareto"
+        pareto_save_dir = plot_dir / "pareto"
         pareto_save_dir.mkdir(parents=True, exist_ok=True)
 
         # Aggregating Hypervolumes - calculating means, cumulative max and std_error
         seed_hv_df = pd.DataFrame(seed_hv_dict)
+        seed_hv_df = seed_hv_df.ffill(axis=0)
+        # print(seed_hv_df.iloc[242])
+        # exit(0)
+        # print(seed_hv_df)
         means = pd.Series(seed_hv_df.mean(axis=1), name=f"means_{instance}")
         ste = pd.Series(seed_hv_df.sem(axis=1), name=f"std_{instance}")
         means = means.cummax()
@@ -506,11 +576,14 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
         means[budget] = means.iloc[-1]
         ste[budget] = ste.iloc[-1]
 
+        # print(means)
+        # print(ste)
+
         # Plotting Hypervolumes
         plt.figure(2)
         plt.plot(
             means,
-            marker=marker,
+            # marker=marker,
             color=color if not is_single_opt else None,
             linestyle="-",
             label=instance,
@@ -530,13 +603,38 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
             fontsize=12
         )
         plt.tight_layout()
-        plt.xlabel("Iteration")
-        plt.xticks(np.arange(1, budget + 1, 1))     # TrialBudget
+        plt.xlabel(budget_type)
+        if budget_type == "TrialBudget":
+            plt.xticks(np.arange(1, budget + 1, 1))
         plt.ylabel("Hypervolume")
         plt.grid(visible=True)
         plt.title(f"Hypervolume over iterations plot for\n{plot_title}")
-        hv_save_dir = exp_dir / "plots"/ str(budget) / "hypervolume"
+        hv_save_dir = plot_dir / "hypervolume"
         hv_save_dir.mkdir(parents=True, exist_ok=True)
+
+        # Aggregated Pareto front over all seeds
+
+        if aggregate_pareto_fronts:
+            agg_pareto_costs = np.array(agg_pareto_costs)
+            agg_pareto_front = pareto_front(agg_pareto_costs)
+            agg_pareto_front = np.array(agg_pareto_costs)[agg_pareto_front]
+            agg_pareto_front = agg_pareto_front[agg_pareto_front[:, 0].argsort()]
+            plt.figure(4)
+            plt.step(
+                agg_pareto_front[:, 0],
+                agg_pareto_front[:, 1],
+                where="post",
+                marker=marker,
+                color=color,
+                label=instance,
+                markersize=5,
+                linewidth=1,
+            )
+            plt.xlabel(keys[0])
+            plt.ylabel(keys[1])
+            plt.grid(visible=True)
+            plt.title(f"Aggregated Pareto front for \n{plot_title}")
+            plt.legend()
 
 
     plot_title = plot_title.replace("\n", "")
@@ -546,24 +644,34 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
 
         plt.figure(2)
         plt.savefig(hv_save_dir / f"Hypervolume_plot_{plot_title.replace(' ', '_')}.png")
+
+        plt.figure(4)
+        plt.savefig(pareto_save_dir / f"Aggregated_Pareto_plot_{plot_title.replace(' ', '_')}.png")
     plt.show()
 
     plt.close("all")
 
     # Ranking every optimizer instance per seed per benchmark
     for seed, instances in seed_means_dict.items():
-        _df = pd.DataFrame(instances)
-        _df = _df.rank(axis=1, method="average", ascending=False)
-        means_dict[seed] = _df
-    return means_dict
+        _rankdf = pd.DataFrame(instances)
+        _rankdf = _rankdf.ffill(axis=0)
+        _rankdf = _rankdf.dropna(axis=0)
+        # print(_rankdf)
+        _rankdf = _rankdf.rank(axis=1, method="average", ascending=False)
+        # print(_rankdf)
+        # exit(0)
+        rank_means_dict[seed] = _rankdf
+    # exit(0)
+    return rank_means_dict, budget_type, budget
 
 
-def agg_data(  # noqa: C901
+def agg_data(  # noqa: C901, PLR0912, PLR0915
     exp_dir: Path,
     plot_opt: str | None = None,
     plot_iters: list[int] | None = None,
     *,
     no_save: bool = False,
+    agg_pareto: bool = False,
 )-> None:
     """Function to aggregate data from all runs in the experiment directory."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
@@ -576,16 +684,14 @@ def agg_data(  # noqa: C901
     benchmarks_in_dir.sort()
     logger.info(f"Found benchmarks: {benchmarks_in_dir}")
 
-    budget: int = 0
-
-
     with (exp_dir / "exp.yaml").open("r") as f:
         exp_config = yaml.safe_load(f)
+
+    all_benches = [(bench.pop("name"), bench) for bench in exp_config["benchmarks"]]
 
     seed_for_pareto = exp_config.get("seeds")[0]
     iterations = exp_config.get("budget")
 
-    print(type(plot_iters))
 
     if plot_iters and isinstance(plot_iters, int):
         plot_iters = [plot_iters]
@@ -598,18 +704,75 @@ def agg_data(  # noqa: C901
         plot_iters.append(iterations)
 
 
-    for iteration in plot_iters:
-        logger.info(f"Plotting for iteration: {iteration}")
+    benchmarks_dict: Mapping[str, Mapping[tuple[str, str], list[pd.DataFrame]]] = {}
 
-        for benchmark in benchmarks_in_dir:
-            bench_dict= {}
-            objectives = []
-            for file in exp_dir.rglob("*.parquet"):
-                if benchmark not in file.name:
+    for benchmark in benchmarks_in_dir:
+        bench_dict= {}
+        objectives = []
+        for file in exp_dir.rglob("*.parquet"):
+            if benchmark not in file.name:
+                continue
+            _df = pd.read_parquet(file)
+
+
+            with (file.parent / "run_config.yaml").open("r") as f:
+                run_config = yaml.safe_load(f)
+            objectives = run_config["problem"]["objectives"]
+            fidelities = run_config["problem"]["fidelities"]
+            if fidelities and not isinstance(fidelities, str) and len(fidelities) > 1:
+                raise NotImplementedError("Plotting not yet implemented for many-fidelity runs.")
+
+            # Add default benchmark fidelity to a blackbox Optimizer to compare it
+            # alongside MF optimizers if the latter exist in the study
+            if fidelities is None:
+                fid = next(
+                    bench[1]["fidelities"]
+                    for bench in all_benches
+                    if bench[0] == benchmark
+                )
+                if fid == _df[BENCH_FIDELITY_NAME].iloc[0]:
+                # Study config is saved in such a way that if Blackbox Optimizers
+                # are used along with MF optimizers on MF benchmarks, the "fidelities"
+                # key in the benchmark instance in the study config is set to the fidelity
+                # being used by the MF optimizers. In that case, there is no benchmark
+                # instance with fidelity as None. In case of multiple fidelities being used
+                # for the same benchmark, separate benchmark instances are created
+                # for each fidelity.
+                # If only Blackbox Optimizers are used in the study, there is only one
+                # benchmark instance with fidelity as None.
+                # When a problem with a Blackbox Optimizer is used on a MF benchmark,
+                # each config is queried at the highest available 'first' fidelity in the
+                # benchmark. Hence, we only set `fidelities` to `fid` if the benchmark instance
+                # is the one with the default fidelity, else it would be incorrect.
+                    fidelities = fid
+
+            seed = int(run_config["seed"])
+            all_plots_dict = benchmarks_dict.setdefault(benchmark, {})
+            conf_tuple = (tuple(objectives), fidelities)
+            if conf_tuple not in all_plots_dict:
+                all_plots_dict[conf_tuple] = [_df]
+            else:
+                all_plots_dict[conf_tuple].append(_df)
+
+
+    for benchmark, conf_dict in benchmarks_dict.items():
+        for conf_tuple, _all_dfs in conf_dict.items():
+            df_agg = {}
+            objectives = conf_tuple[0]
+            fidelity = conf_tuple[1]
+            for _df in _all_dfs:
+                if _df.empty:
                     continue
-                _df = pd.read_parquet(file)
+                instance = _df[OPTIMIZER_COL].iloc[0]
+                if _df[HP_COL].iloc[0] is not None:
+                    instance = f"{instance}_{_df[HP_COL].iloc[0]}"
+                seed = _df[SEED_COL].iloc[0]
+                if instance not in df_agg:
+                    df_agg[instance] = {}
+                if int(seed) not in df_agg[instance]:
+                    df_agg[instance][int(seed)] = {"results": _df}
+                assert objectives is not None
 
-                objectives = _df["objectives"][0]
 
                 assert len(objectives) == 2, ( # noqa: PLR2004
                     "More than 2 objectives found in results file: "
@@ -633,38 +796,41 @@ def agg_data(  # noqa: C901
                 instance = (
                     _df["optimizer"][0] +
                     (
-                        ";" + _df["optimizer_hyperparameters"][0]
-                        if "default" not in _df["optimizer_hyperparameters"][0]
+                        ";" + _df[HP_COL][0]
+                        if "default" not in _df[HP_COL][0]
                         else ""
                     ) +
                     (f";priors={annotations}" if annotations else "")
                 )
-                seed = int(_df["seed"][0])
+                seed = int(_df[SEED_COL][0])
                 if instance not in agg_dict:
                     agg_dict[instance] = {}
                 agg_dict[instance][seed] = {
+                    "_df": _df,
                     "results": _results,
-                    "budget_used_total": _df["budget_used_total"],
                     "plot_title": (
                         f"{instance}"
                         f" on \n{benchmark}"
                     ),
                 }
-                budget = _df["budget_used_total"].iloc[-1]
             is_single_opt = False
             if len(agg_dict) == 1:
                 is_single_opt = True
             assert len(objectives) > 0, "Objectives not found in results file."
-            seed_dict_per_bench = create_plots(
+
+
+            seed_dict_per_bench, budget_type, total_budget = create_plots(
                 agg_data=agg_dict,
                 exp_dir=exp_dir,
                 benchmark=benchmark,
-                budget=iteration,
+                # cut_off_iteration=iteration,
+                fidelity=fidelity,
                 is_single_opt=is_single_opt,
                 plot_opt=plot_opt,
                 seed_for_pareto=seed_for_pareto,
                 objectives=objectives,
                 no_save=no_save,
+                aggregate_pareto_fronts=agg_pareto,
             )
             agg_dict = {}
             for _seed, rank_df in seed_dict_per_bench.items():
@@ -676,7 +842,8 @@ def agg_data(  # noqa: C901
                 bench_dict[_seed][benchmark] = rank_df
             plot_average_rank(
                 bench_dict,
-                budget=iteration,
+                budget=total_budget,
+                budget_type=budget_type,
                 exp_dir=exp_dir,
                 no_save=no_save,
                 benchmark=benchmark,
@@ -684,7 +851,13 @@ def agg_data(  # noqa: C901
             bench_dict = {}
             # Per benchmark ranking plots
     # Plotting average ranks over all benchmarks and seeds
-    plot_average_rank(means_dict, budget, exp_dir, no_save=no_save)
+    plot_average_rank(
+        means_dict,
+        budget=total_budget,
+        budget_type=budget_type,
+        exp_dir=exp_dir,
+        no_save=no_save
+    )
 
 
 def make_subplots(
@@ -776,6 +949,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Do not save the plots."
     )
+    parser.add_argument(
+        "--agg_pareto", "-agg",
+        action="store_true",
+        help="Plot aggregated pareto front over all seeds."
+    )
     args = parser.parse_args()
     exp_dir: Path = DEFAULT_RESULTS_DIR / args.exp_dir
 
@@ -796,7 +974,8 @@ if __name__ == "__main__":
                     exp_dir=exp_dir,
                     plot_opt=args.plot_opt,
                     plot_iters=args.plot_for_iterations,
-                    no_save=args.no_save
+                    no_save=args.no_save,
+                    agg_pareto=args.agg_pareto
                 )
                 make_subplots(exp_dir, args.plot_for_iterations, no_save=args.no_save)
             case _:
@@ -806,5 +985,6 @@ if __name__ == "__main__":
             exp_dir=exp_dir,
             plot_opt=args.plot_opt,
             plot_iters=args.plot_for_iterations,
-            no_save=args.no_save
+            no_save=args.no_save,
+            agg_pareto=args.agg_pareto
         )
