@@ -15,10 +15,21 @@ markers:
 
 colors:
   SMAC_ParEGO: blue
-  RandomSearch: olivedrab
-  RandomSearchWithPriors: red
+  RandomSearch: olive
   NepsRW: lightseagreen
   NepsHyperbandRW: darkgreen
   Nevergrad_EvolutionStrategy: orange
   MOMFBO: purple
   NepsMOASHA: darkviolet
+  RandomSearchWithPriors-good-good: red
+  RandomSearchWithPriors-good-bad: teal
+  RandomSearchWithPriors-good-medium: deepskyblue
+  RandomSearchWithPriors-good: tomato
+  RandomSearchWithPriors-bad-good: darkcyan
+  RandomSearchWithPriors-bad-bad: mediumslateblue
+  RandomSearchWithPriors-bad-medium: salmon
+  RandomSearchWithPriors-bad: green
+  RandomSearchWithPriors-medium-good: darkorange
+  RandomSearchWithPriors-medium-bad: mediumturquoise
+  RandomSearchWithPriors-medium-medium: orchid
+  RandomSearchWithPriors-medium: sienna
