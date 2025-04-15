@@ -204,7 +204,6 @@ class Run:
             **kwargs: Additional keyword arguments to pass to the optimizer.
                 Usage example: Scalarization weights for Neps Random Scalarization MO.
         """
-        print("=================================================================")
         if on_error not in ("raise", "continue"):
             raise ValueError(f"Invalid value for `on_error`: {on_error}")
 
