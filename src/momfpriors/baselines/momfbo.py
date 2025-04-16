@@ -6,7 +6,7 @@ GitHub: https://github.com/PULSE-ML/MOMFBO-Algorithm .
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
@@ -488,7 +488,6 @@ class MOMFBO_Optimizer(Abstract_AskTellOptimizer):
     def ask(self) -> Query:
         """Ask the optimizer for a new trial."""
         trial: Trial = self.optimizer.ask()
-        print(f"Trial {trial.trial_id} with config {trial.x} and fidelity {trial.fidelity}")
         assert isinstance(self.problem.fidelities, tuple)
         fid_name, _ = self.problem.fidelities
 

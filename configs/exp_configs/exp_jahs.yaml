@@ -5,6 +5,8 @@ optimizers:
   - name: NepsRW
   - name: NepsHyperbandRW
   - name: Nevergrad_EvolutionStrategy
+  - name: NepsMOASHA
+  - name: MOMFBO
 benchmarks:
   - name: jahs-CIFAR10
     objectives:
