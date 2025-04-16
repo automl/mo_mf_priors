@@ -4,7 +4,7 @@
 #SBATCH --partition mlhiwidlc_gpu-rtx2080    # short: -p mlhiwidlc_gpu-rtx2080
 
 # Define a name for your job
-#SBATCH --job-name MOMFBO            #  short: -J MOMFBO
+#SBATCH --job-name MOMFBO_yahpo            #  short: -J MOMFBO_yahpo
 
 # Define the files to write the outputs of the job to.
 # Please note the SLURM will not create this directory for you, and if it is missing, no logs will be saved.
@@ -30,7 +30,7 @@ source ~/repos/momfp_env/bin/activate
 # Running the job
 start=`date +%s`
 
-python3 -m momfpriors.run -y configs/exp_configs/exp_test.yaml -e "momfbo_test"
+python3 -m momfpriors.run -y configs/exp_configs/exp_yahpo_lcbench.yaml -e "yahpo_lcbench_25"
 
 end=`date +%s`
 runtime=$((end-start))
