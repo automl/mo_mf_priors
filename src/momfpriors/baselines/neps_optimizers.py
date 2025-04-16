@@ -385,3 +385,99 @@ class NepsMOASHA(NepsOptimizer):
             trial=result.query.optimizer_info,
             result=list(costs.values())
         )
+
+
+class NepsMOHyperband(NepsOptimizer):
+    """NepsMOHyperband."""
+
+    name = "NepsMOHyperband"
+
+    support = Problem.Support(
+        fidelities=("single",),
+        objectives=("many"),
+        cost_awareness=(None,),
+        tabular=False,
+    )
+
+    env = Env(
+        name="Neps-0.12.2",
+        python_version="3.10",
+        requirements=("neural-pipeline-search==0.12.2",)
+    )
+
+    mem_req_mb = 1024
+
+    def __init__(
+        self,
+        problem: Problem,
+        seed: int = 0,
+        working_directory: str | Path = DEFAULT_RESULTS_DIR,
+        mo_selector: Literal["nsga2", "epsnet"] = "epsnet",
+        **kwargs: Any,  # noqa: ARG002
+    ) -> None:
+        """Initialize the optimizer."""
+        space = convert_configspace(problem.config_space)
+
+        _fid = None
+        min_fidelity: int | float
+        max_fidelity: int | float
+        match problem.fidelities:
+            case None:
+                raise ValueError("NepsMOHyperband requires a fidelity.")
+            case Mapping():
+                raise NotImplementedError("Many-fidelity not yet implemented for NepsMOHyperband.")
+            case (fid_name, fidelity):
+                _fid = fidelity
+                min_fidelity = fidelity.min
+                max_fidelity = fidelity.max
+                match _fid.kind:
+                    case _ if _fid.kind is int:
+                        space.fidelities = {
+                            f"{fid_name}": neps.Integer(
+                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
+                            )
+                        }
+                    case _ if _fid.kind is float:
+                        space.fidelities = {
+                            f"{fid_name}": neps.Float(
+                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
+                            )
+                        }
+                    case _:
+                        raise TypeError(
+                            f"Invalid fidelity type: {type(_fid.kind).__name__}. "
+                            "Expected int or float."
+                        )
+            case _:
+                raise TypeError("Fidelity must be a tuple or a Mapping.")
+
+
+        opt = algorithms.PredefinedOptimizers["mo_hyperband"](
+            space = space,
+            mo_selector = mo_selector,
+        )
+        optimizer = AskAndTell(opt)
+        set_seed(seed)
+
+        super().__init__(
+            problem=problem,
+            space=space,
+            optimizer=optimizer,
+            seed=seed,
+            working_directory=working_directory,
+        )
+
+        self.objectives = self.problem.get_objectives()
+        self._rng = np.random.default_rng(seed=self.seed)
+
+
+    def tell(self, result: Result) -> None:
+        """Tell the optimizer about the result of a trial."""
+        costs = {
+            key: obj.as_minimize(result.values[key])
+            for key, obj in self.problem.objectives.items()
+        }
+        self.optimizer.tell(
+            trial=result.query.optimizer_info,
+            result=list(costs.values())
+        )
