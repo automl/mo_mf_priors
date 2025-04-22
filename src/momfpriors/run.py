@@ -108,6 +108,11 @@ def exp(  # noqa: C901, PLR0913
     run_names: list[str] = []
     for benchmark in benchmarks:
         for optimizer in optimizers:
+            if optimizer[0] == "MOMFBO" and not check_gpu_momfbo():
+                root_logger.warning(
+                    "GPU recommended for MOMFBO! Skipping this optimizer."
+                )
+                continue
             for seed in seeds:
                 try:
                     run = Run.generate_run(
@@ -264,6 +269,12 @@ def to_dict(
         "budget": budget,
         "continuations": continuations > 0,
     }
+
+
+def check_gpu_momfbo() -> bool:
+    """Check if the GPU is available for MOMFBO."""
+    import torch
+    return bool(torch.cuda.is_available())
 
 
 if __name__ == "__main__":
