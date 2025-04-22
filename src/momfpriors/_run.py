@@ -185,6 +185,7 @@ class Run:
         on_error: Literal["raise", "continue"] = "raise",
         core_verbose: bool = False,
         overwrite: Run.State | bool | Iterable[Run.State | str] = False,
+        use_continuations_as_budget: bool = False,
         **kwargs: Any,
     ) -> None:
         """Run the Run.
@@ -237,6 +238,7 @@ class Run:
                 seed=self.seed,
                 run_name=self.name,
                 on_error=on_error,
+                use_continuations_as_budget=use_continuations_as_budget,
             )
         except Exception as e:
             self.set_state(Run.State.CRASHED, err_tb=(e, traceback.format_exc()))

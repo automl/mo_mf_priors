@@ -43,6 +43,7 @@ def exp(  # noqa: C901, PLR0913
     *,
     core_verbose: bool = False,
     overwrite: bool = False,
+    use_continuations_as_budget: bool = False,
     **kwargs: Any
 ) -> None:
     """Run experiments with specified optimizers and benchmarks.
@@ -71,6 +72,8 @@ def exp(  # noqa: C901, PLR0913
         core_verbose: Whether to log verbose information during the core loop.
 
         overwrite: Whether to overwrite the results if they already exist.
+
+        use_continuations_as_budget: Whether to use continuations as the budget.
 
         **kwargs: Additional keyword arguments to pass to the Run.generate_run method.
 
@@ -146,6 +149,7 @@ def exp(  # noqa: C901, PLR0913
         run.run(
             core_verbose=core_verbose,
             overwrite=overwrite,
+            use_continuations_as_budget=use_continuations_as_budget,
         )
 
     root_logger.info(f"Completed {len(runs)} runs.")
@@ -351,6 +355,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Whether to overwrite the results if they already exist."
     )
+    parser.add_argument(
+        "--use_continuations_as_budget", "-c",
+        action="store_true",
+        help="Whether to use continuations as the budget."
+    )
 
     args = parser.parse_args()
 
@@ -439,5 +448,6 @@ if __name__ == "__main__":
             exp_name=args.exp_name,
             core_verbose=args.core_verbose,
             overwrite=args.overwrite,
+            use_continuations_as_budget=args.use_continuations_as_budget,
             **config.get("kwargs", {})
         )
