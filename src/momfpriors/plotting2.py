@@ -779,6 +779,8 @@ def agg_data(  # noqa: C901, PLR0912, PLR0915
     with (exp_dir / "exp.yaml").open("r") as f:
         exp_config = yaml.safe_load(f)
 
+    all_opts = [opt["name"] for opt in exp_config["optimizers"]]
+
     all_benches = [(bench.pop("name"), bench) for bench in exp_config["benchmarks"]]
 
     seed_for_pareto = exp_config.get("seeds")[0]
@@ -847,131 +849,244 @@ def agg_data(  # noqa: C901, PLR0912, PLR0915
                 all_plots_dict[conf_tuple].append(_df)
 
 
-    for benchmark, conf_dict in benchmarks_dict.items():
-        for conf_tuple, _all_dfs in conf_dict.items():
-            df_agg = {}
-            objectives = conf_tuple[0]
-            fidelity = conf_tuple[1]
-            for _df in _all_dfs:
-                if _df.empty:
-                    continue
-                instance = _df[OPTIMIZER_COL].iloc[0]
-                if _df[HP_COL].iloc[0] is not None:
-                    instance = f"{instance}_{_df[HP_COL].iloc[0]}"
-                seed = _df[SEED_COL].iloc[0]
-                if instance not in df_agg:
-                    df_agg[instance] = {}
-                if int(seed) not in df_agg[instance]:
-                    df_agg[instance][int(seed)] = {"results": _df}
-                assert objectives is not None
+    # for benchmark, conf_dict in benchmarks_dict.items():
+    #     for conf_tuple, _all_dfs in conf_dict.items():
+    #         df_agg = {}
+    #         objectives = conf_tuple[0]
+    #         fidelity = conf_tuple[1]
+    #         for _df in _all_dfs:
+    #             if _df.empty:
+    #                 continue
+    #             instance = _df[OPTIMIZER_COL].iloc[0]
+    #             if _df[HP_COL].iloc[0] is not None:
+    #                 instance = f"{instance}_{_df[HP_COL].iloc[0]}"
+    #             seed = _df[SEED_COL].iloc[0]
+    #             if instance not in df_agg:
+    #                 df_agg[instance] = {}
+    #             if int(seed) not in df_agg[instance]:
+    #                 df_agg[instance][int(seed)] = {"results": _df}
+    #             assert objectives is not None
 
 
-                assert len(objectives) == 2, ( # noqa: PLR2004
-                    "More than 2 objectives found in results file: "
-                    f"{objectives}. "
-                    "Can only plot pareto front for 2D cost space."
-                )
+    #             assert len(objectives) == 2, ( # noqa: PLR2004
+    #                 "More than 2 objectives found in results file: "
+    #                 f"{objectives}. "
+    #                 "Can only plot pareto front for 2D cost space."
+    #             )
 
-                minimize: dict[str, bool] = _df["minimize"][0]
+    #             minimize: dict[str, bool] = _df["minimize"][0]
 
-                _results = _df["results"].apply(
-                    lambda x, objectives=objectives, minimize=minimize: {
-                        k: x[k] if minimize[k] else -x[k] for k in objectives
-                    }
-                )
+    #             _results = _df["results"].apply(
+    #                 lambda x, objectives=objectives, minimize=minimize: {
+    #                     k: x[k] if minimize[k] else -x[k] for k in objectives
+    #                 }
+    #             )
 
-                if _df["prior_annotations"][0] is not None:
-                    annotations = "-".join(
-                        [a.split("=")[-1] for a in _df["prior_annotations"][0].split(",")]
-                    )
+    #             if _df["prior_annotations"][0] is not None:
+    #                 annotations = "-".join(
+    #                     [a.split("=")[-1] for a in _df["prior_annotations"][0].split(",")]
+    #                 )
 
-                instance = (
-                    _df["optimizer"][0] +
-                    (
-                        ";" + _df[HP_COL][0]
-                        if "default" not in _df[HP_COL][0]
-                        else ""
-                    ) +
-                    (f";priors={annotations}" if annotations else "")
-                )
-                seed = int(_df[SEED_COL][0])
-                if instance not in agg_dict:
-                    agg_dict[instance] = {}
-                agg_dict[instance][seed] = {
-                    "_df": _df,
-                    "results": _results,
-                    "plot_title": (
-                        f"{instance}"
-                        f" on \n{benchmark}"
-                    ),
-                }
-            is_single_opt = False
-            if len(agg_dict) == 1:
-                is_single_opt = True
-            assert len(objectives) > 0, "Objectives not found in results file."
+    #             instance = (
+    #                 _df["optimizer"][0] +
+    #                 (
+    #                     ";" + _df[HP_COL][0]
+    #                     if "default" not in _df[HP_COL][0]
+    #                     else ""
+    #                 ) +
+    #                 (f";priors={annotations}" if annotations else "")
+    #             )
+    #             seed = int(_df[SEED_COL][0])
+    #             if instance not in agg_dict:
+    #                 agg_dict[instance] = {}
+    #             agg_dict[instance][seed] = {
+    #                 "_df": _df,
+    #                 "results": _results,
+    #                 "plot_title": (
+    #                     f"{instance}"
+    #                     f" on \n{benchmark}"
+    #                 ),
+    #             }
+    #         is_single_opt = False
+    #         if len(agg_dict) == 1:
+    #             is_single_opt = True
+    #         assert len(objectives) > 0, "Objectives not found in results file."
 
 
-            seed_dict_per_bench, budget_type, total_budget = create_plots(
-                agg_data=agg_dict,
-                exp_dir=exp_dir,
-                benchmark=benchmark,
-                # cut_off_iteration=iteration,
-                fidelity=fidelity,
-                is_single_opt=is_single_opt,
-                plot_opt=plot_opt,
-                seed_for_pareto=seed_for_pareto,
-                objectives=objectives,
-                no_save=no_save,
-                aggregate_pareto_fronts=agg_pareto,
-            )
-            agg_dict = {}
-            for _seed, rank_df in seed_dict_per_bench.items():
-                if _seed not in means_dict:
-                    means_dict[_seed] = {}
-                means_dict[_seed][benchmark] = rank_df
-                if _seed not in bench_dict:
-                    bench_dict[_seed] = {}
-                bench_dict[_seed][benchmark] = rank_df
-            plot_average_rank(
-                bench_dict,
-                budget=total_budget,
-                budget_type=budget_type,
-                exp_dir=exp_dir,
-                no_save=no_save,
-                benchmark=benchmark,
-            )
-            bench_dict = {}
-            # Per benchmark ranking plots
-    # Plotting average ranks over all benchmarks and seeds
-    plot_average_rank(
-        means_dict,
-        budget=total_budget,
-        budget_type=budget_type,
-        exp_dir=exp_dir,
-        no_save=no_save
-    )
+    #         seed_dict_per_bench, budget_type, total_budget = create_plots(
+    #             agg_data=agg_dict,
+    #             exp_dir=exp_dir,
+    #             benchmark=benchmark,
+    #             # cut_off_iteration=iteration,
+    #             fidelity=fidelity,
+    #             is_single_opt=is_single_opt,
+    #             plot_opt=plot_opt,
+    #             seed_for_pareto=seed_for_pareto,
+    #             objectives=objectives,
+    #             no_save=no_save,
+    #             aggregate_pareto_fronts=agg_pareto,
+    #         )
+    #         agg_dict = {}
+    #         for _seed, rank_df in seed_dict_per_bench.items():
+    #             if _seed not in means_dict:
+    #                 means_dict[_seed] = {}
+    #             means_dict[_seed][benchmark] = rank_df
+    #             if _seed not in bench_dict:
+    #                 bench_dict[_seed] = {}
+    #             bench_dict[_seed][benchmark] = rank_df
+    #         plot_average_rank(
+    #             bench_dict,
+    #             budget=total_budget,
+    #             budget_type=budget_type,
+    #             exp_dir=exp_dir,
+    #             no_save=no_save,
+    #             benchmark=benchmark,
+    #         )
+    #         bench_dict = {}
+    #         # Per benchmark ranking plots
+    # # Plotting average ranks over all benchmarks and seeds
+    # plot_average_rank(
+    #     means_dict,
+    #     budget=total_budget,
+    #     budget_type=budget_type,
+    #     exp_dir=exp_dir,
+    #     no_save=no_save
+    # )
 
 
 def make_subplots(  # noqa: C901
     exp_dir: Path,
     iteration: int | None = None,
     budget_type: str | None = None,
+    benchmarks_dict: Mapping[str, Mapping[str, Any]] | None = None,
+    plot_opt: str | None = None,
+    plot_iters: list[int] | None = None,
     *,
     no_save: bool = False,
+    agg_then_plot: bool = False,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
-    if isinstance(iteration, list):
-        iteration = iteration[0]
-    if budget_type == "FidelityBudget":
-        pareto_plots_dir = exp_dir / "plots" / "FidelityBudget" / "pareto" / "seeds"
-        hv_plots_dir = exp_dir / "plots" / "FidelityBudget" / "hypervolume"
+    if not agg_then_plot:
+        if isinstance(iteration, list):
+            iteration = iteration[0]
+        if budget_type == "FidelityBudget":
+            pareto_plots_dir = exp_dir / "plots" / "FidelityBudget" / "pareto" / "seeds"
+            hv_plots_dir = exp_dir / "plots" / "FidelityBudget" / "hypervolume"
+        else:
+            pareto_plots_dir = exp_dir / "plots" / "TrialBudget" /str(iteration) / "pareto" / "seeds"
+            hv_plots_dir = exp_dir / "plots" / "TrialBudget" / str(iteration) / "hypervolume"
+        str_to_match = "*.png"
+        num_plots = len(list(pareto_plots_dir.rglob(str_to_match)))
+        print(f"Found {num_plots} plots.")
+        assert num_plots == len(list(hv_plots_dir.rglob(str_to_match))), "Number of plots do not match."
+
     else:
-        pareto_plots_dir = exp_dir / "plots" / "TrialBudget" /str(iteration) / "pareto" / "seeds"
-        hv_plots_dir = exp_dir / "plots" / "TrialBudget" / str(iteration) / "hypervolume"
-    str_to_match = "*.png"
-    num_plots = len(list(pareto_plots_dir.rglob(str_to_match)))
-    print(f"Found {num_plots} plots.")
-    assert num_plots == len(list(hv_plots_dir.rglob(str_to_match))), "Number of plots do not match."
+        agg_dict: Mapping[str, Mapping[str, Any]] = {}
+        means_dict = {}
+        bench_dict = {}
+        for benchmark, conf_dict in benchmarks_dict.items():
+            for conf_tuple, _all_dfs in conf_dict.items():
+                df_agg = {}
+                objectives = conf_tuple[0]
+                fidelity = conf_tuple[1]
+                for _df in _all_dfs:
+                    if _df.empty:
+                        continue
+                    instance = _df[OPTIMIZER_COL].iloc[0]
+                    if _df[HP_COL].iloc[0] is not None:
+                        instance = f"{instance}_{_df[HP_COL].iloc[0]}"
+                    seed = _df[SEED_COL].iloc[0]
+                    if instance not in df_agg:
+                        df_agg[instance] = {}
+                    if int(seed) not in df_agg[instance]:
+                        df_agg[instance][int(seed)] = {"results": _df}
+                    assert objectives is not None
+
+
+                    assert len(objectives) == 2, ( # noqa: PLR2004
+                        "More than 2 objectives found in results file: "
+                        f"{objectives}. "
+                        "Can only plot pareto front for 2D cost space."
+                    )
+
+                    minimize: dict[str, bool] = _df["minimize"][0]
+
+                    _results = _df["results"].apply(
+                        lambda x, objectives=objectives, minimize=minimize: {
+                            k: x[k] if minimize[k] else -x[k] for k in objectives
+                        }
+                    )
+
+                    if _df["prior_annotations"][0] is not None:
+                        annotations = "-".join(
+                            [a.split("=")[-1] for a in _df["prior_annotations"][0].split(",")]
+                        )
+
+                    instance = (
+                        _df["optimizer"][0] +
+                        (
+                            ";" + _df[HP_COL][0]
+                            if "default" not in _df[HP_COL][0]
+                            else ""
+                        ) +
+                        (f";priors={annotations}" if annotations else "")
+                    )
+                    seed = int(_df[SEED_COL][0])
+                    if instance not in agg_dict:
+                        agg_dict[instance] = {}
+                    agg_dict[instance][seed] = {
+                        "_df": _df,
+                        "results": _results,
+                        "plot_title": (
+                            f"{instance}"
+                            f" on \n{benchmark}"
+                        ),
+                    }
+                is_single_opt = False
+                if len(agg_dict) == 1:
+                    is_single_opt = True
+                assert len(objectives) > 0, "Objectives not found in results file."
+
+
+                seed_dict_per_bench, budget_type, total_budget = create_plots(
+                    agg_data=agg_dict,
+                    exp_dir=exp_dir,
+                    benchmark=benchmark,
+                    # cut_off_iteration=iteration,
+                    fidelity=fidelity,
+                    is_single_opt=is_single_opt,
+                    plot_opt=plot_opt,
+                    seed_for_pareto=seed_for_pareto,
+                    objectives=objectives,
+                    no_save=no_save,
+                    aggregate_pareto_fronts=agg_pareto,
+                )
+                agg_dict = {}
+                for _seed, rank_df in seed_dict_per_bench.items():
+                    if _seed not in means_dict:
+                        means_dict[_seed] = {}
+                    means_dict[_seed][benchmark] = rank_df
+                    if _seed not in bench_dict:
+                        bench_dict[_seed] = {}
+                    bench_dict[_seed][benchmark] = rank_df
+                plot_average_rank(
+                    bench_dict,
+                    budget=total_budget,
+                    budget_type=budget_type,
+                    exp_dir=exp_dir,
+                    no_save=no_save,
+                    benchmark=benchmark,
+                )
+                bench_dict = {}
+                # Per benchmark ranking plots
+        # Plotting average ranks over all benchmarks and seeds
+        plot_average_rank(
+            means_dict,
+            budget=total_budget,
+            budget_type=budget_type,
+            exp_dir=exp_dir,
+            no_save=no_save
+        )
 
 
     def plot_subplots(dir: Path, type: Literal["pareto", "hypervolume"]) -> None:
