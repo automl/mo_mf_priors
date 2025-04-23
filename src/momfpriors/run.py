@@ -113,6 +113,8 @@ def exp(  # noqa: C901, PLR0913
                     "GPU recommended for MOMFBO! Skipping this optimizer."
                 )
                 continue
+            if optimizer[0] != "MOMFBO" and check_gpu_momfbo():
+                continue
             for seed in seeds:
                 try:
                     run = Run.generate_run(
