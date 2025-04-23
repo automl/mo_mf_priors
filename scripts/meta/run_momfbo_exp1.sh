@@ -15,7 +15,7 @@
 
 # Since using GPU Partion, define the number of gpus required per node
 #SBATCH --gpus=4
-#SBATCH --cpus-per-gpu=5
+#SBATCH --cpus-per-gpu=6
 
 echo "Workingdir: $PWD";
 echo "Started at $(date)";

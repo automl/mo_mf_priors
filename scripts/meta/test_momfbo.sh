@@ -14,7 +14,7 @@
 #SBATCH --error logs/%x-%A_meta-momfbo.err    # STDERR  short: -e logs/%x-%A_meta-momfbo.out
 
 # Since using GPU Partion, define the number of gpus required per node
-#SBATCH --gpus=5
+#SBATCH --gpus=4
 #SBATCH --cpus-per-gpu=6
 
 echo "Workingdir: $PWD";
