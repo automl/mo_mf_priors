@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
-def exp(  # noqa: C901, PLR0913
+def exp(  # noqa: C901, PLR0912, PLR0913
     optimizers: (
         tuple[str, Mapping[str, Any]] |
         list[tuple[str, Mapping[str, Any]]]
@@ -112,8 +112,6 @@ def exp(  # noqa: C901, PLR0913
                 root_logger.warning(
                     "GPU recommended for MOMFBO! Skipping this optimizer."
                 )
-                continue
-            if optimizer[0] != "MOMFBO" and check_gpu_momfbo():
                 continue
             for seed in seeds:
                 try:
