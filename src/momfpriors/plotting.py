@@ -91,8 +91,6 @@ def plot_average_rank(
     ax: plt.Axes,
     ranks: dict,
     budget: int,
-    *,
-    benchmark: str | None = None,
 ) -> None:
     """Plots the average rank of optimizers over iterations with standard error."""
     def _mean(_dfs: Iterable[pd.DataFrame]) -> pd.DataFrame:
@@ -137,14 +135,6 @@ def plot_average_rank(
             color=color,
             edgecolor=color,
         )
-
-    # Labels
-    ax.set_xlabel("Full Evaluations")
-    ax.set_xticks(XTICKS[(1, budget)])
-    ax.set_ylabel("Relative Rank")
-    if benchmark:
-        ax.set_title(benchmark)
-    ax.grid(linestyle="--", alpha=0.6)
 
 
 def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
@@ -630,21 +620,21 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     fig_hv, axs_hv = plt.subplots(
         nrows = nrows,
         ncols = ncols,
-        figsize=(20, 10),
+        figsize=(20, 20),
     )
 
     # Pareto plot
     fig_pareto, axs_pareto = plt.subplots(
         nrows = nrows,
         ncols = ncols,
-        figsize=(20, 10),
+        figsize=(20, 20),
     )
 
     # Relative Ranking per benchmark plot
     fig_rank, axs_rank = plt.subplots(
         nrows = nrows,
         ncols = ncols,
-        figsize=(20, 10),
+        figsize=(20, 20),
     )
 
     # Overall Relative Ranking plot
@@ -688,6 +678,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
             axs_hv[i].set_ylabel("Hypervolume")
             axs_hv[i].grid(visible=True)
             axs_hv[i].set_title(benchmark)
+            axs_hv[i].set_xlim(1, total_budget)
 
 
             axs_pareto[i].set_xlabel(conf_tuple[0][0])
@@ -708,8 +699,14 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
                 ax=axs_rank[i],
                 ranks=bench_dict,
                 budget=total_budget,
-                benchmark=benchmark,
             )
+            axs_rank[i].set_xlabel("Full Evaluations")
+            axs_rank[i].set_xticks(XTICKS[(1, total_budget)])
+            axs_rank[i].set_ylabel("Relative Rank")
+            axs_rank[i].set_title(benchmark)
+            axs_rank[i].grid(visible=True)
+            axs_rank[i].set_xlim(1, total_budget)
+
             bench_dict = {}
 
     # Plotting average ranks over all benchmarks and seeds
@@ -718,13 +715,18 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
         ranks=means_dict,
         budget=total_budget,
     )
+    axs_ov_rank[0].set_xlabel("Full Evaluations")
+    axs_ov_rank[0].set_xticks(XTICKS[(1, total_budget)])
+    axs_ov_rank[0].set_ylabel("Relative Rank")
+    axs_ov_rank[0].grid(visible=True)
+    axs_ov_rank[0].set_xlim(1, total_budget)
 
     hv_handles, hv_labels = axs_hv[0].get_legend_handles_labels()
     pareto_handles, pareto_labels = axs_pareto[0].get_legend_handles_labels()
     rank_handles, rank_labels = axs_rank[0].get_legend_handles_labels()
     ov_rank_handles, ov_rank_labels = axs_ov_rank[0].get_legend_handles_labels()
     num_opts = len(hv_labels)
-    bbox_to_anchor = (0, -0.05)
+    bbox_to_anchor = (0.5, -0.1)
 
     # Remove empty subplots for hypervolume plot
     for j in range(i + 1, len(axs_hv)):
@@ -735,13 +737,13 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
         hv_handles,
         hv_labels,
         fontsize=15,
-        loc="upper left",
+        loc="lower center",
         bbox_to_anchor=bbox_to_anchor,
         ncol=num_opts/2,
         frameon=True,
         markerscale=2,
     )
-    fig_hv.tight_layout(pad=2.5, h_pad=1.5)
+    fig_hv.tight_layout(pad=0, h_pad=0.5)
 
     # Remove empty subplots for pareto plot
     for j in range(i + 1, len(axs_pareto)):
@@ -752,13 +754,13 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
         pareto_handles,
         pareto_labels,
         fontsize=15,
-        loc="upper left",
+        loc="lower center",
         bbox_to_anchor=bbox_to_anchor,
         ncol=num_opts/2,
         frameon=True,
         markerscale=2,
     )
-    fig_pareto.tight_layout(pad=2.5, h_pad=1.5)
+    fig_pareto.tight_layout(pad=0, h_pad=0.5)
 
     # Remove empty subplots for rank plot
     for j in range(i + 1, len(axs_rank)):
@@ -769,34 +771,34 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
         rank_handles,
         rank_labels,
         fontsize=15,
-        loc="upper left",
+        loc="lower center",
         bbox_to_anchor=bbox_to_anchor,
         ncol=num_opts/2,
         frameon=True,
         markerscale=2,
     )
-    fig_rank.tight_layout(pad=2.5, h_pad=1.5)
+    fig_rank.tight_layout(pad=0, h_pad=0.5)
 
     # Legend for overall rank plot
     fig_ov_rank.legend(
         ov_rank_handles,
         ov_rank_labels,
-        fontsize=15,
-        loc="upper left",
-        bbox_to_anchor=bbox_to_anchor,
-        ncol=num_opts/2,
+        fontsize=10,
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.2),
+        ncol=2,
         frameon=True,
         markerscale=2,
     )
-    fig_ov_rank.tight_layout(pad=2.5, h_pad=1.5)
+    fig_ov_rank.tight_layout(pad=0, h_pad=0.5)
 
     save_dir = exp_dir/ "plots" / "subplots"
     save_dir.mkdir(parents=True, exist_ok=True)
     if not no_save:
-        fig_hv.savefig(save_dir / "hypervolume_subplots.png", dpi=300)
-        fig_pareto.savefig(save_dir / "pareto_subplots.png", dpi=300)
-        fig_rank.savefig(save_dir / "rank_subplots.png", dpi=300)
-        fig_ov_rank.savefig(save_dir / "rank_overall_subplots.png", dpi=300)
+        fig_hv.savefig(save_dir / "hypervolume_subplots.png", dpi=300, bbox_inches="tight")
+        fig_pareto.savefig(save_dir / "pareto_subplots.png", dpi=300, bbox_inches="tight")
+        fig_rank.savefig(save_dir / "rank_subplots.png", dpi=300, bbox_inches="tight")
+        fig_ov_rank.savefig(save_dir / "rank_overall_subplots.png", dpi=300, bbox_inches="tight")
 
 
 if __name__ == "__main__":
