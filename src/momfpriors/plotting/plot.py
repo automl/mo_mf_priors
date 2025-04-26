@@ -4,9 +4,8 @@ import argparse
 import logging
 from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
-import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -16,7 +15,14 @@ from pymoo.indicators.hv import Hypervolume
 
 from momfpriors.baselines import OPTIMIZERS
 from momfpriors.constants import DEFAULT_RESULTS_DIR, DEFAULT_ROOT_DIR
-from momfpriors.plotting_styles import COLORS, MARKERS, RC_PARAMS, XTICKS, reference_points_dict
+from momfpriors.plotting.plot_styles import (
+    COLORS,
+    MARKERS,
+    RC_PARAMS,
+    XTICKS,
+    other_fig_params,
+)
+from momfpriors.plotting.plot_utils import edit_legend_labels, reference_points_dict
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -603,6 +609,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     save_individual: bool = False,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
+    fig_size = other_fig_params["fig_size"]
     benchmarks_dict, seed_for_pareto = agg_data(exp_dir)
     num_plots = len(benchmarks_dict)
     import math
@@ -620,21 +627,21 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     fig_hv, axs_hv = plt.subplots(
         nrows = nrows,
         ncols = ncols,
-        figsize=(20, 20),
+        figsize=fig_size,
     )
 
     # Pareto plot
     fig_pareto, axs_pareto = plt.subplots(
         nrows = nrows,
         ncols = ncols,
-        figsize=(20, 20),
+        figsize=fig_size,
     )
 
     # Relative Ranking per benchmark plot
     fig_rank, axs_rank = plt.subplots(
         nrows = nrows,
         ncols = ncols,
-        figsize=(20, 20),
+        figsize=fig_size,
     )
 
     # Overall Relative Ranking plot
@@ -725,72 +732,93 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     pareto_handles, pareto_labels = axs_pareto[0].get_legend_handles_labels()
     rank_handles, rank_labels = axs_rank[0].get_legend_handles_labels()
     ov_rank_handles, ov_rank_labels = axs_ov_rank[0].get_legend_handles_labels()
+
+    hv_labels = edit_legend_labels(hv_labels)
+    pareto_labels = edit_legend_labels(pareto_labels)
+    rank_labels = edit_legend_labels(rank_labels)
+    ov_rank_labels = edit_legend_labels(ov_rank_labels)
+
     num_opts = len(hv_labels)
-    bbox_to_anchor = (0.5, -0.1)
+
+    bbox_to_anchor = other_fig_params["bbox_to_anchor"]
+    tight_layout_pads = other_fig_params["tight_layout_pads"]
+    legend_fontsize = other_fig_params["legend_fontsize"]
 
     # Remove empty subplots for hypervolume plot
     for j in range(i + 1, len(axs_hv)):
         fig_hv.delaxes(axs_hv[j])
 
     # Legend for hypervolume plot
-    fig_hv.legend(
+    hv_leg = fig_hv.legend(
         hv_handles,
         hv_labels,
-        fontsize=15,
+        fontsize=legend_fontsize,
         loc="lower center",
         bbox_to_anchor=bbox_to_anchor,
         ncol=num_opts/2,
         frameon=True,
         markerscale=2,
     )
-    fig_hv.tight_layout(pad=0, h_pad=0.5)
+    for item in hv_leg.legend_handles:
+        item.set_linewidth(2)
+
+    fig_hv.tight_layout(**tight_layout_pads)
 
     # Remove empty subplots for pareto plot
     for j in range(i + 1, len(axs_pareto)):
         fig_pareto.delaxes(axs_pareto[j])
 
     # Legend for pareto plot
-    fig_pareto.legend(
+    pareto_leg = fig_pareto.legend(
         pareto_handles,
         pareto_labels,
-        fontsize=15,
+        fontsize=legend_fontsize,
         loc="lower center",
         bbox_to_anchor=bbox_to_anchor,
         ncol=num_opts/2,
         frameon=True,
         markerscale=2,
     )
-    fig_pareto.tight_layout(pad=0, h_pad=0.5)
+    for item in pareto_leg.legend_handles:
+        item.set_linewidth(2)
+
+    fig_pareto.tight_layout(**tight_layout_pads)
 
     # Remove empty subplots for rank plot
     for j in range(i + 1, len(axs_rank)):
         fig_rank.delaxes(axs_rank[j])
 
     # Legend for rank plot
-    fig_rank.legend(
+    rank_leg = fig_rank.legend(
         rank_handles,
         rank_labels,
-        fontsize=15,
+        fontsize=legend_fontsize,
         loc="lower center",
         bbox_to_anchor=bbox_to_anchor,
         ncol=num_opts/2,
         frameon=True,
         markerscale=2,
     )
-    fig_rank.tight_layout(pad=0, h_pad=0.5)
+    for item in rank_leg.legend_handles:
+        item.set_linewidth(2)
+
+    fig_rank.tight_layout(**tight_layout_pads)
 
     # Legend for overall rank plot
-    fig_ov_rank.legend(
+    ov_rank_leg = fig_ov_rank.legend(
         ov_rank_handles,
         ov_rank_labels,
         fontsize=10,
         loc="lower center",
-        bbox_to_anchor=(0.5, -0.2),
+        bbox_to_anchor=(0.5, -0.15),
         ncol=2,
         frameon=True,
         markerscale=2,
     )
-    fig_ov_rank.tight_layout(pad=0, h_pad=0.5)
+    for item in ov_rank_leg.legend_handles:
+        item.set_linewidth(2)
+
+    fig_ov_rank.tight_layout(**tight_layout_pads)
 
     save_dir = exp_dir/ "plots" / "subplots"
     save_dir.mkdir(parents=True, exist_ok=True)
