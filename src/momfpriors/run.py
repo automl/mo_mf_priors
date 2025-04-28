@@ -459,6 +459,6 @@ if __name__ == "__main__":
             exp_name=args.exp_name,
             core_verbose=args.core_verbose,
             overwrite=args.overwrite,
-            use_continuations_as_budget=args.use_continuations_as_budget,
+            use_continuations_as_budget=True,
             **config.get("kwargs", {})
         )
