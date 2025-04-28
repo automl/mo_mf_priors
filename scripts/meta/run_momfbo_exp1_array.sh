@@ -67,7 +67,7 @@ echo "Generated config:"
 cat "$yaml_file"
 
 # === Now run your script ===
-python3 -m momfpriors.run -y "$yaml_file" -e "all_25"
+python3 -m momfpriors.run -y "$yaml_file" -e "momfbo_all_25"
 
 end=$(date +%s)
 runtime=$((end-start))
