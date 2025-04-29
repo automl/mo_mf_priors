@@ -14,15 +14,18 @@ import yaml
 from pymoo.indicators.hv import Hypervolume
 
 from momfpriors.baselines import OPTIMIZERS
-from momfpriors.constants import DEFAULT_RESULTS_DIR, DEFAULT_ROOT_DIR
+from momfpriors.constants import DEFAULT_RESULTS_DIR
 from momfpriors.plotting.plot_styles import (
-    COLORS,
-    MARKERS,
     RC_PARAMS,
     XTICKS,
     other_fig_params,
 )
-from momfpriors.plotting.plot_utils import edit_legend_labels, reference_points_dict
+from momfpriors.plotting.plot_utils import (
+    edit_legend_labels,
+    get_style,
+    pareto_front,
+    reference_points_dict,
+)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -44,53 +47,7 @@ BENCH_FIDELITY_NAME = "benchmark.fidelity.1.name"
 BENCH_FIDELITY_MIN_COL = "benchmark.fidelity.1.min"
 BENCH_FIDELITY_MAX_COL = "benchmark.fidelity.1.max"
 CONTINUATIONS_COL = "continuations_cost"
-
-
-def dynamic_reference_point(
-    loss_vals: pd.Series | list[Mapping[str, float]]
-) -> np.array:
-    """Function to calculate the pareto front from a pandas Series
-    of Results, i.e., Mapping[str, float] objects.
-    """
-    if isinstance(loss_vals, pd.Series):
-        loss_vals = loss_vals.to_numpy()
-    loss_vals = np.array(
-        [
-            list(cost.values())
-            for cost in loss_vals
-        ]
-    )
-    worst_point = np.max(loss_vals, axis=0)
-    reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
-    reference_point[reference_point == 0] = 1e-12
-    return reference_point
-
-
-def pareto_front(
-    costs: pd.Series | list[Mapping[str, float]] | np.array,
-) -> np.array:
-    """Function to calculate the pareto front from a pandas Series
-    of Results, i.e., Mapping[str, float] objects.
-    """
-    if not isinstance(costs, np.ndarray):
-        costs: np.array = np.array([list(cost.values()) for cost in costs])
-    is_pareto = np.ones(costs.shape[0], dtype=bool)
-    for i, c in enumerate(costs):
-        if is_pareto[i]:
-            is_pareto[is_pareto] = np.any(costs[is_pareto] < c, axis=1)
-            is_pareto[i] = True
-    return is_pareto
-
-
-def _get_style(instance: str) -> tuple[str, str, str, str | None]:
-    """Function to get the plotting style for a given instance."""
-    prior_annot = instance.split("priors=")[-1] if "priors=" in instance else None
-    opt = instance.split(";")[0]
-    color = COLORS.get(opt)
-    if prior_annot:
-        color = COLORS.get(f"{opt}-{prior_annot}")
-    marker = MARKERS.get(prior_annot, "s")
-    return marker, color, opt, prior_annot
+CONTINUATIONS_BUDGET_USED = "continuations_budget_used_total"
 
 
 def plot_average_rank(
@@ -126,7 +83,7 @@ def plot_average_rank(
         means = mean_ranks[instance]
         sems = sem_ranks[instance]
 
-        marker, color, _, _ = _get_style(instance)
+        marker, color, _, _ = get_style(instance)
         ax.plot(
             means,
             linestyle="-",
@@ -151,6 +108,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     benchmark: str,
     objectives: list[str],
     seed_for_pareto: int,
+    budget: int,
     cut_off_iteration: int | None = None,
     fidelity: str | None = None,
     plot_opt: str | None = None,
@@ -158,7 +116,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     is_single_opt: bool = False,
     no_save: bool = False,
     save_individual: bool = False,
-) -> tuple[dict[str, pd.DataFrame], int]:
+) -> dict[str, pd.DataFrame]:
     """Function to plot the dominated hypervolume over
     iterations and pareto fronts from a pandas Series
     of Results, i.e., Mapping[str, float] objects.
@@ -168,7 +126,6 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
 
     seed_means_dict = {}
     rank_means_dict = {}
-    budget = 0
 
     reference_point = np.array([
         reference_points_dict[benchmark][obj]
@@ -178,9 +135,11 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     if plot_opt:
         plt.figure(6, figsize=(10, 10))
     for instance, instance_data in agg_data.items():
+        # if "MOMFBO" in instance:
+        #     continue
 
         # Get the marker, color, optimizer name and prior annotations for the optimizer instance
-        marker, color, opt, prior_annot = _get_style(instance)
+        marker, color, opt, prior_annot = get_style(instance)
 
         assert opt in OPTIMIZERS
 
@@ -230,13 +189,26 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 agg_pareto_costs.extend(pareto)
                 if budget_type == "FidelityBudget" and _df[FIDELITY_COL][0] is not None:
                     fidelity_queried = _df[FIDELITY_COL].iloc[i-1]
-                    if float(fidelity_queried) != float(_df[BENCH_FIDELITY_MAX_COL].iloc[0]):
+                    bench_max_fid = _df[BENCH_FIDELITY_MAX_COL].iloc[0]
+                    continuations_budget_used = _df[CONTINUATIONS_BUDGET_USED].iloc[i-1]
+                    budget_used = _df[BUDGET_USED_COL].iloc[i-1]
+                    if float(fidelity_queried) != float(bench_max_fid):
                         # if hv_vals:
                         #     hv_vals.append(hv_vals[-1])
                         # else:
                         #     hv_vals.append(np.nan)
-                        continue
-                num_full_evals += 1
+                        # continue
+                        if int(budget_used) > int(num_full_evals):
+                            # print("NOT MAX")
+                            # print(budget_used, num_full_evals)
+                            num_full_evals += 1
+                        else:
+                            continue
+                    else:
+                        # print(_df[BUDGET_USED_COL].iloc[i-1], num_full_evals)
+                        num_full_evals += 1
+                else:
+                    num_full_evals += 1
                 hv = Hypervolume(ref_point=reference_point)
                 hypervolume = hv.do(pareto)
                 hv_vals.append(hypervolume)
@@ -244,13 +216,13 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 # if i == cut_off_iteration and budget_type == "TrialBudget":
                 #     break
             budget_list = np.arange(1, num_full_evals + 1, 1)
-            budget = max(budget_list[-1], budget)
             seed_hv_dict[seed] = pd.Series(hv_vals, index=budget_list)
 
             if continuations:
                 seed_cont_dict[seed] = pd.Series(hv_vals, index=budget_list)
                 seed_incumbents = seed_cont_dict[seed].cummax()
                 instance_name = f"{instance}_w_continuations"
+                # breakpoint()
             else:
                 seed_incumbents = seed_hv_dict[seed].cummax()
                 instance_name = instance
@@ -351,12 +323,12 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
             seed_hv_df = pd.DataFrame(seed_hv_dict)
             seed_hv_df = seed_hv_df.ffill(axis=0)
             means = pd.Series(seed_hv_df.mean(axis=1), name=f"means_{instance}")
-            ste = pd.Series(seed_hv_df.sem(axis=1), name=f"ste_{instance}")
+            sem = pd.Series(seed_hv_df.sem(axis=1), name=f"ste_{instance}")
             means = means.cummax()
             means = means.drop_duplicates()
-            ste = ste.loc[means.index]
+            sem = sem.loc[means.index]
             means[budget] = means.iloc[-1]
-            ste[budget] = ste.iloc[-1]
+            sem[budget] = sem.iloc[-1]
 
             # Plotting Hypervolumes
 
@@ -367,8 +339,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
             )
             ax_hv.fill_between(
                 means.index,
-                means - ste,
-                means + ste,
+                means - sem,
+                means + sem,
                 alpha=0.1,
                 color=color if not is_single_opt else None,
                 edgecolor=color if not is_single_opt else None,
@@ -377,7 +349,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
         #For plotting continuations
         else:
 
-            _, _color, _, _ = _get_style(f"{opt}_w_continuations")
+            _, _color, _, _ = get_style(f"{opt}_w_continuations")
             seed_cont_df = pd.DataFrame(seed_cont_dict)
             seed_cont_df = seed_cont_df.ffill(axis=0)
             means_cont = pd.Series(seed_cont_df.mean(axis=1), name=f"means_{instance}")
@@ -385,6 +357,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
             means_cont = means_cont.cummax()
             means_cont = means_cont.drop_duplicates()
             sem_cont = sem_cont.loc[means_cont.index]
+            means_cont[budget] = means_cont.iloc[-1]
+            sem_cont[budget] = sem_cont.iloc[-1]
 
             ax_hv.plot(
                 means_cont,
@@ -431,13 +405,14 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
         _rankdf = _rankdf.rank(axis=1, method="average", ascending=False)
         rank_means_dict[seed] = _rankdf
     instances = list(agg_data.keys())
-    return rank_means_dict, int(budget)
+    return rank_means_dict
 
 
 def agg_data(
     exp_dir: Path
 ) -> tuple[
     Mapping[str, Mapping[tuple[str, str], list[pd.DataFrame]]],
+    int,
     int
 ]:
     """Function to aggregate data from all runs in the experiment directory
@@ -454,6 +429,8 @@ def agg_data(
         exp_config = yaml.safe_load(f)
 
     all_benches = [(bench.pop("name"), bench) for bench in exp_config["benchmarks"]]
+
+    total_budget = int(exp_config.get("budget"))
 
     seed_for_pareto = exp_config.get("seeds")[0]
 
@@ -506,7 +483,7 @@ def agg_data(
             else:
                 all_plots_dict[conf_tuple].append(_df)
 
-    return benchmarks_dict, seed_for_pareto
+    return benchmarks_dict, seed_for_pareto, total_budget
 
 
 def gen_plots_per_bench(
@@ -514,6 +491,7 @@ def gen_plots_per_bench(
     ax_pareto: plt.Axes,
     exp_dir: Path,
     seed_for_pareto: int,
+    total_budget: int,
     *,
     save_individual: bool = False,
     benchmark: str,
@@ -522,7 +500,7 @@ def gen_plots_per_bench(
     plot_opt: str | None = None,
     no_save: bool = False,
     # cut_off_iteration: int | None = None,
-) -> tuple[dict[int, pd.DataFrame], int]:
+) -> dict[int, pd.DataFrame]:
     """Function to generate plots for a given benchmark and its config dict."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
     df_agg = {}
@@ -589,6 +567,7 @@ def gen_plots_per_bench(
         agg_data=agg_dict,
         exp_dir=exp_dir,
         benchmark=benchmark,
+        budget=total_budget,
         # cut_off_iteration=iteration,
         fidelity=fidelity,
         is_single_opt=is_single_opt,
@@ -610,7 +589,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     fig_size = other_fig_params["fig_size"]
-    benchmarks_dict, seed_for_pareto = agg_data(exp_dir)
+    benchmarks_dict, seed_for_pareto, total_budget = agg_data(exp_dir)
     num_plots = len(benchmarks_dict)
     import math
     if math.sqrt(num_plots) % 1 == 0:
@@ -658,6 +637,8 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     axs_rank: list[plt.Axes] = axs_rank.flatten() if num_plots > 1 else [axs_rank]
     axs_ov_rank: list[plt.Axes] = [axs_ov_rank]
 
+    xylabel_fontsize = other_fig_params["xylabel_fontsize"]
+
     means_dict = {}
     bench_dict = {}
     for i, (benchmark, conf_dict) in enumerate(benchmarks_dict.items()):
@@ -666,7 +647,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
             f" Found {len(conf_dict)} configs for benchmark {benchmark}."
         )
         for conf_tuple, _all_dfs in conf_dict.items():
-            seed_dict_per_bench, total_budget = gen_plots_per_bench(
+            seed_dict_per_bench = gen_plots_per_bench(
                 ax_hv=axs_hv[i],
                 ax_pareto=axs_pareto[i],
                 exp_dir=exp_dir,
@@ -677,19 +658,20 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
                 no_save=no_save,
                 seed_for_pareto=seed_for_pareto,
                 save_individual=save_individual,
+                total_budget=total_budget,
                 # cut_off_iteration=iteration,
             )
 
-            axs_hv[i].set_xlabel("Full Evaluations")
+            axs_hv[i].set_xlabel("Full Evaluations", fontsize=xylabel_fontsize)
             axs_hv[i].set_xticks(XTICKS[(1, total_budget)])
-            axs_hv[i].set_ylabel("Hypervolume")
+            axs_hv[i].set_ylabel("Hypervolume", fontsize=xylabel_fontsize)
             axs_hv[i].grid(visible=True)
             axs_hv[i].set_title(benchmark)
             axs_hv[i].set_xlim(1, total_budget)
 
 
-            axs_pareto[i].set_xlabel(conf_tuple[0][0])
-            axs_pareto[i].set_ylabel(conf_tuple[0][1])
+            axs_pareto[i].set_xlabel(conf_tuple[0][0], fontsize=xylabel_fontsize)
+            axs_pareto[i].set_ylabel(conf_tuple[0][1], fontsize=xylabel_fontsize)
             axs_pareto[i].grid(visible=True)
             axs_pareto[i].set_title(benchmark)
 
@@ -707,9 +689,9 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
                 ranks=bench_dict,
                 budget=total_budget,
             )
-            axs_rank[i].set_xlabel("Full Evaluations")
+            axs_rank[i].set_xlabel("Full Evaluations", fontsize=xylabel_fontsize)
             axs_rank[i].set_xticks(XTICKS[(1, total_budget)])
-            axs_rank[i].set_ylabel("Relative Rank")
+            axs_rank[i].set_ylabel("Relative Rank", fontsize=xylabel_fontsize)
             axs_rank[i].set_title(benchmark)
             axs_rank[i].grid(visible=True)
             axs_rank[i].set_xlim(1, total_budget)
