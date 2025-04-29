@@ -181,49 +181,41 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
             )
             num_full_evals = 0
             for i, costs in enumerate(results, start=1):
+                if budget_type == "FidelityBudget" and _df[FIDELITY_COL][0] is not None:
+                    fidelity_queried = _df[FIDELITY_COL].iloc[i-1]
+                    bench_max_fid = _df[BENCH_FIDELITY_MAX_COL].iloc[0]
+                    continuations_budget_used = _df[CONTINUATIONS_BUDGET_USED].iloc[i-1]
+                    if float(fidelity_queried) != float(bench_max_fid):
+                        if int(continuations_budget_used) > int(num_full_evals):
+                            num_full_evals += 1
+                            if len(hv_vals) > 0:
+                                hv_vals.append(hv_vals[-1])
+                            else:
+                                hv_vals.append(np.nan)
+                        continue
                 # Compute hypervolume
+                num_full_evals += 1
                 acc_costs.append(costs)
                 pareto = pareto_front(acc_costs)
                 pareto = np.array([list(ac.values()) for ac in acc_costs])[pareto]
                 pareto = pareto[pareto[:, 0].argsort()]
                 agg_pareto_costs.extend(pareto)
-                if budget_type == "FidelityBudget" and _df[FIDELITY_COL][0] is not None:
-                    fidelity_queried = _df[FIDELITY_COL].iloc[i-1]
-                    bench_max_fid = _df[BENCH_FIDELITY_MAX_COL].iloc[0]
-                    continuations_budget_used = _df[CONTINUATIONS_BUDGET_USED].iloc[i-1]
-                    budget_used = _df[BUDGET_USED_COL].iloc[i-1]
-                    if float(fidelity_queried) != float(bench_max_fid):
-                        # if hv_vals:
-                        #     hv_vals.append(hv_vals[-1])
-                        # else:
-                        #     hv_vals.append(np.nan)
-                        # continue
-                        if int(budget_used) > int(num_full_evals):
-                            # print("NOT MAX")
-                            # print(budget_used, num_full_evals)
-                            num_full_evals += 1
-                        else:
-                            continue
-                    else:
-                        # print(_df[BUDGET_USED_COL].iloc[i-1], num_full_evals)
-                        num_full_evals += 1
-                else:
-                    num_full_evals += 1
                 hv = Hypervolume(ref_point=reference_point)
                 hypervolume = hv.do(pareto)
                 hv_vals.append(hypervolume)
 
-                # if i == cut_off_iteration and budget_type == "TrialBudget":
-                #     break
+                if cut_off_iteration and num_full_evals == cut_off_iteration:
+                    budget = cut_off_iteration
+                    break
+
             budget_list = np.arange(1, num_full_evals + 1, 1)
-            seed_hv_dict[seed] = pd.Series(hv_vals, index=budget_list)
 
             if continuations:
                 seed_cont_dict[seed] = pd.Series(hv_vals, index=budget_list)
                 seed_incumbents = seed_cont_dict[seed].cummax()
                 instance_name = f"{instance}_w_continuations"
-                # breakpoint()
             else:
+                seed_hv_dict[seed] = pd.Series(hv_vals, index=budget_list)
                 seed_incumbents = seed_hv_dict[seed].cummax()
                 instance_name = instance
 
@@ -401,7 +393,6 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     for seed, instances in seed_means_dict.items():
         _rankdf = pd.DataFrame(instances)
         _rankdf = _rankdf.ffill(axis=0)
-        _rankdf = _rankdf.dropna(axis=0)
         _rankdf = _rankdf.rank(axis=1, method="average", ascending=False)
         rank_means_dict[seed] = _rankdf
     instances = list(agg_data.keys())
@@ -584,23 +575,17 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     exp_dir: Path,
     plot_opt: str | None = None,
     *,
+    cut_off_iteration: int | None = None,
     no_save: bool = False,
     save_individual: bool = False,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     fig_size = other_fig_params["fig_size"]
     benchmarks_dict, seed_for_pareto, total_budget = agg_data(exp_dir)
+    if cut_off_iteration:
+        total_budget = cut_off_iteration
     num_plots = len(benchmarks_dict)
-    import math
-    if math.sqrt(num_plots) % 1 == 0:
-        nrows = ncols = int(math.sqrt(num_plots))
-    else:
-        nrows, ncols = 1, 2
-        while num_plots > nrows * ncols:
-            ncols += 1
-            if ncols > 4:   # noqa: PLR2004
-                nrows += 1
-                ncols = 4
+    nrows, ncols = other_fig_params["n_rows_cols"][num_plots]
 
     # Hypervolume plot
     fig_hv, axs_hv = plt.subplots(
@@ -662,7 +647,6 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
                 # cut_off_iteration=iteration,
             )
 
-            axs_hv[i].set_xlabel("Full Evaluations", fontsize=xylabel_fontsize)
             axs_hv[i].set_xticks(XTICKS[(1, total_budget)])
             axs_hv[i].set_ylabel("Hypervolume", fontsize=xylabel_fontsize)
             axs_hv[i].grid(visible=True)
@@ -689,12 +673,17 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
                 ranks=bench_dict,
                 budget=total_budget,
             )
-            axs_rank[i].set_xlabel("Full Evaluations", fontsize=xylabel_fontsize)
             axs_rank[i].set_xticks(XTICKS[(1, total_budget)])
             axs_rank[i].set_ylabel("Relative Rank", fontsize=xylabel_fontsize)
             axs_rank[i].set_title(benchmark)
             axs_rank[i].grid(visible=True)
             axs_rank[i].set_xlim(1, total_budget)
+
+            xlabel_i = other_fig_params["xlabel_min_i"][num_plots]
+
+            if i >= xlabel_i:
+                axs_hv[i].set_xlabel("Full Evaluations", fontsize=xylabel_fontsize)
+                axs_rank[i].set_xlabel("Full Evaluations", fontsize=xylabel_fontsize)
 
             bench_dict = {}
 
@@ -831,9 +820,8 @@ if __name__ == "__main__":
         help="Plot all pareto fronts only for the given optimizer."
     )
     parser.add_argument(
-        "--plot_for_iterations", "-i",
+        "--cut_off_iteration", "-i",
         type=int,
-        nargs="+",
         default=None,
         help="Plot pareto fronts and Hypervolumes for the given iterations."
     )
@@ -855,6 +843,7 @@ if __name__ == "__main__":
     make_subplots(
         exp_dir=exp_dir,
         plot_opt=args.plot_opt,
+        cut_off_iteration=args.cut_off_iteration,
         no_save=args.no_save,
         save_individual=args.save_individual,
     )
