@@ -17,13 +17,13 @@ MARKERS = {
 
 COLORS = {
     "SMAC_ParEGO": "blue",
-    "RandomSearch": "olive",
+    "RandomSearch": "sienna",
     "NepsRW": "lightseagreen",
     "NepsHyperbandRW": "darkgreen",
-    "NepsHyperbandRW_w_continuations": "slategray",
-    "Nevergrad_EvolutionStrategy": "orange",
+    "NepsHyperbandRW_w_continuations": "darkslategray",
+    "Nevergrad_EvolutionStrategy": "lime",
     "MOMFBO": "purple",
-    "MOMFBO_w_continuations": "darkpink",
+    "MOMFBO_w_continuations": "magenta",
     "NepsMOASHA": "salmon",
     "NepsMOASHA_w_continuations": "darkviolet",
     "RandomSearchWithPriors-good-good": "red",
@@ -31,13 +31,13 @@ COLORS = {
     "RandomSearchWithPriors-good-medium": "deepskyblue",
     "RandomSearchWithPriors-good": "tomato",
     "RandomSearchWithPriors-bad-good": "darkcyan",
-    "RandomSearchWithPriors-bad-bad": "mediumslateblue",
+    "RandomSearchWithPriors-bad-bad": "darkorange",
     "RandomSearchWithPriors-bad-medium": "crimson",
     "RandomSearchWithPriors-bad": "green",
     "RandomSearchWithPriors-medium-good": "darkorange",
     "RandomSearchWithPriors-medium-bad": "mediumturquoise",
     "RandomSearchWithPriors-medium-medium": "orchid",
-    "RandomSearchWithPriors-medium": "sienna",
+    "RandomSearchWithPriors-medium": "darkkhaki",
 }
 
 RC_PARAMS = {
@@ -58,7 +58,6 @@ RC_PARAMS = {
     "axes.linewidth": 1,
     "lines.markersize": 4,
     "axes.titlesize": 20,
-    "axes.labelsize": 20,
     # "bottomlabel.weight": "normal",
     # "toplabel.weight": "normal",
     # "leftlabel.weight": "normal",
@@ -87,4 +86,5 @@ other_fig_params = {
     },
     "bbox_to_anchor": (0.5, -0.08),
     "legend_fontsize": 18,
+    "xylabel_fontsize": 20,
 }

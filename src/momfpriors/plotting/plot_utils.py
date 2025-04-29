@@ -1,5 +1,59 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
+
+import numpy as np
+import pandas as pd
+
+from momfpriors.plotting.plot_styles import COLORS, MARKERS
+
+
+def dynamic_reference_point(
+    loss_vals: pd.Series | list[Mapping[str, float]]
+) -> np.array:
+    """Function to calculate the pareto front from a pandas Series
+    of Results, i.e., Mapping[str, float] objects.
+    """
+    if isinstance(loss_vals, pd.Series):
+        loss_vals = loss_vals.to_numpy()
+    loss_vals = np.array(
+        [
+            list(cost.values())
+            for cost in loss_vals
+        ]
+    )
+    worst_point = np.max(loss_vals, axis=0)
+    reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
+    reference_point[reference_point == 0] = 1e-12
+    return reference_point
+
+
+def pareto_front(
+    costs: pd.Series | list[Mapping[str, float]] | np.array,
+) -> np.array:
+    """Function to calculate the pareto front from a pandas Series
+    of Results, i.e., Mapping[str, float] objects.
+    """
+    if not isinstance(costs, np.ndarray):
+        costs: np.array = np.array([list(cost.values()) for cost in costs])
+    is_pareto = np.ones(costs.shape[0], dtype=bool)
+    for i, c in enumerate(costs):
+        if is_pareto[i]:
+            is_pareto[is_pareto] = np.any(costs[is_pareto] < c, axis=1)
+            is_pareto[i] = True
+    return is_pareto
+
+
+def get_style(instance: str) -> tuple[str, str, str, str | None]:
+    """Function to get the plotting style for a given instance."""
+    prior_annot = instance.split("priors=")[-1] if "priors=" in instance else None
+    opt = instance.split(";")[0]
+    color = COLORS.get(opt)
+    if prior_annot:
+        color = COLORS.get(f"{opt}-{prior_annot}")
+    marker = MARKERS.get(prior_annot, "s")
+    return marker, color, opt, prior_annot
+
 
 def edit_legend_labels(labels: list[str]) -> list[str]:
     """Edit the legend labels to be more readable."""
@@ -10,6 +64,8 @@ def edit_legend_labels(labels: list[str]) -> list[str]:
             _label = label.replace("_w_continuations", "")
         if ";priors=" in label:
             _label = label.replace(";priors=", "_")
+        if "Evolution" in label:
+            _label = "NSGA-II"
         new_labels.append(_label)
     return new_labels
 
@@ -17,8 +73,11 @@ def edit_legend_labels(labels: list[str]) -> list[str]:
 
 reference_points_dict = {
 
+    # MOMFPark
+    "MOMFPark": {"value1": 1, "value2": 1},
+
     # PD1
-    "pd1-cifar100-wide_resnet-2048": {"valid_error_rate": 1, "train_cost": 100},
+    "pd1-cifar100-wide_resnet-2048": {"valid_error_rate": 1, "train_cost": 30},
     "pd1-imagenet-resnet-512": {"valid_error_rate": 1, "train_cost": 5000},
     "pd1-lm1b-transformer-2048": {"valid_error_rate": 1, "train_cost": 1000},
     "pd1-translate_wmt-xformer_translate-64": {"valid_error_rate": 1, "train_cost": 20000},
@@ -28,15 +87,12 @@ reference_points_dict = {
     "jahs-ColorectalHistology": {"valid_acc": 0, "runtime": 200000},
     "jahs-FashionMNIST": {"valid_acc": 0, "runtime": 200000},
 
-    # MOMFPark
-    "MOMFPark": {"value1": 1, "value2": 1},
-
     # YAHPO-LCBench
     "yahpo-lcbench-126026": {
         "val_accuracy": 0,
         "val_balanced_accuracy": 0,
         "val_cross_entropy": 1,
-        "time": 200
+        "time": 150
     },
     "yahpo-lcbench-167190": {
         "val_accuracy": 0,
@@ -48,7 +104,7 @@ reference_points_dict = {
         "val_accuracy": 0,
         "val_balanced_accuracy": 0,
         "val_cross_entropy": 1,
-        "time": 20000
+        "time": 5000
     },
     "yahpo-lcbench-168910": {
         "val_accuracy": 0,
@@ -96,7 +152,7 @@ reference_points_dict = {
         "val_accuracy": 0,
         "val_balanced_accuracy": 0,
         "val_cross_entropy": 1,
-        "time": 10000
+        "time": 150
     },
     "yahpo-lcbench-167104": {
         "val_accuracy": 0,
@@ -180,7 +236,7 @@ reference_points_dict = {
         "val_accuracy": 0,
         "val_balanced_accuracy": 0,
         "val_cross_entropy": 1,
-        "time": 10000
+        "time": 200
     },
     "yahpo-lcbench-168908": {
         "val_accuracy": 0,
