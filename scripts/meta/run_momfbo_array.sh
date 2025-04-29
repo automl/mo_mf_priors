@@ -3,9 +3,9 @@
 #SBATCH --job-name MOMFBO_all_array
 #SBATCH --output logs/%x-%A_%a.out
 #SBATCH --error logs/%x-%A_%a.err
-#SBATCH --gpus=1
+#SBATCH --gpus=3
 #SBATCH --cpus-per-gpu=6
-#SBATCH --array=0-8   # 9 benchmarks = 9 array jobs
+#SBATCH --array=3,5,8   # rerun only selected benchmarks
 
 echo "Workingdir: $PWD";
 echo "Started at $(date)";
@@ -19,14 +19,14 @@ start=$(date +%s)
 # === Define benchmarks ===
 optimizer="MOMFBO"
 benchmarks=(
-    "MOMFPark"
-    "pd1-cifar100-wide_resnet-2048"
-    "pd1-imagenet-resnet-512"
+    # "MOMFPark"
+    # "pd1-cifar100-wide_resnet-2048"
+    # "pd1-imagenet-resnet-512"
     "pd1-lm1b-transformer-2048"
-    "pd1-translate_wmt-xformer_translate-64"
+    # "pd1-translate_wmt-xformer_translate-64"
     "yahpo-lcbench-126026"
-    "yahpo-lcbench-146212"
-    "yahpo-lcbench-168330"
+    # "yahpo-lcbench-146212"
+    # "yahpo-lcbench-168330"
     "yahpo-lcbench-168868"
 )
 
