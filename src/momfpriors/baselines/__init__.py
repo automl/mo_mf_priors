@@ -5,6 +5,7 @@ from momfpriors.baselines.neps_optimizers import (
     NepsHyperbandRW,
     NepsMOASHA,
     NepsMOHyperband,
+    NepsPriorMOASHA,
     NepsRW,
 )
 from momfpriors.baselines.nevergrad import yield_nevergrad_optimizers
@@ -19,6 +20,7 @@ OPTIMIZERS = {
     SMAC_ParEGO.name: SMAC_ParEGO,
     MOMFBO_Optimizer.name: MOMFBO_Optimizer,
     NepsMOASHA.name: NepsMOASHA,
+    NepsPriorMOASHA.name: NepsPriorMOASHA,
     NepsMOHyperband.name: NepsMOHyperband,
 }
 

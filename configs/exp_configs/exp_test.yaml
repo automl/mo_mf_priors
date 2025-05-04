@@ -1,15 +1,18 @@
 optimizers:
   # - name: Nevergrad_EvolutionStrategy
+  # - name: NepsMOHyperband
   # - name: NepsRW
   # - name: NepsHyperbandRW  
   # - name: SMAC_ParEGO
-  - name: MOMFBO
-  # - name: NepsMOASHA
+  # - name: MOMFBO
+  - name: NepsMOASHA
+  - name: NepsPriorMOASHA
+  - name: RandomSearchWithPriors
 benchmarks:
-  # - name: MOMFPark
-  #   objectives: 
-  #     value1: null
-  #     value2: null
+  - name: MOMFPark
+    objectives: 
+      value1: good
+      value2: good
   # - name: yahpo-lcbench-126026
   #   objectives:
   #     val_cross_entropy: null
@@ -20,7 +23,15 @@ benchmarks:
   #     train_cost: null
   - name: pd1-imagenet-resnet-512
     objectives:
-      valid_error_rate: null
-      train_cost: null
-num_seeds: 1
-num_iterations: 10
+      valid_error_rate: good
+      train_cost: good
+  - name: MOMFPark
+    objectives: 
+      value1: bad
+      value2: bad
+  - name: pd1-imagenet-resnet-512
+    objectives:
+      valid_error_rate: bad
+      train_cost: bad
+num_seeds: 3
+num_iterations: 25

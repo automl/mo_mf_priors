@@ -1,5 +1,4 @@
 optimizers:
-  - name: MOMFBO
   - name: RandomSearchWithPriors
   - name: RandomSearch
   - name: SMAC_ParEGO
@@ -7,6 +6,7 @@ optimizers:
   - name: NepsHyperbandRW
   - name: Nevergrad_EvolutionStrategy
   - name: NepsMOASHA
+  - name: NepsPriorMOASHA
 benchmarks:
   - name: MOMFPark
     objectives:

@@ -19,13 +19,15 @@ COLORS = {
     "SMAC_ParEGO": "blue",
     "RandomSearch": "sienna",
     "NepsRW": "lightseagreen",
-    "NepsHyperbandRW": "darkgreen",
+    "NepsHyperbandRW": "goldenrod",
     "NepsHyperbandRW_w_continuations": "darkslategray",
     "Nevergrad_EvolutionStrategy": "lime",
     "MOMFBO": "purple",
     "MOMFBO_w_continuations": "magenta",
     "NepsMOASHA": "salmon",
     "NepsMOASHA_w_continuations": "darkviolet",
+    "NepsPriorMOASHA-good-good": "orchid",
+    "NepsPriorMOASHA-good-good_w_continuations": "darkgreen",
     "RandomSearchWithPriors-good-good": "red",
     "RandomSearchWithPriors-good-bad": "teal",
     "RandomSearchWithPriors-good-medium": "deepskyblue",
@@ -82,6 +84,8 @@ XTICKS = {
 other_fig_params = {
     "fig_size": (20, 15),
     "n_rows_cols": {
+        2: (1, 2),
+        3: (1, 3),
         4: (2, 2),
         5: (2, 3),
         6: (2, 3),
@@ -96,7 +100,9 @@ other_fig_params = {
     "bbox_to_anchor": (0.5, -0.08),
     "legend_fontsize": 18,
     "xylabel_fontsize": 20,
-    "xlabel_min_i": {
+    "xlabel_start_i": {
+        2 : 0,
+        3 : 0,
         4 : 2,
         6 : 3,
         8 : 4,
