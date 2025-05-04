@@ -60,11 +60,11 @@ def edit_legend_labels(labels: list[str]) -> list[str]:
     new_labels = []
     for label in labels:
         _label = label
-        if "_w_continuations" in label:
-            _label = label.replace("_w_continuations", "")
-        if ";priors=" in label:
-            _label = label.replace(";priors=", "_")
-        if "Evolution" in label:
+        if "_w_continuations" in _label:
+            _label = _label.replace("_w_continuations", "")
+        if ";priors=" in _label:
+            _label = _label.replace(";priors=", "_")
+        if "Evolution" in _label:
             _label = "NSGA-II"
         new_labels.append(_label)
     return new_labels
@@ -292,4 +292,49 @@ reference_points_dict = {
         "val_cross_entropy": 1,
         "time": 10000
     }
+}
+
+fid_perc_momfbo = {
+    "MOMFPark": 0.5,
+    "pd1-cifar100-wide_resnet-2048": 0.5,
+    "pd1-imagenet-resnet-512": 0.5,
+    "pd1-lm1b-transformer-2048": 0.5,
+    "pd1-translate_wmt-xformer_translate-64": 0.5,
+    "yahpo-lcbench-126026": 0.5,
+    "yahpo-lcbench-146212": 0.5,
+    "yahpo-lcbench-168330": 0.5,
+    "yahpo-lcbench-168868": 0.5,
+    "jahs-CIFAR10": 0.9,
+    "jahs-ColorectalHistology": 0.9,
+    "jahs-FashionMNIST": 0.9,
+    "yahpo-lcbench-167190": 0.9,
+    "yahpo-lcbench-168910": 0.9,
+    "yahpo-lcbench-189906": 0.9,
+    "yahpo-lcbench-3945": 0.9,
+    "yahpo-lcbench-7593": 0.9,
+    "yahpo-lcbench-34539": 0.9,
+    "yahpo-lcbench-126025": 0.9,
+    "yahpo-lcbench-126029": 0.9,
+    "yahpo-lcbench-167104": 0.9,
+    "yahpo-lcbench-167149": 0.9,
+    "yahpo-lcbench-167152": 0.9,
+    "yahpo-lcbench-167161": 0.9,
+    "yahpo-lcbench-167168": 0.9,
+    "yahpo-lcbench-167181": 0.9,
+    "yahpo-lcbench-167184": 0.9,
+    "yahpo-lcbench-167185": 0.9,
+    "yahpo-lcbench-167200": 0.9,
+    "yahpo-lcbench-167201": 0.9,
+    "yahpo-lcbench-168329": 0.9,
+    "yahpo-lcbench-168331": 0.9,
+    "yahpo-lcbench-168335": 0.9,
+    "yahpo-lcbench-168908": 0.9,
+    "yahpo-lcbench-189354": 0.9,
+    "yahpo-lcbench-189862": 0.9,
+    "yahpo-lcbench-189865": 0.9,
+    "yahpo-lcbench-189866": 0.9,
+    "yahpo-lcbench-189873": 0.9,
+    "yahpo-lcbench-189905": 0.9,
+    "yahpo-lcbench-189908": 0.9,
+    "yahpo-lcbench-189909": 0.9
 }

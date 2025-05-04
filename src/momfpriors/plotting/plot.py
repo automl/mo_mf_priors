@@ -22,6 +22,7 @@ from momfpriors.plotting.plot_styles import (
 )
 from momfpriors.plotting.plot_utils import (
     edit_legend_labels,
+    fid_perc_momfbo,
     get_style,
     pareto_front,
     reference_points_dict,
@@ -135,8 +136,6 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     if plot_opt:
         plt.figure(6, figsize=(10, 10))
     for instance, instance_data in agg_data.items():
-        # if "MOMFBO" in instance:
-        #     continue
 
         # Get the marker, color, optimizer name and prior annotations for the optimizer instance
         marker, color, opt, prior_annot = get_style(instance)
@@ -185,7 +184,19 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                     fidelity_queried = _df[FIDELITY_COL].iloc[i-1]
                     bench_max_fid = _df[BENCH_FIDELITY_MAX_COL].iloc[0]
                     continuations_budget_used = _df[CONTINUATIONS_BUDGET_USED].iloc[i-1]
-                    if float(fidelity_queried) != float(bench_max_fid):
+                    max_fid_flag = True
+                    match instance:
+                        case "MOMFBO":
+                            max_fid_flag = (
+                                float(fidelity_queried) / float(bench_max_fid)
+                                > float(fid_perc_momfbo[benchmark])
+                            )
+                        case str():
+                            max_fid_flag = float(fidelity_queried) == float(bench_max_fid)
+                        case _:
+                            print("Huh?")
+
+                    if not max_fid_flag:
                         if int(continuations_budget_used) > int(num_full_evals):
                             num_full_evals += 1
                             if len(hv_vals) > 0:
@@ -208,6 +219,9 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                     budget = cut_off_iteration
                     break
 
+            if pareto is None:
+                breakpoint()
+
             budget_list = np.arange(1, num_full_evals + 1, 1)
 
             if continuations:
@@ -218,6 +232,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 seed_hv_dict[seed] = pd.Series(hv_vals, index=budget_list)
                 seed_incumbents = seed_hv_dict[seed].cummax()
                 instance_name = instance
+
+            seed_incumbents[budget] = seed_incumbents.iloc[-1]
 
             if seed not in seed_means_dict:
                 seed_means_dict[seed] = {}
@@ -338,10 +354,10 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 edgecolor=color if not is_single_opt else None,
             )
 
-        #For plotting continuations
+        # For plotting continuations
         else:
 
-            _, _color, _, _ = get_style(f"{opt}_w_continuations")
+            _, _color, _, _ = get_style(f"{instance}_w_continuations")
             seed_cont_df = pd.DataFrame(seed_cont_dict)
             seed_cont_df = seed_cont_df.ffill(axis=0)
             means_cont = pd.Series(seed_cont_df.mean(axis=1), name=f"means_{instance}")
@@ -578,6 +594,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     cut_off_iteration: int | None = None,
     no_save: bool = False,
     save_individual: bool = False,
+    save_suffix: str = "",
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     fig_size = other_fig_params["fig_size"]
@@ -679,7 +696,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
             axs_rank[i].grid(visible=True)
             axs_rank[i].set_xlim(1, total_budget)
 
-            xlabel_i = other_fig_params["xlabel_min_i"][num_plots]
+            xlabel_i = other_fig_params["xlabel_start_i"][num_plots]
 
             if i >= xlabel_i:
                 axs_hv[i].set_xlabel("Full Evaluations", fontsize=xylabel_fontsize)
@@ -793,11 +810,22 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
 
     save_dir = exp_dir/ "plots" / "subplots"
     save_dir.mkdir(parents=True, exist_ok=True)
+
+    if save_suffix:
+        save_suffix = f"_{save_suffix}"
     if not no_save:
-        fig_hv.savefig(save_dir / "hypervolume_subplots.png", dpi=300, bbox_inches="tight")
-        fig_pareto.savefig(save_dir / "pareto_subplots.png", dpi=300, bbox_inches="tight")
-        fig_rank.savefig(save_dir / "rank_subplots.png", dpi=300, bbox_inches="tight")
-        fig_ov_rank.savefig(save_dir / "rank_overall_subplots.png", dpi=300, bbox_inches="tight")
+        fig_hv.savefig(
+            save_dir / f"hypervolume_subplots{save_suffix}.png", dpi=300, bbox_inches="tight"
+        )
+        fig_pareto.savefig(
+            save_dir / f"pareto_subplots{save_suffix}.png", dpi=300, bbox_inches="tight"
+        )
+        fig_rank.savefig(
+            save_dir / f"rank_subplots{save_suffix}.png", dpi=300, bbox_inches="tight"
+        )
+        fig_ov_rank.savefig(
+            save_dir / f"rank_overall_subplots{save_suffix}.png", dpi=300, bbox_inches="tight"
+        )
 
 
 if __name__ == "__main__":
@@ -835,6 +863,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Save individual plots for each optimizer instance."
     )
+    parser.add_argument(
+        "--save_suffix", "-suf",
+        type=str,
+        default="",
+        help="Suffix to add to the saved plots."
+    )
     args = parser.parse_args()
     exp_dir: Path = DEFAULT_RESULTS_DIR / args.exp_dir
 
@@ -846,4 +880,5 @@ if __name__ == "__main__":
         cut_off_iteration=args.cut_off_iteration,
         no_save=args.no_save,
         save_individual=args.save_individual,
+        save_suffix=args.save_suffix,
     )
