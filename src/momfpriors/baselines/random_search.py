@@ -90,7 +90,7 @@ class RandomSearchWithPriors(Abstract_AskTellOptimizer):
             )
         self.mo_prior_sampling = mo_prior_sampling
         self._optmizer_unique_id = 0
-        self._priors_used = {key: 0 for key in self.priors}
+        self._priors_used = dict.fromkeys(self.priors, 0)
 
     def ask(self) -> Query:  # noqa: D102
         self._optmizer_unique_id += 1
