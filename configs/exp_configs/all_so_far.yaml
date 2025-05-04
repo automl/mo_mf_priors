@@ -5,6 +5,7 @@ optimizers:
   - name: NepsRW
   - name: NepsHyperbandRW
   - name: Nevergrad_EvolutionStrategy
+  - name: NepsMOASHA
 benchmarks:
   - name: MOMFPark
     objectives:
@@ -46,31 +47,19 @@ benchmarks:
     objectives:
       valid_error_rate: bad
       train_cost: bad
-  - name: jahs-CIFAR10
-    objectives:
-      valid_acc: good
-      runtime: good
-  - name: jahs-CIFAR10
-    objectives:
-      valid_acc: bad
-      runtime: bad
-  - name: jahs-ColorectalHistology
-    objectives:
-      valid_acc: good
-      runtime: good
-  - name: jahs-ColorectalHistology
-    objectives:
-      valid_acc: bad
-      runtime: bad
-  - name: jahs-FashionMNIST
-    objectives:
-      valid_acc: good
-      runtime: good
-  - name: jahs-FashionMNIST
-    objectives:
-      valid_acc: bad
-      runtime: bad
   - name: yahpo-lcbench-126026
+    objectives:
+      val_cross_entropy: good
+      time: good
+  - name: yahpo-lcbench-146212
+    objectives:
+      val_cross_entropy: good
+      time: good
+  - name: yahpo-lcbench-168330
+    objectives:
+      val_cross_entropy: good
+      time: good
+  - name: yahpo-lcbench-168868
     objectives:
       val_cross_entropy: good
       time: good
@@ -78,35 +67,15 @@ benchmarks:
     objectives:
       val_cross_entropy: bad
       time: bad
-  - name: yahpo-lcbench-167190
-    objectives:
-      val_cross_entropy: good
-      time: good
-  - name: yahpo-lcbench-167190
+  - name: yahpo-lcbench-146212
     objectives:
       val_cross_entropy: bad
       time: bad
   - name: yahpo-lcbench-168330
     objectives:
-      val_cross_entropy: good
-      time: good
-  - name: yahpo-lcbench-168330
-    objectives:
       val_cross_entropy: bad
       time: bad
-  - name: yahpo-lcbench-168910
-    objectives:
-      val_cross_entropy: good
-      time: good
-  - name: yahpo-lcbench-168910
-    objectives:
-      val_cross_entropy: bad
-      time: bad
-  - name: yahpo-lcbench-189906
-    objectives:
-      val_cross_entropy: good
-      time: good
-  - name: yahpo-lcbench-189906
+  - name: yahpo-lcbench-168868
     objectives:
       val_cross_entropy: bad
       time: bad
