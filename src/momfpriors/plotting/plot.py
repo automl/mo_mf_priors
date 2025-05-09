@@ -33,6 +33,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 sns.set_theme(style="whitegrid")
+sns.set_context("paper")
 
 SEED_COL = "seed"
 OPTIMIZER_COL = "optimizer"
@@ -97,11 +98,12 @@ def plot_average_rank(
             means + sems,
             alpha=0.1,
             color=color,
-            edgecolor=color,
+            edgecolor=None,
         )
 
 
 def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
+    *,
     ax_hv: plt.Axes,
     ax_pareto: plt.Axes,
     agg_data: Mapping[str, Mapping[str, Any]],
@@ -110,10 +112,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     objectives: list[str],
     seed_for_pareto: int,
     budget: int,
-    cut_off_iteration: int | None = None,
     fidelity: str | None = None,
     plot_opt: str | None = None,
-    *,
     is_single_opt: bool = False,
     no_save: bool = False,
     save_individual: bool = False,
@@ -215,12 +215,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 hypervolume = hv.do(pareto)
                 hv_vals.append(hypervolume)
 
-                if cut_off_iteration and num_full_evals == cut_off_iteration:
-                    budget = cut_off_iteration
+                if num_full_evals == budget:
                     break
-
-            if pareto is None:
-                breakpoint()
 
             budget_list = np.arange(1, num_full_evals + 1, 1)
 
@@ -351,7 +347,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 means + sem,
                 alpha=0.1,
                 color=color if not is_single_opt else None,
-                edgecolor=color if not is_single_opt else None,
+                edgecolor=None,
             )
 
         # For plotting continuations
@@ -379,7 +375,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 means_cont + sem_cont,
                 alpha=0.1,
                 color=_color if not is_single_opt else None,
-                edgecolor=_color if not is_single_opt else None,
+                edgecolor=None,
             )
 
 
@@ -416,7 +412,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
 
 
 def agg_data(
-    exp_dir: Path
+    exp_dir: Path,
+    skip_opt: list[str] | None = None,
 ) -> tuple[
     Mapping[str, Mapping[tuple[str, str], list[pd.DataFrame]]],
     int,
@@ -448,6 +445,9 @@ def agg_data(
         objectives = []
         for file in exp_dir.rglob("*.parquet"):
             if benchmark not in file.name:
+                continue
+            opt_name = file.name.split("optimizer=")[-1].split(".")[0]
+            if skip_opt and opt_name in skip_opt:
                 continue
             _df = pd.read_parquet(file)
 
@@ -506,7 +506,6 @@ def gen_plots_per_bench(
     _all_dfs: list[pd.DataFrame],
     plot_opt: str | None = None,
     no_save: bool = False,
-    # cut_off_iteration: int | None = None,
 ) -> dict[int, pd.DataFrame]:
     """Function to generate plots for a given benchmark and its config dict."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
@@ -575,7 +574,6 @@ def gen_plots_per_bench(
         exp_dir=exp_dir,
         benchmark=benchmark,
         budget=total_budget,
-        # cut_off_iteration=iteration,
         fidelity=fidelity,
         is_single_opt=is_single_opt,
         plot_opt=plot_opt,
@@ -595,10 +593,11 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     no_save: bool = False,
     save_individual: bool = False,
     save_suffix: str = "",
+    skip_opt: list[str] | None = None,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     fig_size = other_fig_params["fig_size"]
-    benchmarks_dict, seed_for_pareto, total_budget = agg_data(exp_dir)
+    benchmarks_dict, seed_for_pareto, total_budget = agg_data(exp_dir, skip_opt=skip_opt)
     if cut_off_iteration:
         total_budget = cut_off_iteration
     num_plots = len(benchmarks_dict)
@@ -661,7 +660,6 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
                 seed_for_pareto=seed_for_pareto,
                 save_individual=save_individual,
                 total_budget=total_budget,
-                # cut_off_iteration=iteration,
             )
 
             axs_hv[i].set_xticks(XTICKS[(1, total_budget)])
@@ -869,6 +867,13 @@ if __name__ == "__main__":
         default="",
         help="Suffix to add to the saved plots."
     )
+    parser.add_argument(
+        "--skip_opt", "-skip",
+        nargs="+",
+        type=str,
+        default=None,
+        help="Skip the given optimizers."
+    )
     args = parser.parse_args()
     exp_dir: Path = DEFAULT_RESULTS_DIR / args.exp_dir
 
@@ -881,4 +886,5 @@ if __name__ == "__main__":
         no_save=args.no_save,
         save_individual=args.save_individual,
         save_suffix=args.save_suffix,
+        skip_opt=args.skip_opt,
     )

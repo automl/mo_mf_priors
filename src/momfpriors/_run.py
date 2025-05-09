@@ -258,7 +258,7 @@ class Run:
             logger.info(f"Results dumped at {self.df_path.absolute()}\n")
 
 
-    def create_df(
+    def create_df(  # noqa: C901
         self,
         *,
         history: list[Result],
