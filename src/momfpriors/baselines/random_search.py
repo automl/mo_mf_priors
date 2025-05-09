@@ -69,7 +69,7 @@ class RandomSearchWithPriors(Abstract_AskTellOptimizer):
         self,
         problem: Problem,
         working_directory: str | Path,  # noqa: ARG002
-        mo_prior_sampling: Literal["random", "equal"] = "random",
+        mo_prior_sampling: Literal["random", "equal", "scalarization"] = "random",
         seed: int = 0,
         **kwargs: Any
     ) -> None:
@@ -108,6 +108,30 @@ class RandomSearchWithPriors(Abstract_AskTellOptimizer):
                     selected_prior_key = self._rng.choice(eligible_priors)
                     prior = self.priors[selected_prior_key]
                     self._priors_used[selected_prior_key] += 1
+                case "scalarization":
+                    probs = self._rng.random(len(self.priors))
+                    probs /= probs.sum()
+
+                    # Scalarizing the priors with prob weights
+                    # to get a single prior
+                    config_keys = list(self.priors[next(iter(self.priors))].prior_config.keys())
+                    prior_mean = {}
+                    for key in config_keys:
+                        prior_mean[key] = sum(
+                            [
+                                v.prior_config[key] * probs[i]
+                                for i, (k, v) in enumerate(self.priors.items())
+                            ]
+                        )
+                    new_sigma = np.sqrt(
+                        sum(0.25**2 * probs[i]**2 for i in range(len(self.priors)))
+                    )
+                    prior = next(iter(construct_prior(
+                        priors={"scalarized_prior": prior_mean},
+                        config_space=self.config_space,
+                        prior_distribution="normal",
+                        sigma=new_sigma,
+                    ).values()))
                 case _:
                     raise ValueError(
                         "Invalid value for `mo_prior_sampling`. "
