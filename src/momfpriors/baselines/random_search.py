@@ -82,6 +82,7 @@ class RandomSearchWithPriors(Abstract_AskTellOptimizer):
             seed=seed,
             **kwargs,
         )
+        self.seed = seed
         self._rng = np.random.default_rng(seed)
         if mo_prior_sampling == "equal":
             assert len(self.problem.get_objectives()) <= self.problem.budget.total, (
@@ -109,8 +110,8 @@ class RandomSearchWithPriors(Abstract_AskTellOptimizer):
                     prior = self.priors[selected_prior_key]
                     self._priors_used[selected_prior_key] += 1
                 case "scalarization":
-                    probs = self._rng.random(len(self.priors))
-                    probs /= probs.sum()
+                    weights = self._rng.random(len(self.priors))
+                    weights /= weights.sum()
 
                     # Scalarizing the priors with prob weights
                     # to get a single prior
@@ -119,18 +120,19 @@ class RandomSearchWithPriors(Abstract_AskTellOptimizer):
                     for key in config_keys:
                         prior_mean[key] = sum(
                             [
-                                v.prior_config[key] * probs[i]
+                                v.prior_config[key] * weights[i]
                                 for i, (k, v) in enumerate(self.priors.items())
                             ]
                         )
                     new_sigma = np.sqrt(
-                        sum(0.25**2 * probs[i]**2 for i in range(len(self.priors)))
+                        sum(0.25**2 * weights[i]**2 for i in range(len(self.priors)))
                     )
                     prior = next(iter(construct_prior(
                         priors={"scalarized_prior": prior_mean},
                         config_space=self.config_space,
                         prior_distribution="normal",
                         sigma=new_sigma,
+                        seed=self.seed,
                     ).values()))
                 case _:
                     raise ValueError(
