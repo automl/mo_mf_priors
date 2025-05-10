@@ -639,6 +639,9 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     axs_ov_rank: list[plt.Axes] = [axs_ov_rank]
 
     xylabel_fontsize = other_fig_params["xylabel_fontsize"]
+    xlabel_i = other_fig_params["xlabel_start_i"][num_plots]
+    ylabel_i_inc = other_fig_params["ylabel_i_inc"][num_plots]
+    ylabel_i_counter = 0
 
     means_dict = {}
     bench_dict = {}
@@ -663,7 +666,6 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
             )
 
             axs_hv[i].set_xticks(XTICKS[(1, total_budget)])
-            axs_hv[i].set_ylabel("Hypervolume", fontsize=xylabel_fontsize)
             axs_hv[i].grid(visible=True)
             axs_hv[i].set_title(benchmark)
             axs_hv[i].set_xlim(1, total_budget)
@@ -689,16 +691,19 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
                 budget=total_budget,
             )
             axs_rank[i].set_xticks(XTICKS[(1, total_budget)])
-            axs_rank[i].set_ylabel("Relative Rank", fontsize=xylabel_fontsize)
             axs_rank[i].set_title(benchmark)
             axs_rank[i].grid(visible=True)
             axs_rank[i].set_xlim(1, total_budget)
 
-            xlabel_i = other_fig_params["xlabel_start_i"][num_plots]
-
             if i >= xlabel_i:
                 axs_hv[i].set_xlabel("Full Evaluations", fontsize=xylabel_fontsize)
                 axs_rank[i].set_xlabel("Full Evaluations", fontsize=xylabel_fontsize)
+
+            if i == ylabel_i_counter:
+                axs_hv[i].set_ylabel("Hypervolume", fontsize=xylabel_fontsize)
+                axs_rank[i].set_ylabel("Relative Rank", fontsize=xylabel_fontsize)
+                ylabel_i_counter += ylabel_i_inc
+
 
             bench_dict = {}
 
@@ -862,7 +867,7 @@ if __name__ == "__main__":
         help="Save individual plots for each optimizer instance."
     )
     parser.add_argument(
-        "--save_suffix", "-suf",
+        "--save_suffix", "-suffix",
         type=str,
         default="",
         help="Suffix to add to the saved plots."
