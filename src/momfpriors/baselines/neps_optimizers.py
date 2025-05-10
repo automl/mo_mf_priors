@@ -805,3 +805,103 @@ class NepsMOASHABO(NepsOptimizer):
             trial=result.query.optimizer_info,
             result=list(costs.values())
         )
+
+
+class NepsPiBORW(NepsOptimizer):
+    """Random Weighted Scalarization of objectives using PiBO in Neps
+    with random choice of priors.
+    """
+
+    name = "NepsPiBORW"
+
+    support = Problem.Support(
+        fidelities=(None,),
+        objectives=("many"),
+        cost_awareness=(None,),
+        tabular=False,
+        priors=True,
+    )
+
+    env = Env(
+        name="Neps-0.12.2",
+        python_version="3.10",
+        requirements=("neural-pipeline-search==0.12.2",)
+    )
+
+    mem_req_mb = 1024
+
+    def __init__(
+        self,
+        problem: Problem,
+        seed: int = 0,
+        working_directory: str | Path = DEFAULT_RESULTS_DIR,
+        scalarization_weights: Literal["equal", "random"] | Mapping[str, float] = "random",
+        **kwargs: Any,  # noqa: ARG002
+    ) -> None:
+        """Initialize the optimizer."""
+        space = convert_configspace(problem.config_space)
+
+        prior_centers = {
+            obj: prior.values
+            for obj, prior in problem.priors[1].items()
+        }
+
+        prior_confidences = {
+            obj: dict.fromkeys(
+                prior.keys(),
+                0.75
+            )
+            for obj, prior in problem.priors[1].items()
+        }
+
+        opt = algorithms.PredefinedOptimizers["pibo"](
+            space = space,
+            mo_prior_centers=prior_centers,
+            mo_prior_confidences=prior_confidences,
+        )
+        optimizer = AskAndTell(opt)
+        set_seed(seed)
+
+        super().__init__(
+            problem=problem,
+            space=space,
+            optimizer=optimizer,
+            seed=seed,
+            working_directory=working_directory,
+        )
+
+        self.objectives = self.problem.get_objectives()
+
+        self._rng = np.random.default_rng(seed=self.seed)
+        match scalarization_weights:
+            case Mapping():
+                self.scalarization_weights = scalarization_weights
+            case "equal":
+                self.scalarization_weights = {
+                    obj: 1.0/len(self.objectives) for obj in self.objectives
+                }
+            case "random":
+                weights = self._rng.uniform(size=len(self.objectives))
+                self.scalarization_weights = {
+                    obj: weight/sum(weights) for obj, weight in zip(self.objectives, weights)  # noqa: B905
+                }
+            case _:
+                raise ValueError(
+                    f"Invalid scalarization_weights: {scalarization_weights}. "
+                    "Expected 'equal', 'random', or a Mapping."
+                )
+
+
+    def tell(self, result: Result) -> None:
+        """Tell the optimizer about the result of a trial."""
+        costs = {
+            key: obj.as_minimize(result.values[key])
+            for key, obj in self.problem.objectives.items()
+        }
+        scalarized_objective = sum(
+            self.scalarization_weights[obj] * costs[obj] for obj in self.objectives
+        )
+        self.optimizer.tell(
+            trial=result.query.optimizer_info,
+            result=scalarized_objective
+        )
