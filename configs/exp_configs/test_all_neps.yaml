@@ -1,0 +1,17 @@
+optimizers:
+  - name: NepsRW
+  - name: NepsHyperbandRW
+  - name: NepsMOPriorband
+  - name: NepsMOHyperband
+  - name: NepsMOASHA
+  - name: NepsPriorMOASHA
+  - name: NepsPiBORW
+  - name: NepsMOASHABO
+  - name: NepsMOASHAPiBORW
+benchmarks:
+  - name: MOMFPark
+    objectives: 
+      value1: good
+      value2: good
+num_seeds: 1
+num_iterations: 15
