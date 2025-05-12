@@ -48,7 +48,7 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
 
         match fidelities:
             case None:
-                raise ValueError("NepsHyperbandRW requires a fidelity.")
+                pass
             case (fid_name, fidelity):
                 _fid = fidelity
                 min_fidelity = fidelity.min

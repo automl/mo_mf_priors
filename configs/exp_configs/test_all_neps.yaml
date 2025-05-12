@@ -13,5 +13,9 @@ benchmarks:
     objectives: 
       value1: good
       value2: good
-num_seeds: 1
+  - name: pd1-cifar100-wide_resnet-2048
+    objectives:
+      valid_error_rate: good
+      train_cost: good
+num_seeds: 3
 num_iterations: 15
