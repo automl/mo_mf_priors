@@ -746,7 +746,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
         fontsize=legend_fontsize,
         loc="lower center",
         bbox_to_anchor=bbox_to_anchor,
-        ncol=num_opts/2,
+        ncol=num_opts // 2 if num_opts > 2 else num_opts,  # noqa: PLR2004
         frameon=True,
         markerscale=2,
     )
@@ -766,7 +766,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
         fontsize=legend_fontsize,
         loc="lower center",
         bbox_to_anchor=bbox_to_anchor,
-        ncol=num_opts/2,
+        ncol=num_opts // 2 if num_opts > 2 else num_opts,  # noqa: PLR2004
         frameon=True,
         markerscale=2,
     )
@@ -786,7 +786,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
         fontsize=legend_fontsize,
         loc="lower center",
         bbox_to_anchor=bbox_to_anchor,
-        ncol=num_opts/2,
+        ncol=num_opts // 2 if num_opts > 2 else num_opts,  # noqa: PLR2004
         frameon=True,
         markerscale=2,
     )
@@ -802,7 +802,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
         fontsize=10,
         loc="lower center",
         bbox_to_anchor=(0.5, -0.15),
-        ncol=2,
+        ncol=num_opts // 2 if num_opts > 2 else num_opts,  # noqa: PLR2004
         frameon=True,
         markerscale=2,
     )

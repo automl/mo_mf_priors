@@ -5,6 +5,7 @@ from momfpriors.baselines.neps_optimizers import (
     NepsHyperbandRW,
     NepsMOASHA,
     NepsMOASHABO,
+    NepsMOASHAPiBORW,
     NepsMOHyperband,
     NepsMOPriorband,
     NepsPiBORW,
@@ -28,6 +29,7 @@ OPTIMIZERS = {
     NepsMOPriorband.name: NepsMOPriorband,
     NepsMOASHABO.name: NepsMOASHABO,
     NepsPiBORW.name: NepsPiBORW,
+    NepsMOASHAPiBORW.name: NepsMOASHAPiBORW,
 }
 
 for opt in yield_nevergrad_optimizers():
