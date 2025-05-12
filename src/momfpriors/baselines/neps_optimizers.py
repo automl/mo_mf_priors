@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import logging
-from abc import abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import neps
 import numpy as np
@@ -15,6 +14,9 @@ from neps.space.parsing import convert_configspace
 
 from momfpriors.constants import DEFAULT_RESULTS_DIR
 from momfpriors.optimizer import Abstract_AskTellOptimizer
+
+if TYPE_CHECKING:
+    from hpoglue.fidelity import Fidelity
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -28,24 +30,90 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
 
     def __init__(
         self,
+        *,
         problem: Problem,
         space: neps.SearchSpace,
-        optimizer: AskAndTell,
+        optimizer: str,
         seed: int = 0,
         working_directory: str | Path = DEFAULT_RESULTS_DIR,
-        **kwargs: Any,  # noqa: ARG002
+        fidelities: tuple[str, Fidelity] | None = None,
+        random_weighted_opt: bool = False,
+        constant_weights: bool = True,
+        scalarization_weights: Literal["equal", "random"] | Mapping[str, float] = "random",
+        **kwargs: Any,
     ) -> None:
         """Initialize the optimizer."""
         self.problem = problem
         self.space = space
+
+        match fidelities:
+            case None:
+                raise ValueError("NepsHyperbandRW requires a fidelity.")
+            case (fid_name, fidelity):
+                _fid = fidelity
+                min_fidelity = fidelity.min
+                max_fidelity = fidelity.max
+                match _fid.kind:
+                    case _ if _fid.kind is int:
+                        space.fidelities = {
+                            f"{fid_name}": neps.Integer(
+                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
+                            )
+                        }
+                    case _ if _fid.kind is float:
+                        space.fidelities = {
+                            f"{fid_name}": neps.Float(
+                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
+                            )
+                        }
+                    case _:
+                        raise TypeError(
+                            f"Invalid fidelity type: {type(_fid.kind).__name__}. "
+                            "Expected int or float."
+                        )
+            case _:
+                raise TypeError("Fidelity must be a tuple or None.")
+
 
         if not isinstance(working_directory, Path):
             working_directory = Path(working_directory)
         self.seed = seed
         self.working_dir = working_directory
 
-        self.optimizer = optimizer
+        self.optimizer = AskAndTell(
+            algorithms.PredefinedOptimizers[optimizer](
+                space = space,
+                **kwargs,
+            )
+        )
         self.trial_counter = 0
+
+        self.objectives = self.problem.get_objectives()
+
+        self._rng = np.random.default_rng(seed=self.seed)
+
+        self.constant_weights = constant_weights
+        self.random_weighted_opt = random_weighted_opt
+        self.scalarization_weights = None
+
+        if self.constant_weights and self.random_weighted_opt:
+            match scalarization_weights:
+                case Mapping():
+                    self.scalarization_weights = scalarization_weights
+                case "equal":
+                    self.scalarization_weights = {
+                        obj: 1.0/len(self.objectives) for obj in self.objectives
+                    }
+                case "random":
+                    weights = self._rng.uniform(size=len(self.objectives))
+                    self.scalarization_weights = {
+                        obj: weight/sum(weights) for obj, weight in zip(self.objectives, weights)  # noqa: B905
+                    }
+                case _:
+                    raise ValueError(
+                        f"Invalid scalarization_weights: {scalarization_weights}. "
+                        "Expected 'equal', 'random', or a Mapping."
+                    )
 
 
     def ask(self) -> Query:
@@ -74,9 +142,29 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
             optimizer_info=trial
         )
 
-    @abstractmethod
     def tell(self, result: Result) -> None:
         """Tell the optimizer about the result of a trial."""
+        costs = {
+            key: obj.as_minimize(result.values[key])
+            for key, obj in self.problem.objectives.items()
+        }
+        if self.random_weighted_opt:
+            if not self.constant_weights:
+                weights = self._rng.uniform(size=len(self.objectives))
+                self.scalarization_weights = {
+                    obj: weight/sum(weights) for obj, weight in zip(self.objectives, weights)  # noqa: B905
+                }
+
+            costs = sum(
+                self.scalarization_weights[obj] * costs[obj] for obj in self.objectives
+            )
+        else:
+            costs = list(costs.values())
+
+        self.optimizer.tell(
+            trial=result.query.optimizer_info,
+            result=costs
+        )
 
 
 def set_seed(seed: int) -> None:
@@ -122,11 +210,17 @@ class NepsRW(NepsOptimizer):
         """Initialize the optimizer."""
         self.searcher = searcher
         space = convert_configspace(problem.config_space)
+        optimizer = searcher
 
-        opt = algorithms.PredefinedOptimizers[self.searcher](
-            space = space
-        )
-        optimizer = AskAndTell(opt)
+
+        match problem.fidelities:
+            case None:
+                pass
+            case Mapping() | tuple():
+                raise ValueError("NepsRW does not support fidelities.")
+            case _:
+                raise TypeError("Fidelity must be a tuple or a Mapping.")
+
         set_seed(seed)
 
         super().__init__(
@@ -135,42 +229,9 @@ class NepsRW(NepsOptimizer):
             optimizer=optimizer,
             seed=seed,
             working_directory=working_directory,
-        )
-
-        self.objectives = self.problem.get_objectives()
-
-        self._rng = np.random.default_rng(seed=self.seed)
-        match scalarization_weights:
-            case Mapping():
-                self.scalarization_weights = scalarization_weights
-            case "equal":
-                self.scalarization_weights = {
-                    obj: 1.0/len(self.objectives) for obj in self.objectives
-                }
-            case "random":
-                weights = self._rng.uniform(size=len(self.objectives))
-                self.scalarization_weights = {
-                    obj: weight/sum(weights) for obj, weight in zip(self.objectives, weights)  # noqa: B905
-                }
-            case _:
-                raise ValueError(
-                    f"Invalid scalarization_weights: {scalarization_weights}. "
-                    "Expected 'equal', 'random', or a Mapping."
-                )
-
-
-    def tell(self, result: Result) -> None:
-        """Tell the optimizer about the result of a trial."""
-        costs = {
-            key: obj.as_minimize(result.values[key])
-            for key, obj in self.problem.objectives.items()
-        }
-        scalarized_objective = sum(
-            self.scalarization_weights[obj] * costs[obj] for obj in self.objectives
-        )
-        self.optimizer.tell(
-            trial=result.query.optimizer_info,
-            result=scalarized_objective
+            random_weighted_opt=True,
+            constant_weights=True,
+            scalarization_weights=scalarization_weights,
         )
 
 
@@ -200,94 +261,34 @@ class NepsHyperbandRW(NepsOptimizer):
         seed: int = 0,
         working_directory: str | Path = DEFAULT_RESULTS_DIR,
         scalarization_weights: Literal["equal", "random"] | Mapping[str, float] = "random",
-        searcher: str = "hyperband",
         **kwargs: Any,  # noqa: ARG002
     ) -> None:
         """Initialize the optimizer."""
-        self.searcher = searcher
         space = convert_configspace(problem.config_space)
 
         _fid = None
-        min_fidelity: int | float
-        max_fidelity: int | float
         match problem.fidelities:
             case None:
                 raise ValueError("NepsHyperbandRW requires a fidelity.")
             case Mapping():
                 raise NotImplementedError("Many-fidelity not yet implemented for NepsHyperbandRW.")
             case (fid_name, fidelity):
-                _fid = fidelity
-                min_fidelity = fidelity.min
-                max_fidelity = fidelity.max
-                match _fid.kind:
-                    case _ if _fid.kind is int:
-                        space.fidelities = {
-                            f"{fid_name}": neps.Integer(
-                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
-                            )
-                        }
-                    case _ if _fid.kind is float:
-                        space.fidelities = {
-                            f"{fid_name}": neps.Float(
-                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
-                            )
-                        }
-                    case _:
-                        raise TypeError(
-                            f"Invalid fidelity type: {type(_fid.kind).__name__}. "
-                            "Expected int or float."
-                        )
+                _fid = (fid_name, fidelity)
             case _:
                 raise TypeError("Fidelity must be a tuple or a Mapping.")
 
-
-        opt = algorithms.PredefinedOptimizers[self.searcher](
-            space = space
-        )
-        optimizer = AskAndTell(opt)
         set_seed(seed)
 
         super().__init__(
             problem=problem,
             space=space,
-            optimizer=optimizer,
+            optimizer="hyperband",
             seed=seed,
             working_directory=working_directory,
-        )
-
-        self.objectives = self.problem.get_objectives()
-        self._rng = np.random.default_rng(seed=self.seed)
-        match scalarization_weights:
-            case Mapping():
-                self.scalarization_weights = scalarization_weights
-            case "equal":
-                self.scalarization_weights = {
-                    obj: 1.0/len(self.objectives) for obj in self.objectives
-                }
-            case "random":
-                weights = self._rng.uniform(size=len(self.objectives))
-                self.scalarization_weights = {
-                    obj: weight/sum(weights) for obj, weight in zip(self.objectives, weights)  # noqa: B905
-                }
-            case _:
-                raise ValueError(
-                    f"Invalid scalarization_weights: {scalarization_weights}. "
-                    "Expected 'equal', 'random', or a Mapping."
-                )
-
-
-    def tell(self, result: Result) -> None:
-        """Tell the optimizer about the result of a trial."""
-        costs = {
-            key: obj.as_minimize(result.values[key])
-            for key, obj in self.problem.objectives.items()
-        }
-        scalarized_objective = sum(
-            self.scalarization_weights[obj] * costs[obj] for obj in self.objectives
-        )
-        self.optimizer.tell(
-            trial=result.query.optimizer_info,
-            result=scalarized_objective
+            fidelities=_fid,
+            random_weighted_opt=True,
+            constant_weights=True,
+            scalarization_weights=scalarization_weights,
         )
 
 
@@ -323,64 +324,25 @@ class NepsMOASHA(NepsOptimizer):
         space = convert_configspace(problem.config_space)
 
         _fid = None
-        min_fidelity: int | float
-        max_fidelity: int | float
         match problem.fidelities:
             case None:
                 raise ValueError("NepsMOASHA requires a fidelity.")
             case Mapping():
                 raise NotImplementedError("Many-fidelity not yet implemented for NepsMOASHA.")
             case (fid_name, fidelity):
-                _fid = fidelity
-                min_fidelity = fidelity.min
-                max_fidelity = fidelity.max
-                match _fid.kind:
-                    case _ if _fid.kind is int:
-                        space.fidelities = {
-                            f"{fid_name}": neps.Integer(
-                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
-                            )
-                        }
-                    case _ if _fid.kind is float:
-                        space.fidelities = {
-                            f"{fid_name}": neps.Float(
-                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
-                            )
-                        }
-                    case _:
-                        raise TypeError(
-                            f"Invalid fidelity type: {type(_fid.kind).__name__}. "
-                            "Expected int or float."
-                        )
+                _fid = (fid_name, fidelity)
             case _:
                 raise TypeError("Fidelity must be a tuple or a Mapping.")
-
-
-        opt = algorithms.PredefinedOptimizers["moasha"](
-            space = space,
-            mo_selector = mo_selector,
-        )
-        optimizer = AskAndTell(opt)
         set_seed(seed)
 
         super().__init__(
             problem=problem,
             space=space,
-            optimizer=optimizer,
+            optimizer="moasha",
             seed=seed,
             working_directory=working_directory,
-        )
-
-
-    def tell(self, result: Result) -> None:
-        """Tell the optimizer about the result of a trial."""
-        costs = {
-            key: obj.as_minimize(result.values[key])
-            for key, obj in self.problem.objectives.items()
-        }
-        self.optimizer.tell(
-            trial=result.query.optimizer_info,
-            result=list(costs.values())
+            fidelities=_fid,
+            mo_selector=mo_selector,
         )
 
 
@@ -416,64 +378,25 @@ class NepsMOHyperband(NepsOptimizer):
         space = convert_configspace(problem.config_space)
 
         _fid = None
-        min_fidelity: int | float
-        max_fidelity: int | float
         match problem.fidelities:
             case None:
                 raise ValueError("NepsMOHyperband requires a fidelity.")
             case Mapping():
                 raise NotImplementedError("Many-fidelity not yet implemented for NepsMOHyperband.")
             case (fid_name, fidelity):
-                _fid = fidelity
-                min_fidelity = fidelity.min
-                max_fidelity = fidelity.max
-                match _fid.kind:
-                    case _ if _fid.kind is int:
-                        space.fidelities = {
-                            f"{fid_name}": neps.Integer(
-                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
-                            )
-                        }
-                    case _ if _fid.kind is float:
-                        space.fidelities = {
-                            f"{fid_name}": neps.Float(
-                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
-                            )
-                        }
-                    case _:
-                        raise TypeError(
-                            f"Invalid fidelity type: {type(_fid.kind).__name__}. "
-                            "Expected int or float."
-                        )
+                _fid = (fid_name, fidelity)
             case _:
                 raise TypeError("Fidelity must be a tuple or a Mapping.")
-
-
-        opt = algorithms.PredefinedOptimizers["mo_hyperband"](
-            space = space,
-            mo_selector = mo_selector,
-        )
-        optimizer = AskAndTell(opt)
         set_seed(seed)
 
         super().__init__(
             problem=problem,
             space=space,
-            optimizer=optimizer,
+            optimizer="mo_hyperband",
             seed=seed,
             working_directory=working_directory,
-        )
-
-
-    def tell(self, result: Result) -> None:
-        """Tell the optimizer about the result of a trial."""
-        costs = {
-            key: obj.as_minimize(result.values[key])
-            for key, obj in self.problem.objectives.items()
-        }
-        self.optimizer.tell(
-            trial=result.query.optimizer_info,
-            result=list(costs.values())
+            fidelities=_fid,
+            mo_selector=mo_selector,
         )
 
 
@@ -510,37 +433,16 @@ class NepsPriorMOASHA(NepsOptimizer):
         space = convert_configspace(problem.config_space)
 
         _fid = None
-        min_fidelity: int | float
-        max_fidelity: int | float
         match problem.fidelities:
             case None:
                 raise ValueError("NepsPriorMOASHA requires a fidelity.")
             case Mapping():
                 raise NotImplementedError("Many-fidelity not yet implemented for NepsPriorMOASHA.")
             case (fid_name, fidelity):
-                _fid = fidelity
-                min_fidelity = fidelity.min
-                max_fidelity = fidelity.max
-                match _fid.kind:
-                    case _ if _fid.kind is int:
-                        space.fidelities = {
-                            f"{fid_name}": neps.Integer(
-                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
-                            )
-                        }
-                    case _ if _fid.kind is float:
-                        space.fidelities = {
-                            f"{fid_name}": neps.Float(
-                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
-                            )
-                        }
-                    case _:
-                        raise TypeError(
-                            f"Invalid fidelity type: {type(_fid.kind).__name__}. "
-                            "Expected int or float."
-                        )
+                _fid = (fid_name, fidelity)
             case _:
                 raise TypeError("Fidelity must be a tuple or a Mapping.")
+        set_seed(seed)
 
         prior_centers = {
             obj: prior.values
@@ -555,34 +457,16 @@ class NepsPriorMOASHA(NepsOptimizer):
             for obj, prior in problem.priors[1].items()
         }
 
-
-        opt = algorithms.PredefinedOptimizers["priormoasha"](
-            space = space,
-            mo_selector = mo_selector,
-            prior_centers=prior_centers,
-            prior_confidences=prior_confidences,
-        )
-        optimizer = AskAndTell(opt)
-        set_seed(seed)
-
         super().__init__(
             problem=problem,
             space=space,
-            optimizer=optimizer,
+            optimizer="priormoasha",
             seed=seed,
             working_directory=working_directory,
-        )
-
-
-    def tell(self, result: Result) -> None:
-        """Tell the optimizer about the result of a trial."""
-        costs = {
-            key: obj.as_minimize(result.values[key])
-            for key, obj in self.problem.objectives.items()
-        }
-        self.optimizer.tell(
-            trial=result.query.optimizer_info,
-            result=list(costs.values())
+            fidelities=_fid,
+            mo_selector=mo_selector,
+            prior_centers=prior_centers,
+            prior_confidences=prior_confidences,
         )
 
 
@@ -619,37 +503,16 @@ class NepsMOPriorband(NepsOptimizer):
         space = convert_configspace(problem.config_space)
 
         _fid = None
-        min_fidelity: int | float
-        max_fidelity: int | float
         match problem.fidelities:
             case None:
                 raise ValueError("NepsMOPriorband requires a fidelity.")
             case Mapping():
                 raise NotImplementedError("Many-fidelity not yet implemented for NepsMOPriorband.")
             case (fid_name, fidelity):
-                _fid = fidelity
-                min_fidelity = fidelity.min
-                max_fidelity = fidelity.max
-                match _fid.kind:
-                    case _ if _fid.kind is int:
-                        space.fidelities = {
-                            f"{fid_name}": neps.Integer(
-                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
-                            )
-                        }
-                    case _ if _fid.kind is float:
-                        space.fidelities = {
-                            f"{fid_name}": neps.Float(
-                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
-                            )
-                        }
-                    case _:
-                        raise TypeError(
-                            f"Invalid fidelity type: {type(_fid.kind).__name__}. "
-                            "Expected int or float."
-                        )
+                _fid = (fid_name, fidelity)
             case _:
                 raise TypeError("Fidelity must be a tuple or a Mapping.")
+        set_seed(seed)
 
         prior_centers = {
             obj: prior.values
@@ -664,146 +527,18 @@ class NepsMOPriorband(NepsOptimizer):
             for obj, prior in problem.priors[1].items()
         }
 
-
-        opt = algorithms.PredefinedOptimizers["mopriorband"](
-            space = space,
-            mo_selector = mo_selector,
+        super().__init__(
+            problem=problem,
+            space=space,
+            optimizer="mopriorband",
+            seed=seed,
+            working_directory=working_directory,
+            fidelities=_fid,
+            mo_selector=mo_selector,
             prior_centers=prior_centers,
             prior_confidences=prior_confidences,
             incumbent_type="scalarized",
             base="asha",
-        )
-        optimizer = AskAndTell(opt)
-        set_seed(seed)
-
-        super().__init__(
-            problem=problem,
-            space=space,
-            optimizer=optimizer,
-            seed=seed,
-            working_directory=working_directory,
-        )
-
-
-    def tell(self, result: Result) -> None:
-        """Tell the optimizer about the result of a trial."""
-        costs = {
-            key: obj.as_minimize(result.values[key])
-            for key, obj in self.problem.objectives.items()
-        }
-        self.optimizer.tell(
-            trial=result.query.optimizer_info,
-            result=list(costs.values())
-        )
-
-
-class NepsMOASHABO(NepsOptimizer):
-    """NepsMOASHABO."""
-
-    name = "NepsMOASHABO"
-
-    support = Problem.Support(
-        fidelities=("single",),
-        objectives=("many"),
-        cost_awareness=(None,),
-        tabular=False,
-        priors=True,
-    )
-
-    env = Env(
-        name="Neps-0.12.2",
-        python_version="3.10",
-        requirements=("neural-pipeline-search==0.12.2",)
-    )
-
-    mem_req_mb = 1024
-
-    def __init__(
-        self,
-        problem: Problem,
-        seed: int = 0,
-        working_directory: str | Path = DEFAULT_RESULTS_DIR,
-        mo_selector: Literal["nsga2", "epsnet"] = "epsnet",
-        **kwargs: Any,  # noqa: ARG002
-    ) -> None:
-        """Initialize the optimizer."""
-        space = convert_configspace(problem.config_space)
-
-        _fid = None
-        min_fidelity: int | float
-        max_fidelity: int | float
-        match problem.fidelities:
-            case None:
-                raise ValueError("NepsMOASHABO requires a fidelity.")
-            case Mapping():
-                raise NotImplementedError("Many-fidelity not yet implemented for NepsMOASHABO.")
-            case (fid_name, fidelity):
-                _fid = fidelity
-                min_fidelity = fidelity.min
-                max_fidelity = fidelity.max
-                match _fid.kind:
-                    case _ if _fid.kind is int:
-                        space.fidelities = {
-                            f"{fid_name}": neps.Integer(
-                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
-                            )
-                        }
-                    case _ if _fid.kind is float:
-                        space.fidelities = {
-                            f"{fid_name}": neps.Float(
-                                lower=min_fidelity, upper=max_fidelity, is_fidelity=True
-                            )
-                        }
-                    case _:
-                        raise TypeError(
-                            f"Invalid fidelity type: {type(_fid.kind).__name__}. "
-                            "Expected int or float."
-                        )
-            case _:
-                raise TypeError("Fidelity must be a tuple or a Mapping.")
-
-        prior_centers = {
-            obj: prior.values
-            for obj, prior in problem.priors[1].items()
-        }
-
-        prior_confidences = {
-            obj: dict.fromkeys(
-                prior.keys(),
-                0.75
-            )
-            for obj, prior in problem.priors[1].items()
-        }
-
-
-        opt = algorithms.PredefinedOptimizers["moashabo"](
-            space = space,
-            sampler="mopriorsampler",
-            mo_selector = mo_selector,
-            prior_centers=prior_centers,
-            prior_confidences=prior_confidences,
-        )
-        optimizer = AskAndTell(opt)
-        set_seed(seed)
-
-        super().__init__(
-            problem=problem,
-            space=space,
-            optimizer=optimizer,
-            seed=seed,
-            working_directory=working_directory,
-        )
-
-
-    def tell(self, result: Result) -> None:
-        """Tell the optimizer about the result of a trial."""
-        costs = {
-            key: obj.as_minimize(result.values[key])
-            for key, obj in self.problem.objectives.items()
-        }
-        self.optimizer.tell(
-            trial=result.query.optimizer_info,
-            result=list(costs.values())
         )
 
 
@@ -841,6 +576,16 @@ class NepsPiBORW(NepsOptimizer):
         """Initialize the optimizer."""
         space = convert_configspace(problem.config_space)
 
+        match problem.fidelities:
+            case None:
+                pass
+            case Mapping() | tuple():
+                raise ValueError("NepsPiBORW does not support fidelities.")
+            case _:
+                raise TypeError("Fidelity must be a tuple or a Mapping.")
+
+        set_seed(seed)
+
         prior_centers = {
             obj: prior.values
             for obj, prior in problem.priors[1].items()
@@ -854,54 +599,141 @@ class NepsPiBORW(NepsOptimizer):
             for obj, prior in problem.priors[1].items()
         }
 
-        opt = algorithms.PredefinedOptimizers["pibo"](
-            space = space,
+        super().__init__(
+            problem=problem,
+            space=space,
+            optimizer="pibo",
+            seed=seed,
+            working_directory=working_directory,
+            random_weighted_opt=True,
+            constant_weights=True,
+            scalarization_weights=scalarization_weights,
             mo_prior_centers=prior_centers,
             mo_prior_confidences=prior_confidences,
         )
-        optimizer = AskAndTell(opt)
+
+
+class NepsMOASHABO(NepsOptimizer):
+    """NepsMOASHABO."""
+
+    name = "NepsMOASHABO"
+
+    support = Problem.Support(
+        fidelities=("single",),
+        objectives=("many"),
+        cost_awareness=(None,),
+        tabular=False,
+    )
+
+    env = Env(
+        name="Neps-0.12.2",
+        python_version="3.10",
+        requirements=("neural-pipeline-search==0.12.2",)
+    )
+
+    mem_req_mb = 1024
+
+    def __init__(
+        self,
+        problem: Problem,
+        seed: int = 0,
+        working_directory: str | Path = DEFAULT_RESULTS_DIR,
+        mo_selector: Literal["nsga2", "epsnet"] = "epsnet",
+        **kwargs: Any,  # noqa: ARG002
+    ) -> None:
+        """Initialize the optimizer."""
+        space = convert_configspace(problem.config_space)
+
+        _fid = None
+        match problem.fidelities:
+            case None:
+                raise ValueError("NepsMOASHABO requires a fidelity.")
+            case Mapping():
+                raise NotImplementedError("Many-fidelity not yet implemented for NepsMOASHABO.")
+            case (fid_name, fidelity):
+                _fid = (fid_name, fidelity)
+            case _:
+                raise TypeError("Fidelity must be a tuple or a Mapping.")
         set_seed(seed)
 
         super().__init__(
             problem=problem,
             space=space,
-            optimizer=optimizer,
+            optimizer="moashabo",
             seed=seed,
             working_directory=working_directory,
+            fidelities=_fid,
+            mo_selector=mo_selector,
+            initial_design_size=5,
         )
 
-        self.objectives = self.problem.get_objectives()
 
-        self._rng = np.random.default_rng(seed=self.seed)
-        match scalarization_weights:
+class NepsMOASHAPiBORW(NepsOptimizer):
+    """NepsMOASHAPiBORW."""
+
+    name = "NepsMOASHAPiBORW"
+
+    support = Problem.Support(
+        fidelities=("single",),
+        objectives=("many"),
+        cost_awareness=(None,),
+        tabular=False,
+        priors=True,
+    )
+
+    env = Env(
+        name="Neps-0.12.2",
+        python_version="3.10",
+        requirements=("neural-pipeline-search==0.12.2",)
+    )
+
+    mem_req_mb = 1024
+
+    def __init__(
+        self,
+        problem: Problem,
+        seed: int = 0,
+        working_directory: str | Path = DEFAULT_RESULTS_DIR,
+        mo_selector: Literal["nsga2", "epsnet"] = "epsnet",
+        **kwargs: Any,  # noqa: ARG002
+    ) -> None:
+        """Initialize the optimizer."""
+        space = convert_configspace(problem.config_space)
+
+        _fid = None
+        match problem.fidelities:
+            case None:
+                raise ValueError("NepsMOASHAPiBORW requires a fidelity.")
             case Mapping():
-                self.scalarization_weights = scalarization_weights
-            case "equal":
-                self.scalarization_weights = {
-                    obj: 1.0/len(self.objectives) for obj in self.objectives
-                }
-            case "random":
-                weights = self._rng.uniform(size=len(self.objectives))
-                self.scalarization_weights = {
-                    obj: weight/sum(weights) for obj, weight in zip(self.objectives, weights)  # noqa: B905
-                }
+                raise NotImplementedError("Many-fidelity not yet implemented for NepsMOASHAPiBORW.")
+            case (fid_name, fidelity):
+                _fid = (fid_name, fidelity)
             case _:
-                raise ValueError(
-                    f"Invalid scalarization_weights: {scalarization_weights}. "
-                    "Expected 'equal', 'random', or a Mapping."
-                )
+                raise TypeError("Fidelity must be a tuple or a Mapping.")
+        set_seed(seed)
 
-
-    def tell(self, result: Result) -> None:
-        """Tell the optimizer about the result of a trial."""
-        costs = {
-            key: obj.as_minimize(result.values[key])
-            for key, obj in self.problem.objectives.items()
+        prior_centers = {
+            obj: prior.values
+            for obj, prior in problem.priors[1].items()
         }
-        scalarized_objective = sum(
-            self.scalarization_weights[obj] * costs[obj] for obj in self.objectives
-        )
-        self.optimizer.tell(
-            trial=result.query.optimizer_info,
-            result=scalarized_objective
+
+        prior_confidences = {
+            obj: dict.fromkeys(
+                prior.keys(),
+                0.75
+            )
+            for obj, prior in problem.priors[1].items()
+        }
+
+        super().__init__(
+            problem=problem,
+            space=space,
+            optimizer="moashabo",
+            seed=seed,
+            working_directory=working_directory,
+            fidelities=_fid,
+            mo_selector=mo_selector,
+            initial_design_size=5,
+            prior_centers=prior_centers,
+            prior_confidences=prior_confidences,
         )
