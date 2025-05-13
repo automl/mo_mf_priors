@@ -183,10 +183,10 @@ class Run:
         self,
         *,
         on_error: Literal["raise", "continue"] = "raise",
-        core_verbose: bool = False,
+        core_verbose: bool = False, # noqa: ARG002
         overwrite: Run.State | bool | Iterable[Run.State | str] = False,
         use_continuations_as_budget: bool = False,
-        **kwargs: Any,
+        **kwargs: Any, # noqa: ARG002
     ) -> None:
         """Run the Run.
 
@@ -201,6 +201,9 @@ class Run:
             core_verbose: Whether to log the core loop at INFO level.
 
             overwrite: Overwrite existing runs.
+
+            use_continuations_as_budget: Whether to use continuations as budget.
+                If True, the budget will be set to the fractional continuations cost.
 
             **kwargs: Additional keyword arguments to pass to the optimizer.
                 Usage example: Scalarization weights for Neps Random Scalarization MO.
@@ -225,14 +228,6 @@ class Run:
         try:
 
             self.set_state(self.State.RUNNING)
-            # _hist = _core(
-            #     problem=self.problem,
-            #     seed=self.seed,
-            #     num_iterations=self.problem.budget.total,
-            #     results_dir=self.exp_dir.parent.absolute(),
-            #     core_verbose=core_verbose,
-            #     **kwargs,
-            # )
             _hist = _run(
                 problem=self.problem,
                 seed=self.seed,
@@ -500,11 +495,16 @@ class Run:
                         prior_annot,
                         yaml.safe_load(file)["config"]
                     )
+            else:
+                _priors[obj] = (
+                    None,
+                    None
+                )
 
         _prior_name = ";".join(_prior_name)
         priors: tuple[str, Mapping[str, Mapping[str, Any]]] = (
             _prior_name,
-            {obj: prior[1] for obj, prior in _priors.items()}
+            {obj: prior[1] for obj, prior in _priors.items() if prior[1] is not None}
         )
 
 
