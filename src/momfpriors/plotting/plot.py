@@ -149,13 +149,12 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
         seed_hv_dict = {}
         seed_cont_dict = {}
         for seed, data in instance_data.items():
-            results: dict = data["results"]
+            results: list[dict[str, Any]] = data["results"]
             _df = data["_df"]
             keys = list(results[0].keys())
             acc_costs = []
             pareto = None
             hv_vals = []
-            minimize: dict[str, bool] = _df["minimize"][0]
             budget_type = "TrialBudget" if fidelity is None else "FidelityBudget"
             match budget_type:
                 case "FidelityBudget":
@@ -173,11 +172,6 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 continuations_list = _df[CONTINUATIONS_COL].values.astype(np.float64)
                 continuations_list = np.cumsum(continuations_list)
 
-            results = _df["results"].apply(
-                lambda x, objectives=objectives, minimize=minimize: {
-                    k: x[k] if minimize[k] else -x[k] for k in objectives
-                }
-            )
             num_full_evals = 0
             for i, costs in enumerate(results, start=1):
                 if budget_type == "FidelityBudget" and _df[FIDELITY_COL][0] is not None:
@@ -493,7 +487,7 @@ def agg_data(
     return benchmarks_dict, seed_for_pareto, total_budget
 
 
-def gen_plots_per_bench(
+def gen_plots_per_bench(  # noqa: C901, PLR0913
     ax_hv: plt.Axes,
     ax_pareto: plt.Axes,
     exp_dir: Path,
@@ -506,6 +500,7 @@ def gen_plots_per_bench(
     _all_dfs: list[pd.DataFrame],
     plot_opt: str | None = None,
     no_save: bool = False,
+    priors_to_avg: list[str] | None = None,
 ) -> dict[int, pd.DataFrame]:
     """Function to generate plots for a given benchmark and its config dict."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
@@ -540,6 +535,8 @@ def gen_plots_per_bench(
             }
         )
 
+        annotations = None
+
         if _df["prior_annotations"][0] is not None:
             annotations = "-".join(
                 [a.split("=")[-1] for a in _df["prior_annotations"][0].split(",")]
@@ -554,7 +551,26 @@ def gen_plots_per_bench(
             ) +
             (f";priors={annotations}" if annotations else "")
         )
+
         seed = int(_df[SEED_COL][0])
+
+        if priors_to_avg and annotations in priors_to_avg:
+            instance = (
+                _df["optimizer"][0] +
+                (
+                    ";" + _df[HP_COL][0]
+                    if "default" not in _df[HP_COL][0]
+                    else ""
+                ) + ";priors=all"
+            )
+            if instance not in agg_dict:
+                agg_dict[instance] = {}
+            seed = f"{seed}_{_df['optimizer'][0]}_{annotations}"
+            agg_dict[instance][seed] = {
+                "_df": _df,
+                "results": _results,
+            }
+            continue
         if instance not in agg_dict:
             agg_dict[instance] = {}
         agg_dict[instance][seed] = {
@@ -594,6 +610,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     save_individual: bool = False,
     save_suffix: str = "",
     skip_opt: list[str] | None = None,
+    priors_to_avg: list[str] | None = None,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     fig_size = other_fig_params["fig_size"]
@@ -663,6 +680,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
                 seed_for_pareto=seed_for_pareto,
                 save_individual=save_individual,
                 total_budget=total_budget,
+                priors_to_avg=priors_to_avg,
             )
 
             axs_hv[i].set_xticks(XTICKS[(1, total_budget)])
@@ -879,6 +897,13 @@ if __name__ == "__main__":
         default=None,
         help="Skip the given optimizers."
     )
+    parser.add_argument(
+        "--priors_to_avg", "-avg",
+        nargs="+",
+        type=str,
+        default=None,
+        help="Priors to average over."
+    )
     args = parser.parse_args()
     exp_dir: Path = DEFAULT_RESULTS_DIR / args.exp_dir
 
@@ -892,4 +917,5 @@ if __name__ == "__main__":
         save_individual=args.save_individual,
         save_suffix=args.save_suffix,
         skip_opt=args.skip_opt,
+        priors_to_avg=args.priors_to_avg,
     )
