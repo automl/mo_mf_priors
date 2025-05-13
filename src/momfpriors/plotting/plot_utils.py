@@ -70,11 +70,13 @@ def edit_legend_labels(labels: list[str]) -> list[str]:
     return new_labels
 
 
-
 reference_points_dict = {
 
     # MOMFPark
     "MOMFPark": {"value1": 1, "value2": 1},
+
+    # MOMFBraninCurrin
+    "MOMFBraninCurrin": {"value1": 1, "value2": 1},
 
     # PD1
     "pd1-cifar100-wide_resnet-2048": {"valid_error_rate": 1, "train_cost": 30},
