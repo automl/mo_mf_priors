@@ -86,7 +86,7 @@ cat "$yaml_file"
 
 start=$(date +%s)
 
-python3 -m momfpriors.run -y "$yaml_file" -e "prior_exp_${SLURM_ARRAY_TASK_ID}"
+python3 -m momfpriors.run -y "$yaml_file" -e "all_priors_25"
 
 end=$(date +%s)
 runtime=$((end - start))
