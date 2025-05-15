@@ -3,7 +3,7 @@ from __future__ import annotations
 MARKERS = {
     "good-good": "o",      # Circle
     "good-bad": "v",       # Triangle Down
-    "good-medium": "s",    # Square
+    "good-medium": ".",    # dot
     "good": "h",           # Hexagon
     "bad-good": "^",       # Triangle Up
     "bad-bad": "x",        # X
@@ -16,48 +16,77 @@ MARKERS = {
 }
 
 COLORS = {
+    # Optimizers without Priors
     "SMAC_ParEGO": "blue",
     "RandomSearch": "sienna",
     "NepsRW": "lightseagreen",
-    "NepsHyperbandRW": "gainsboro",
-    "NepsHyperbandRW_w_continuations": "darkslategray",
     "Nevergrad_EvolutionStrategy": "lime",
-    "MOMFBO": "purple",
+
+    "NepsHyperbandRW": "darkslategray",
+    "NepsHyperbandRW_w_continuations": "darkslategray",
+
+    "MOMFBO": "magenta",
     "MOMFBO_w_continuations": "magenta",
-    "NepsMOASHA": "salmon",
+
+    "NepsMOASHA": "darkviolet",
     "NepsMOASHA_w_continuations": "darkviolet",
-    "NepsPriorMOASHA-good-good": "thistle",
-    "NepsPriorMOASHA-good-good_w_continuations": "darkgreen",
-    "NepsPriorMOASHA-bad-bad": "crimson",
-    "NepsPriorMOASHA-bad-bad_w_continuations": "hotpink",
-    "NepsMOPriorband-good-good": "pink",
-    "NepsMOPriorband-good-good_w_continuations": "cornflowerblue",
-    "NepsMOPriorband-bad-bad": "lightcoral",
-    "NepsMOPriorband-bad-bad_w_continuations": "olivedrab",
-    "NepsPiBORW-good-good": "black",
-    "NepsPiBORW-bad-bad": "darkcyan",
-    "NepsMOASHABO": "paleturquoise",
+
+    "NepsMOASHABO": "darkblue",
     "NepsMOASHABO_w_continuations": "darkblue",
-    "NepsMOASHAPiBORW-good-good": "saddlebrown",
+
+    # NepsPriorMOASHA
+    "NepsPriorMOASHA-all": "darkgreen",
+    "NepsPriorMOASHA-all_w_continuations": "darkgreen",
+    "NepsPriorMOASHA-good-good": "darkgreen",
+    "NepsPriorMOASHA-good-good_w_continuations": "darkgreen",
+    "NepsPriorMOASHA-bad-bad": "darkgreen",
+    "NepsPriorMOASHA-bad-bad_w_continuations": "darkgreen",
+    "NepsPriorMOASHA-bad-good": "darkgreen",
+    "NepsPriorMOASHA-bad-good_w_continuations": "darkgreen",
+
+    # NepsMOPriorband
+    "NepsMOPriorband-all": "cornflowerblue",
+    "NepsMOPriorband-all_w_continuations": "cornflowerblue",
+    "NepsMOPriorband-good-good": "cornflowerblue",
+    "NepsMOPriorband-good-good_w_continuations": "cornflowerblue",
+    "NepsMOPriorband-bad-bad": "cornflowerblue",
+    "NepsMOPriorband-bad-bad_w_continuations": "cornflowerblue",
+    "NepsMOPriorband-bad-good": "cornflowerblue",
+    "NepsMOPriorband-bad-good_w_continuations": "cornflowerblue",
+
+    # NepsPiBORW
+    "NepsPiBORW-all": "darkcyan",
+    "NepsPiBORW-good-good": "darkcyan",
+    "NepsPiBORW-bad-bad": "darkcyan",
+    "NepsPiBORW-bad-good": "darkcyan",
+
+    # NepsMOASHAPiBORW
+    "NepsMOASHAPiBORW-all": "goldenrod",
+    "NepsMOASHAPiBORW-all_w_continuations": "goldenrod",
+    "NepsMOASHAPiBORW-good-good": "goldenrod",
     "NepsMOASHAPiBORW-good-good_w_continuations": "goldenrod",
-    "NepsMOASHAPiBORW-bad-bad": "lightsteelblue",
-    "NepsMOASHAPiBORW-bad-bad_w_continuations": "darkkhaki",
-    "RandomSearchWithPriors-all": "darkseagreen",
-    "RandomSearchWithPriors-good-good": "red",
-    "RandomSearchWithPriors-good-bad": "teal",
-    "RandomSearchWithPriors-good-medium": "deepskyblue",
-    "RandomSearchWithPriors-good-None": "tomato",
-    "RandomSearchWithPriors-None-good": "lightblue",
-    "RandomSearchWithPriors-bad-good": "green",
+    "NepsMOASHAPiBORW-bad-bad": "goldenrod",
+    "NepsMOASHAPiBORW-bad-bad_w_continuations": "goldenrod",
+    "NepsMOASHAPiBORW-bad-good": "goldenrod",
+    "NepsMOASHAPiBORW-bad-good_w_continuations": "goldenrod",
+
+    # RandomSearchWithPriors
+    "RandomSearchWithPriors-all": "darkorange",
+    "RandomSearchWithPriors-good-good": "darkorange",
+    "RandomSearchWithPriors-good-bad": "teadarkorangel",
+    "RandomSearchWithPriors-good-medium": "darkorange",
+    "RandomSearchWithPriors-good-None": "darkorange",
+    "RandomSearchWithPriors-None-good": "darkorange",
+    "RandomSearchWithPriors-bad-good": "darkorange",
     "RandomSearchWithPriors-bad-bad": "darkorange",
-    "RandomSearchWithPriors-bad-medium": "crimson",
-    "RandomSearchWithPriors-bad-None": "peru",
-    "RandomSearchWithPriors-None-bad": "lightcoral",
+    "RandomSearchWithPriors-bad-medium": "darkorange",
+    "RandomSearchWithPriors-bad-None": "darkorange",
+    "RandomSearchWithPriors-None-bad": "darkorange",
     "RandomSearchWithPriors-medium-good": "darkorange",
-    "RandomSearchWithPriors-medium-bad": "mediumturquoise",
-    "RandomSearchWithPriors-medium-medium": "orchid",
-    "RandomSearchWithPriors-medium-None": "darkkhaki",
-    "RandomSearchWithPriors-None-medium": "lightpink",
+    "RandomSearchWithPriors-medium-bad": "darkorange",
+    "RandomSearchWithPriors-medium-medium": "darkorange",
+    "RandomSearchWithPriors-medium-None": "darkorange",
+    "RandomSearchWithPriors-None-medium": "darkorange",
 }
 
 RC_PARAMS = {
@@ -135,5 +164,36 @@ other_fig_params = {
         8 : 4,
         9 : 3,
         12: 4,
+    },
+    "multi_fig_leg_cols": {
+        2: 2,
+        3: 3,
+        4: 4,
+        5: 5,
+        6: 3,
+        7: 4,
+        8: 4,
+        9: 3,
+        10: 5,
+        11: 4,
+        12: 4,
+        13: 5,
+        14: 5,
+        15: 5,
+        16: 4,
+    },
+    "single_fig_leg_cols": {
+        2: 2,
+        3: 3,
+        4: 2,
+        5: 2,
+        6: 3,
+        7: 3,
+        8: 2,
+        9: 3,
+        10: 2,
+        11: 3,
+        12: 2,
+        13: 5,
     }
 }
