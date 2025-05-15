@@ -21,6 +21,7 @@ from momfpriors.plotting.plot_styles import (
     other_fig_params,
 )
 from momfpriors.plotting.plot_utils import (
+    avg_seed_dfs_for_ranking,
     edit_legend_labels,
     fid_perc_momfbo,
     get_style,
@@ -33,6 +34,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 sns.set_theme(style="whitegrid")
+sns.set_context("paper")
 
 SEED_COL = "seed"
 OPTIMIZER_COL = "optimizer"
@@ -97,26 +99,20 @@ def plot_average_rank(
             means + sems,
             alpha=0.1,
             color=color,
-            edgecolor=color,
+            edgecolor=None,
         )
 
 
-def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
+def create_plots(  # noqa: C901, PLR0912, PLR0915
+    *,
     ax_hv: plt.Axes,
     ax_pareto: plt.Axes,
     agg_data: Mapping[str, Mapping[str, Any]],
-    exp_dir: Path,
     benchmark: str,
     objectives: list[str],
-    seed_for_pareto: int,
     budget: int,
-    cut_off_iteration: int | None = None,
     fidelity: str | None = None,
-    plot_opt: str | None = None,
-    *,
     is_single_opt: bool = False,
-    no_save: bool = False,
-    save_individual: bool = False,
 ) -> dict[str, pd.DataFrame]:
     """Function to plot the dominated hypervolume over
     iterations and pareto fronts from a pandas Series
@@ -132,9 +128,6 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
         reference_points_dict[benchmark][obj]
         for obj in objectives
     ])
-    plt.figure(5, figsize=(10, 10))
-    if plot_opt:
-        plt.figure(6, figsize=(10, 10))
     for instance, instance_data in agg_data.items():
 
         # Get the marker, color, optimizer name and prior annotations for the optimizer instance
@@ -149,21 +142,17 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
         seed_hv_dict = {}
         seed_cont_dict = {}
         for seed, data in instance_data.items():
-            results: dict = data["results"]
+            results: list[dict[str, Any]] = data["results"]
             _df = data["_df"]
-            keys = list(results[0].keys())
             acc_costs = []
             pareto = None
             hv_vals = []
-            minimize: dict[str, bool] = _df["minimize"][0]
             budget_type = "TrialBudget" if fidelity is None else "FidelityBudget"
             match budget_type:
                 case "FidelityBudget":
                     assert FIDELITY_COL in _df.columns
                     if _df[FIDELITY_COL].iloc[0] is None:
                         budget_list = _df[BUDGET_USED_COL].values.astype(np.float64)
-                    else:
-                        budget_list = _df[CONTINUATIONS_BUDGET_USED].values.astype(np.float64)
                 case "TrialBudget":
                     budget_list = _df[BUDGET_USED_COL].values.astype(np.float64)
                 case _:
@@ -175,11 +164,6 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 continuations_list = _df[CONTINUATIONS_COL].values.astype(np.float64)
                 continuations_list = np.cumsum(continuations_list)
 
-            results = _df["results"].apply(
-                lambda x, objectives=objectives, minimize=minimize: {
-                    k: x[k] if minimize[k] else -x[k] for k in objectives
-                }
-            )
             num_full_evals = 0
             for i, costs in enumerate(results, start=1):
                 if budget_type == "FidelityBudget" and _df[FIDELITY_COL][0] is not None:
@@ -189,7 +173,10 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                     max_fid_flag = True
                     match instance:
                         case "MOMFBO":
-                            pass
+                            max_fid_flag = (
+                                float(fidelity_queried) / float(bench_max_fid)
+                                > float(fid_perc_momfbo[benchmark])
+                            )
                         case str():
                             max_fid_flag = float(fidelity_queried) == float(bench_max_fid)
                         case _:
@@ -214,26 +201,17 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 hypervolume = hv.do(pareto)
                 hv_vals.append(hypervolume)
 
-                if cut_off_iteration and num_full_evals == cut_off_iteration:
-                    budget = cut_off_iteration
+                if num_full_evals == budget:
                     break
 
-
-            eval_list = np.arange(1, num_full_evals + 1, 1)
+            budget_list = np.arange(1, num_full_evals + 1, 1)
 
             if continuations:
-                if "MOMFBO" in instance:
-                    seed_cont_dict[seed] = pd.Series(hv_vals, index=budget_list)
-                    seed_cont_dict[seed] = seed_cont_dict[seed].reindex(
-                        sorted(set(seed_cont_dict[seed].index.tolist() + list(eval_list)))
-                    ).ffill()
-                    seed_cont_dict[seed] = seed_cont_dict[seed].loc[list(eval_list)]
-                else:
-                    seed_cont_dict[seed] = pd.Series(hv_vals, index=eval_list)
+                seed_cont_dict[seed] = pd.Series(hv_vals, index=budget_list)
                 seed_incumbents = seed_cont_dict[seed].cummax()
                 instance_name = f"{instance}_w_continuations"
             else:
-                seed_hv_dict[seed] = pd.Series(hv_vals, index=eval_list)
+                seed_hv_dict[seed] = pd.Series(hv_vals, index=budget_list)
                 seed_incumbents = seed_hv_dict[seed].cummax()
                 instance_name = instance
 
@@ -243,89 +221,6 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 seed_means_dict[seed] = {}
             seed_means_dict[seed][instance_name] = seed_incumbents
 
-            plot_dir = exp_dir / "plots"
-            pareto_save_dir = plot_dir / "pareto"
-
-            match plot_opt:
-                case None:
-                    pass
-                case "all":
-                # Plotting Pareto fronts for all seeds
-                    plt.figure(6)
-                    plt.step(
-                        pareto[:, 0],
-                        pareto[:, 1],
-                        where="post",
-                        marker=marker,
-                        label=f"{instance}_{seed}",
-                        markersize=7,
-                        linewidth=1,
-                    )
-                    plt.xlabel(keys[0])
-                    plt.ylabel(keys[1])
-                    plt.grid(visible=True)
-                    plt.title(f"Multiple seeds pareto plot for \n{instance} on {benchmark}")
-                case str():
-                    if plot_opt in instance:
-                        plt.figure(6)
-                        plt.step(
-                            pareto[:, 0],
-                            pareto[:, 1],
-                            where="post",
-                            marker=marker,
-                            label=f"{instance}_{seed}",
-                            markersize=7,
-                            linewidth=1,
-                        )
-                        plt.xlabel(keys[0])
-                        plt.ylabel(keys[1])
-                        plt.grid(visible=True)
-                        plt.title(f"Multiple seeds pareto plot for \n{instance} on {benchmark}")
-                case _:
-                    raise ValueError(f"Invalid plot_opt: {plot_opt}.")
-
-            # Plotting pareto front for a given seed
-            if seed == seed_for_pareto:
-                plt.figure(5)
-                plt.step(
-                    pareto[:, 0],
-                    pareto[:, 1],
-                    where="post",
-                    marker=marker,
-                    color=color if not is_single_opt else None,
-                    label=f"{instance}_{seed}",
-                    markersize=7,
-                    linewidth=1,
-                )
-
-        if plot_opt and (plot_opt == "all" or plot_opt in instance):
-            pareto_save_dir.mkdir(parents=True, exist_ok=True)
-            plt.figure(6)
-            plt.legend(
-                loc="upper left",
-                bbox_to_anchor=(0, -0.05),
-                fontsize=12
-            )
-            plt.tight_layout()
-            if not no_save and save_individual:
-                plt.savefig(
-                    pareto_save_dir / "multiple" /
-                    f"Multiple seeds pareto plot for {instance} on {benchmark}.png"
-                )
-            plt.clf()
-
-        plt.figure(5)
-
-        plt.legend(
-            loc="upper left",
-            bbox_to_anchor=(0, -0.05),
-            fontsize=12
-        )
-        plt.tight_layout()
-        plt.xlabel(keys[0])
-        plt.ylabel(keys[1])
-        plt.grid(visible=True)
-        plt.title(benchmark)
 
         # Aggregating Hypervolumes - calculating means, cumulative max and std_error
 
@@ -355,7 +250,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 means + sem,
                 alpha=0.1,
                 color=color if not is_single_opt else None,
-                edgecolor=color if not is_single_opt else None,
+                edgecolor=None,
             )
 
         # For plotting continuations
@@ -383,7 +278,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 means_cont + sem_cont,
                 alpha=0.1,
                 color=_color if not is_single_opt else None,
-                edgecolor=_color if not is_single_opt else None,
+                edgecolor=None,
             )
 
 
@@ -402,13 +297,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
             label=instance if not continuations else f"{instance}_w_continuations",
         )
 
-    if not no_save and save_individual:
-        plt.figure(5)
-        pareto_save_dir.mkdir(parents=True, exist_ok=True)
-        plt.savefig(pareto_save_dir / "seeds" / f"Pareto_plot_{benchmark}_single_seed.png")
-
-    plt.close("all")
-
+    seed_means_dict = avg_seed_dfs_for_ranking(seed_means_dict)
     # Ranking every optimizer instance per seed per benchmark
     for seed, instances in seed_means_dict.items():
         _rankdf = pd.DataFrame(instances)
@@ -420,7 +309,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0913, PLR0915
 
 
 def agg_data(
-    exp_dir: Path
+    exp_dir: Path,
+    skip_opt: list[str] | None = None,
 ) -> tuple[
     Mapping[str, Mapping[tuple[str, str], list[pd.DataFrame]]],
     int,
@@ -443,15 +333,15 @@ def agg_data(
 
     total_budget = int(exp_config.get("budget"))
 
-    seed_for_pareto = exp_config.get("seeds")[0]
-
-
     benchmarks_dict: Mapping[str, Mapping[tuple[str, str], list[pd.DataFrame]]] = {}
 
     for benchmark in benchmarks_in_dir:
         objectives = []
         for file in exp_dir.rglob("*.parquet"):
             if benchmark not in file.name:
+                continue
+            opt_name = file.name.split("optimizer=")[-1].split(".")[0]
+            if skip_opt and opt_name in skip_opt:
                 continue
             _df = pd.read_parquet(file)
 
@@ -494,23 +384,20 @@ def agg_data(
             else:
                 all_plots_dict[conf_tuple].append(_df)
 
-    return benchmarks_dict, seed_for_pareto, total_budget
+    return benchmarks_dict, total_budget
 
 
-def gen_plots_per_bench(
+def gen_plots_per_bench(  # noqa: C901
     ax_hv: plt.Axes,
     ax_pareto: plt.Axes,
-    exp_dir: Path,
-    seed_for_pareto: int,
     total_budget: int,
     *,
-    save_individual: bool = False,
     benchmark: str,
     conf_tuple: tuple[str, str],
     _all_dfs: list[pd.DataFrame],
-    plot_opt: str | None = None,
-    no_save: bool = False,
-    # cut_off_iteration: int | None = None,
+    priors_to_avg: list[str] | None = None,
+    skip_non_avg: bool = False,
+    skip_priors: bool = False,
 ) -> dict[int, pd.DataFrame]:
     """Function to generate plots for a given benchmark and its config dict."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
@@ -545,6 +432,8 @@ def gen_plots_per_bench(
             }
         )
 
+        annotations = None
+
         if _df["prior_annotations"][0] is not None:
             annotations = "-".join(
                 [a.split("=")[-1] for a in _df["prior_annotations"][0].split(",")]
@@ -559,7 +448,30 @@ def gen_plots_per_bench(
             ) +
             (f";priors={annotations}" if annotations else "")
         )
+
         seed = int(_df[SEED_COL][0])
+
+        if priors_to_avg and annotations in priors_to_avg:
+            instance = (
+                _df["optimizer"][0] +
+                (
+                    ";" + _df[HP_COL][0]
+                    if "default" not in _df[HP_COL][0]
+                    else ""
+                ) + ";priors=all"
+            )
+            if instance not in agg_dict:
+                agg_dict[instance] = {}
+            seed = f"{seed}_{_df['optimizer'][0]}_{annotations}"
+            agg_dict[instance][seed] = {
+                "_df": _df,
+                "results": _results,
+            }
+            continue
+        if annotations and skip_non_avg and priors_to_avg and annotations not in priors_to_avg:
+            continue
+        if skip_priors and annotations in skip_priors:
+            continue
         if instance not in agg_dict:
             agg_dict[instance] = {}
         agg_dict[instance][seed] = {
@@ -576,33 +488,29 @@ def gen_plots_per_bench(
         ax_hv=ax_hv,
         ax_pareto=ax_pareto,
         agg_data=agg_dict,
-        exp_dir=exp_dir,
         benchmark=benchmark,
         budget=total_budget,
-        # cut_off_iteration=iteration,
         fidelity=fidelity,
         is_single_opt=is_single_opt,
-        plot_opt=plot_opt,
-        seed_for_pareto=seed_for_pareto,
         objectives=objectives,
-        no_save=no_save,
-        save_individual=save_individual,
     )
 
 
 
 def make_subplots(  # noqa: C901, PLR0912, PLR0915
     exp_dir: Path,
-    plot_opt: str | None = None,
     *,
     cut_off_iteration: int | None = None,
     no_save: bool = False,
-    save_individual: bool = False,
     save_suffix: str = "",
+    skip_opt: list[str] | None = None,
+    priors_to_avg: list[str] | None = None,
+    skip_non_avg: bool = False,
+    skip_priors: bool = False,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     fig_size = other_fig_params["fig_size"]
-    benchmarks_dict, seed_for_pareto, total_budget = agg_data(exp_dir)
+    benchmarks_dict, total_budget = agg_data(exp_dir, skip_opt=skip_opt)
     if cut_off_iteration:
         total_budget = cut_off_iteration
     num_plots = len(benchmarks_dict)
@@ -644,6 +552,9 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     axs_ov_rank: list[plt.Axes] = [axs_ov_rank]
 
     xylabel_fontsize = other_fig_params["xylabel_fontsize"]
+    xlabel_i = other_fig_params["xlabel_start_i"][num_plots]
+    ylabel_i_inc = other_fig_params["ylabel_i_inc"][num_plots]
+    ylabel_i_counter = 0
 
     means_dict = {}
     bench_dict = {}
@@ -656,20 +567,16 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
             seed_dict_per_bench = gen_plots_per_bench(
                 ax_hv=axs_hv[i],
                 ax_pareto=axs_pareto[i],
-                exp_dir=exp_dir,
                 benchmark=benchmark,
                 conf_tuple=conf_tuple,
                 _all_dfs=_all_dfs,
-                plot_opt=plot_opt,
-                no_save=no_save,
-                seed_for_pareto=seed_for_pareto,
-                save_individual=save_individual,
                 total_budget=total_budget,
-                # cut_off_iteration=iteration,
+                priors_to_avg=priors_to_avg,
+                skip_non_avg=skip_non_avg,
+                skip_priors=skip_priors,
             )
 
             axs_hv[i].set_xticks(XTICKS[(1, total_budget)])
-            axs_hv[i].set_ylabel("Hypervolume", fontsize=xylabel_fontsize)
             axs_hv[i].grid(visible=True)
             axs_hv[i].set_title(benchmark)
             axs_hv[i].set_xlim(1, total_budget)
@@ -695,16 +602,19 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
                 budget=total_budget,
             )
             axs_rank[i].set_xticks(XTICKS[(1, total_budget)])
-            axs_rank[i].set_ylabel("Relative Rank", fontsize=xylabel_fontsize)
             axs_rank[i].set_title(benchmark)
             axs_rank[i].grid(visible=True)
             axs_rank[i].set_xlim(1, total_budget)
 
-            xlabel_i = other_fig_params["xlabel_start_i"][num_plots]
-
             if i >= xlabel_i:
                 axs_hv[i].set_xlabel("Full Evaluations", fontsize=xylabel_fontsize)
                 axs_rank[i].set_xlabel("Full Evaluations", fontsize=xylabel_fontsize)
+
+            if i == ylabel_i_counter:
+                axs_hv[i].set_ylabel("Hypervolume", fontsize=xylabel_fontsize)
+                axs_rank[i].set_ylabel("Relative Rank", fontsize=xylabel_fontsize)
+                ylabel_i_counter += ylabel_i_inc
+
 
             bench_dict = {}
 
@@ -730,11 +640,44 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     rank_labels = edit_legend_labels(rank_labels)
     ov_rank_labels = edit_legend_labels(ov_rank_labels)
 
+    # Sort all labels and handles by label
+
+    hv_labels, hv_handles = zip(
+        *sorted(
+            zip(hv_labels, hv_handles, strict=False),
+            key=lambda x: x[0]
+        ),
+        strict=False
+    )
+    pareto_labels, pareto_handles = zip(
+        *sorted(
+            zip(pareto_labels, pareto_handles, strict=False),
+            key=lambda x: x[0]
+        ),
+        strict=False
+    )
+    rank_labels, rank_handles = zip(
+        *sorted(
+            zip(rank_labels, rank_handles, strict=False),
+            key=lambda x: x[0]),
+        strict=False
+    )
+    ov_rank_labels, ov_rank_handles = zip(
+        *sorted(
+            zip(ov_rank_labels, ov_rank_handles, strict=False),
+            key=lambda x: x[0]
+        ),
+        strict=False
+    )
+
     num_opts = len(hv_labels)
 
     bbox_to_anchor = other_fig_params["bbox_to_anchor"]
     tight_layout_pads = other_fig_params["tight_layout_pads"]
     legend_fontsize = other_fig_params["legend_fontsize"]
+
+    multi_cols = other_fig_params["multi_fig_leg_cols"][num_opts]
+    single_cols = other_fig_params["single_fig_leg_cols"][num_opts]
 
     # Remove empty subplots for hypervolume plot
     for j in range(i + 1, len(axs_hv)):
@@ -747,7 +690,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
         fontsize=legend_fontsize,
         loc="lower center",
         bbox_to_anchor=bbox_to_anchor,
-        ncol=num_opts/2,
+        ncol=multi_cols,
         frameon=True,
         markerscale=2,
     )
@@ -767,7 +710,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
         fontsize=legend_fontsize,
         loc="lower center",
         bbox_to_anchor=bbox_to_anchor,
-        ncol=num_opts/2,
+        ncol=multi_cols,
         frameon=True,
         markerscale=2,
     )
@@ -787,7 +730,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
         fontsize=legend_fontsize,
         loc="lower center",
         bbox_to_anchor=bbox_to_anchor,
-        ncol=num_opts/2,
+        ncol=multi_cols,
         frameon=True,
         markerscale=2,
     )
@@ -803,7 +746,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
         fontsize=10,
         loc="lower center",
         bbox_to_anchor=(0.5, -0.15),
-        ncol=2,
+        ncol=single_cols,
         frameon=True,
         markerscale=2,
     )
@@ -846,12 +789,6 @@ if __name__ == "__main__":
         help="make subplot for all plots in the same experiment directory."
     )
     parser.add_argument(
-        "--plot_opt", "-o",
-        type=str,
-        default=None,
-        help="Plot all pareto fronts only for the given optimizer."
-    )
-    parser.add_argument(
         "--cut_off_iteration", "-i",
         type=int,
         default=None,
@@ -863,15 +800,36 @@ if __name__ == "__main__":
         help="Do not save the plots."
     )
     parser.add_argument(
-        "--save_individual", "-sv_ind",
-        action="store_true",
-        help="Save individual plots for each optimizer instance."
-    )
-    parser.add_argument(
-        "--save_suffix", "-suf",
+        "--save_suffix", "-suffix",
         type=str,
         default="",
         help="Suffix to add to the saved plots."
+    )
+    parser.add_argument(
+        "--skip_opt", "-skip",
+        nargs="+",
+        type=str,
+        default=None,
+        help="Skip the given optimizers."
+    )
+    parser.add_argument(
+        "--priors_to_avg", "-avg",
+        nargs="+",
+        type=str,
+        default=None,
+        help="Priors to average over."
+    )
+    parser.add_argument(
+        "--skip_non_avg", "-skipna",
+        action="store_true",
+        help="Skip the non-averaged priors."
+    )
+    parser.add_argument(
+        "--skip_priors", "-skp",
+        nargs="+",
+        type=str,
+        default=None,
+        help="Skip the given priors."
     )
     args = parser.parse_args()
     exp_dir: Path = DEFAULT_RESULTS_DIR / args.exp_dir
@@ -880,9 +838,11 @@ if __name__ == "__main__":
 
     make_subplots(
         exp_dir=exp_dir,
-        plot_opt=args.plot_opt,
         cut_off_iteration=args.cut_off_iteration,
         no_save=args.no_save,
-        save_individual=args.save_individual,
         save_suffix=args.save_suffix,
+        skip_opt=args.skip_opt,
+        priors_to_avg=args.priors_to_avg,
+        skip_non_avg=args.skip_non_avg,
+        skip_priors=args.skip_priors,
     )
