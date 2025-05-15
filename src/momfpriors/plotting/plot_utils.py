@@ -52,6 +52,8 @@ def get_style(instance: str) -> tuple[str, str, str, str | None]:
     if prior_annot:
         color = COLORS.get(f"{opt}-{prior_annot}")
     marker = MARKERS.get(prior_annot, "s")
+    if color is None:
+        print(f"No color found for {opt}-{prior_annot}.")
     return marker, color, opt, prior_annot
 
 
@@ -69,6 +71,35 @@ def edit_legend_labels(labels: list[str]) -> list[str]:
         new_labels.append(_label)
     return new_labels
 
+
+def avg_seed_dfs_for_ranking(
+    seed_means_dict: dict[str | int, dict[str, pd.Series]],
+) -> dict[int, dict[str, pd.Series]]:
+    """Function to average prior seeds and move them into their
+    respective seed dicts.
+    """
+    final_dict = {}
+    seed_dfs = {}
+    for seed, instances in seed_means_dict.items():
+        if isinstance(seed, str) and "_" in seed:
+            assert len(instances) == 1
+            _seed = int(seed.split("_")[0])
+            if _seed not in seed_dfs:
+                seed_dfs[_seed] = {}
+            instance = next(iter(instances))
+            if instance not in seed_dfs[_seed]:
+                seed_dfs[_seed][instance] = []
+            seed_dfs[_seed][instance].append(instances[instance])
+        elif seed not in final_dict:
+            final_dict[seed] = instances
+    for seed, instances in seed_dfs.items():
+        for instance, df_list in instances.items():
+            if seed not in final_dict:
+                final_dict[seed] = {}
+            else:
+                assert instance not in final_dict[seed]
+            final_dict[seed][instance] = pd.DataFrame(df_list).mean()
+    return final_dict
 
 reference_points_dict = {
 
