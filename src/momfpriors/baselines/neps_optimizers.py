@@ -101,14 +101,12 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
                 case Mapping():
                     self.scalarization_weights = scalarization_weights
                 case "equal":
-                    self.scalarization_weights = {
-                        obj: 1.0/len(self.objectives) for obj in self.objectives
-                    }
+                    self.scalarization_weights = (
+                        dict.fromkeys(self.objectives, 1.0 / len(self.objectives))
+                    )
                 case "random":
                     weights = self._rng.uniform(size=len(self.objectives))
-                    self.scalarization_weights = {
-                        obj: weight/sum(weights) for obj, weight in zip(self.objectives, weights)  # noqa: B905
-                    }
+                    self.scalarization_weights = dict(zip(self.objectives, weights, strict=True))
                 case _:
                     raise ValueError(
                         f"Invalid scalarization_weights: {scalarization_weights}. "
@@ -151,9 +149,7 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
         if self.random_weighted_opt:
             if not self.constant_weights:
                 weights = self._rng.uniform(size=len(self.objectives))
-                self.scalarization_weights = {
-                    obj: weight/sum(weights) for obj, weight in zip(self.objectives, weights)  # noqa: B905
-                }
+                self.scalarization_weights = dict(zip(self.objectives, weights, strict=True))
 
             costs = sum(
                 self.scalarization_weights[obj] * costs[obj] for obj in self.objectives
@@ -205,7 +201,7 @@ class NepsRW(NepsOptimizer):
         working_directory: str | Path = DEFAULT_RESULTS_DIR,
         scalarization_weights: Literal["equal", "random"] | Mapping[str, float] = "random",
         searcher: str = "bayesian_optimization",
-        **kwargs: Any,  # noqa: ARG002
+        **kwargs: Any,
     ) -> None:
         """Initialize the optimizer."""
         self.searcher = searcher
@@ -230,8 +226,9 @@ class NepsRW(NepsOptimizer):
             seed=seed,
             working_directory=working_directory,
             random_weighted_opt=True,
-            constant_weights=True,
+            constant_weights=False,
             scalarization_weights=scalarization_weights,
+            initial_design_size=kwargs.get("initial_design_size", "ndim"),
         )
 
 
@@ -261,7 +258,7 @@ class NepsHyperbandRW(NepsOptimizer):
         seed: int = 0,
         working_directory: str | Path = DEFAULT_RESULTS_DIR,
         scalarization_weights: Literal["equal", "random"] | Mapping[str, float] = "random",
-        **kwargs: Any,  # noqa: ARG002
+        eta: int = 3,
     ) -> None:
         """Initialize the optimizer."""
         space = convert_configspace(problem.config_space)
@@ -287,8 +284,9 @@ class NepsHyperbandRW(NepsOptimizer):
             working_directory=working_directory,
             fidelities=_fid,
             random_weighted_opt=True,
-            constant_weights=True,
+            constant_weights=False,
             scalarization_weights=scalarization_weights,
+            eta=eta,
         )
 
 
@@ -318,7 +316,7 @@ class NepsMOASHA(NepsOptimizer):
         seed: int = 0,
         working_directory: str | Path = DEFAULT_RESULTS_DIR,
         mo_selector: Literal["nsga2", "epsnet"] = "epsnet",
-        **kwargs: Any,  # noqa: ARG002
+        **kwargs: Any # noqa: ARG002
     ) -> None:
         """Initialize the optimizer."""
         space = convert_configspace(problem.config_space)
@@ -497,7 +495,8 @@ class NepsMOPriorband(NepsOptimizer):
         seed: int = 0,
         working_directory: str | Path = DEFAULT_RESULTS_DIR,
         mo_selector: Literal["nsga2", "epsnet"] = "epsnet",
-        **kwargs: Any,  # noqa: ARG002
+        eta: int = 3,
+        **kwargs: Any,
     ) -> None:
         """Initialize the optimizer."""
         space = convert_configspace(problem.config_space)
@@ -537,8 +536,9 @@ class NepsMOPriorband(NepsOptimizer):
             mo_selector=mo_selector,
             prior_centers=prior_centers,
             prior_confidences=prior_confidences,
-            incumbent_type="scalarized",
-            base="asha",
+            incumbent_type=kwargs.get("incumbent_type", "scalarized"),
+            base=kwargs.get("base", "asha"),
+            eta=eta,
         )
 
 
@@ -571,7 +571,7 @@ class NepsPiBORW(NepsOptimizer):
         seed: int = 0,
         working_directory: str | Path = DEFAULT_RESULTS_DIR,
         scalarization_weights: Literal["equal", "random"] | Mapping[str, float] = "random",
-        **kwargs: Any,  # noqa: ARG002
+        **kwargs: Any,
     ) -> None:
         """Initialize the optimizer."""
         space = convert_configspace(problem.config_space)
@@ -606,7 +606,8 @@ class NepsPiBORW(NepsOptimizer):
             seed=seed,
             working_directory=working_directory,
             random_weighted_opt=True,
-            constant_weights=True,
+            constant_weights=False,
+            initial_design_size=kwargs.get("initial_design_size", "ndim"),
             scalarization_weights=scalarization_weights,
             mo_prior_centers=prior_centers,
             mo_prior_confidences=prior_confidences,
@@ -639,7 +640,8 @@ class NepsMOASHABO(NepsOptimizer):
         seed: int = 0,
         working_directory: str | Path = DEFAULT_RESULTS_DIR,
         mo_selector: Literal["nsga2", "epsnet"] = "epsnet",
-        **kwargs: Any,  # noqa: ARG002
+        eta: int = 3,
+        **kwargs: Any,
     ) -> None:
         """Initialize the optimizer."""
         space = convert_configspace(problem.config_space)
@@ -656,6 +658,8 @@ class NepsMOASHABO(NepsOptimizer):
                 raise TypeError("Fidelity must be a tuple or a Mapping.")
         set_seed(seed)
 
+        weights = np.random.uniform(size=len(problem.objectives))  # noqa: NPY002
+
         super().__init__(
             problem=problem,
             space=space,
@@ -664,7 +668,9 @@ class NepsMOASHABO(NepsOptimizer):
             working_directory=working_directory,
             fidelities=_fid,
             mo_selector=mo_selector,
-            initial_design_size=5,
+            eta=eta,
+            initial_design_size=kwargs.get("initial_design_size", 10),
+            bo_scalar_weights=weights,
         )
 
 
@@ -695,7 +701,8 @@ class NepsMOASHAPiBORW(NepsOptimizer):
         seed: int = 0,
         working_directory: str | Path = DEFAULT_RESULTS_DIR,
         mo_selector: Literal["nsga2", "epsnet"] = "epsnet",
-        **kwargs: Any,  # noqa: ARG002
+        eta: int = 3,
+        **kwargs: Any,
     ) -> None:
         """Initialize the optimizer."""
         space = convert_configspace(problem.config_space)
@@ -733,7 +740,9 @@ class NepsMOASHAPiBORW(NepsOptimizer):
             working_directory=working_directory,
             fidelities=_fid,
             mo_selector=mo_selector,
-            initial_design_size=5,
+            eta=eta,
+            sampler=kwargs.get("sampler", "uniform"),
+            initial_design_size=kwargs.get("initial_design_size", 10),
             prior_centers=prior_centers,
             prior_confidences=prior_confidences,
         )
