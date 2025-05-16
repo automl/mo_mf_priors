@@ -17,8 +17,8 @@ MARKERS = {
 
 COLORS = {
     # Optimizers without Priors
-    "SMAC_ParEGO": "blue",
-    "RandomSearch": "sienna",
+    "SMAC_ParEGO": "goldenrod",
+    "RandomSearch": "peru",
     "NepsRW": "lightseagreen",
     "Nevergrad_EvolutionStrategy": "lime",
 
@@ -35,58 +35,110 @@ COLORS = {
     "NepsMOASHABO_w_continuations": "darkblue",
 
     # NepsPriorMOASHA
-    "NepsPriorMOASHA-all": "darkgreen",
-    "NepsPriorMOASHA-all_w_continuations": "darkgreen",
-    "NepsPriorMOASHA-good-good": "darkgreen",
-    "NepsPriorMOASHA-good-good_w_continuations": "darkgreen",
-    "NepsPriorMOASHA-bad-bad": "darkgreen",
-    "NepsPriorMOASHA-bad-bad_w_continuations": "darkgreen",
-    "NepsPriorMOASHA-bad-good": "darkgreen",
-    "NepsPriorMOASHA-bad-good_w_continuations": "darkgreen",
+    "NepsPriorMOASHA": "darkgreen",
+    "NepsPriorMOASHA_w_continuations": "darkgreen",
 
     # NepsMOPriorband
-    "NepsMOPriorband-all": "cornflowerblue",
-    "NepsMOPriorband-all_w_continuations": "cornflowerblue",
-    "NepsMOPriorband-good-good": "cornflowerblue",
-    "NepsMOPriorband-good-good_w_continuations": "cornflowerblue",
-    "NepsMOPriorband-bad-bad": "cornflowerblue",
-    "NepsMOPriorband-bad-bad_w_continuations": "cornflowerblue",
-    "NepsMOPriorband-bad-good": "cornflowerblue",
-    "NepsMOPriorband-bad-good_w_continuations": "cornflowerblue",
+    "NepsMOPriorband": "cornflowerblue",
+    "NepsMOPriorband_w_continuations": "cornflowerblue",
 
     # NepsPiBORW
-    "NepsPiBORW-all": "darkcyan",
-    "NepsPiBORW-good-good": "darkcyan",
-    "NepsPiBORW-bad-bad": "darkcyan",
-    "NepsPiBORW-bad-good": "darkcyan",
+    "NepsPiBORW": "olive",
 
     # NepsMOASHAPiBORW
-    "NepsMOASHAPiBORW-all": "goldenrod",
-    "NepsMOASHAPiBORW-all_w_continuations": "goldenrod",
-    "NepsMOASHAPiBORW-good-good": "goldenrod",
-    "NepsMOASHAPiBORW-good-good_w_continuations": "goldenrod",
-    "NepsMOASHAPiBORW-bad-bad": "goldenrod",
-    "NepsMOASHAPiBORW-bad-bad_w_continuations": "goldenrod",
-    "NepsMOASHAPiBORW-bad-good": "goldenrod",
-    "NepsMOASHAPiBORW-bad-good_w_continuations": "goldenrod",
+    "NepsMOASHAPiBORW": "crimson",
+    "NepsMOASHAPiBORW_w_continuations": "crimson",
 
     # RandomSearchWithPriors
-    "RandomSearchWithPriors-all": "darkorange",
-    "RandomSearchWithPriors-good-good": "darkorange",
-    "RandomSearchWithPriors-good-bad": "teadarkorangel",
-    "RandomSearchWithPriors-good-medium": "darkorange",
-    "RandomSearchWithPriors-good-None": "darkorange",
-    "RandomSearchWithPriors-None-good": "darkorange",
-    "RandomSearchWithPriors-bad-good": "darkorange",
-    "RandomSearchWithPriors-bad-bad": "darkorange",
-    "RandomSearchWithPriors-bad-medium": "darkorange",
-    "RandomSearchWithPriors-bad-None": "darkorange",
-    "RandomSearchWithPriors-None-bad": "darkorange",
-    "RandomSearchWithPriors-medium-good": "darkorange",
-    "RandomSearchWithPriors-medium-bad": "darkorange",
-    "RandomSearchWithPriors-medium-medium": "darkorange",
-    "RandomSearchWithPriors-medium-None": "darkorange",
-    "RandomSearchWithPriors-None-medium": "darkorange",
+    "RandomSearchWithPriors": "darkorange",
+}
+
+PREFERENCE_LABELS1 = {
+    "NepsMOASHAPiBORW-all": "Our Method(all)",
+    "NepsMOASHAPiBORW-good-good": "Our Method(good-good)",
+    "NepsMOASHAPiBORW-bad-bad": "Our Method(bad-bad)",
+    "NepsMOASHAPiBORW-bad-good": "Our Method(bad-good)",
+}
+
+OPTIMIZER_LABELS1 = {
+    "SMAC_ParEGO": "ParEGO",
+    "RandomSearch": "Random Search",
+    "NepsRW": "BO+RW",
+    "Nevergrad_EvolutionStrategy": "NSGA-II",
+
+    "NepsHyperbandRW": "HB+RW",
+
+    "NepsMOASHA": "MOASHA",
+
+    "NepsMOASHABO": "MOASHA-BO+RW",
+
+    "MOMFBO": "MOMF-BO",
+
+    "NepsPriorMOASHA-all": "MOASHA+Prior(all)",
+    "NepsPriorMOASHA-good-good": "MOASHA+Prior(good-good)",
+    "NepsPriorMOASHA-bad-bad": "MOASHA+Prior(bad-bad)",
+    "NepsPriorMOASHA-bad-good": "MOASHA+Prior(bad-good)",
+
+    "NepsMOPriorband-all": "MO-Priorband(all)",
+    "NepsMOPriorband-good-good": "MO-Priorband(good-good)",
+    "NepsMOPriorband-bad-bad": "MO-Priorband(bad-bad)",
+    "NepsMOPriorband-bad-good": "MO-Priorband(bad-good)",
+
+    "NepsPiBORW-all": "πBO+RW(all)",
+    "NepsPiBORW-good-good": "πBO+RW(good-good)",
+    "NepsPiBORW-bad-bad": "πBO+RW(bad-bad)",
+    "NepsPiBORW-bad-good": "πBO+RW(bad-good)",
+
+    "NepsMOASHAPiBORW-all": "MOASHA+πBO(all)",
+    "NepsMOASHAPiBORW-good-good": "MOASHA+πBO(good-good)",
+    "NepsMOASHAPiBORW-bad-bad": "MOASHA+πBO(bad-bad)",
+    "NepsMOASHAPiBORW-bad-good": "MOASHA+πBO(bad-good)",
+
+    "RandomSearchWithPriors-all": "RS+Prior(all)",
+    "RandomSearchWithPriors-good-good": "RS+Prior(good-good)",
+    "RandomSearchWithPriors-good-bad": "RS+Prior(good-bad)",
+    "RandomSearchWithPriors-good-medium": "RS+Prior(good-medium)",
+    "RandomSearchWithPriors-good-None": "RS+Prior(good-None)",
+    "RandomSearchWithPriors-None-good": "RS+Prior(None-good)",
+    "RandomSearchWithPriors-bad-good": "RS+Prior(bad-good)",
+    "RandomSearchWithPriors-bad-bad": "RS+Prior(bad-bad)",
+    "RandomSearchWithPriors-bad-medium": "RS+Prior(bad-medium)",
+    "RandomSearchWithPriors-bad-None": "RS+Prior(bad-None)",
+    "RandomSearchWithPriors-None-bad": "RS+Prior(None-bad)",
+    "RandomSearchWithPriors-medium-good": "RS+Prior(medium-good)",
+    "RandomSearchWithPriors-medium-bad": "RS+Prior(medium-bad)",
+    "RandomSearchWithPriors-medium-medium": "RS+Prior(medium-medium)",
+    "RandomSearchWithPriors-medium-None": "RS+Prior(medium-None)",
+    "RandomSearchWithPriors-None-medium": "RS+Prior(None-medium)",
+}
+
+PREFERENCE_LABELS2 = {
+    "NepsMOASHAPiBORW": "Our Method",
+}
+
+OPTIMIZER_LABELS2 = {
+    "SMAC_ParEGO": "ParEGO",
+    "RandomSearch": "Random Search",
+    "NepsRW": "BO+RW",
+    "Nevergrad_EvolutionStrategy": "NSGA-II",
+
+    "NepsHyperbandRW": "HB+RW",
+
+    "NepsMOASHA": "MOASHA",
+
+    "NepsMOASHABO": "MOASHA-BO+RW",
+
+    "MOMFBO": "MOMF-BO",
+
+    "NepsPriorMOASHA": "MOASHA+Prior",
+
+    "NepsMOPriorband": "MO-Priorband",
+
+    "NepsPiBORW": "πBO+RW",
+
+    "NepsMOASHAPiBORW": "MOASHA+πBO",
+
+    "RandomSearchWithPriors": "RS+Prior",
 }
 
 RC_PARAMS = {
@@ -151,6 +203,7 @@ other_fig_params = {
         2 : 0,
         3 : 0,
         4 : 2,
+        5 : 3,
         6 : 3,
         8 : 4,
         9 : 6,
@@ -160,6 +213,7 @@ other_fig_params = {
         2 : 0,
         3 : 0,
         4 : 2,
+        5 : 3,
         6 : 3,
         8 : 4,
         9 : 3,

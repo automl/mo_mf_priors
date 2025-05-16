@@ -387,7 +387,7 @@ def agg_data(
     return benchmarks_dict, total_budget
 
 
-def gen_plots_per_bench(  # noqa: C901
+def gen_plots_per_bench(  # noqa: C901, PLR0912
     ax_hv: plt.Axes,
     ax_pareto: plt.Axes,
     total_budget: int,
@@ -398,6 +398,8 @@ def gen_plots_per_bench(  # noqa: C901
     priors_to_avg: list[str] | None = None,
     skip_non_avg: bool = False,
     skip_priors: bool = False,
+    skip_opt: list[str] | None = None,
+    avg_prior_label: str = "all",
 ) -> dict[int, pd.DataFrame]:
     """Function to generate plots for a given benchmark and its config dict."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
@@ -458,8 +460,10 @@ def gen_plots_per_bench(  # noqa: C901
                     ";" + _df[HP_COL][0]
                     if "default" not in _df[HP_COL][0]
                     else ""
-                ) + ";priors=all"
+                ) + f";priors={avg_prior_label}"
             )
+            if skip_opt and _df["optimizer"][0] in skip_opt:
+                continue
             if instance not in agg_dict:
                 agg_dict[instance] = {}
             seed = f"{seed}_{_df['optimizer'][0]}_{annotations}"
@@ -507,6 +511,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     priors_to_avg: list[str] | None = None,
     skip_non_avg: bool = False,
     skip_priors: bool = False,
+    avg_prior_label: str = "all",
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     fig_size = other_fig_params["fig_size"]
@@ -574,6 +579,8 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
                 priors_to_avg=priors_to_avg,
                 skip_non_avg=skip_non_avg,
                 skip_priors=skip_priors,
+                skip_opt=skip_opt,
+                avg_prior_label=avg_prior_label,
             )
 
             axs_hv[i].set_xticks(XTICKS[(1, total_budget)])
@@ -639,6 +646,8 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     pareto_labels = edit_legend_labels(pareto_labels)
     rank_labels = edit_legend_labels(rank_labels)
     ov_rank_labels = edit_legend_labels(ov_rank_labels)
+
+    logger.info(f"Final Optimizer labels: {hv_labels}")
 
     # Sort all labels and handles by label
 
@@ -831,6 +840,12 @@ if __name__ == "__main__":
         default=None,
         help="Skip the given priors."
     )
+    parser.add_argument(
+        "--avg_prior_label", "-avg_label",
+        type=str,
+        default="all",
+        help="Label for the averaged priors."
+    )
     args = parser.parse_args()
     exp_dir: Path = DEFAULT_RESULTS_DIR / args.exp_dir
 
@@ -845,4 +860,5 @@ if __name__ == "__main__":
         priors_to_avg=args.priors_to_avg,
         skip_non_avg=args.skip_non_avg,
         skip_priors=args.skip_priors,
+        avg_prior_label=args.avg_prior_label,
     )

@@ -5,7 +5,14 @@ from collections.abc import Mapping
 import numpy as np
 import pandas as pd
 
-from momfpriors.plotting.plot_styles import COLORS, MARKERS
+from momfpriors.plotting.plot_styles import (
+    COLORS,
+    MARKERS,
+    OPTIMIZER_LABELS1,
+    OPTIMIZER_LABELS2,
+    PREFERENCE_LABELS1,
+    PREFERENCE_LABELS2,
+)
 
 
 def dynamic_reference_point(
@@ -50,10 +57,10 @@ def get_style(instance: str) -> tuple[str, str, str, str | None]:
     opt = instance.split(";")[0]
     color = COLORS.get(opt)
     if prior_annot:
-        color = COLORS.get(f"{opt}-{prior_annot}")
+        color = COLORS.get(f"{opt}")
     marker = MARKERS.get(prior_annot, "s")
     if color is None:
-        print(f"No color found for {opt}-{prior_annot}.")
+        print(f"No color found for {opt}")
     return marker, color, opt, prior_annot
 
 
@@ -61,13 +68,17 @@ def edit_legend_labels(labels: list[str]) -> list[str]:
     """Edit the legend labels to be more readable."""
     new_labels = []
     for label in labels:
+        prior_annot = ""
         _label = label
         if "_w_continuations" in _label:
             _label = _label.replace("_w_continuations", "")
         if ";priors=" in _label:
-            _label = _label.replace(";priors=", "_")
-        if "Evolution" in _label:
-            _label = "NSGA-II"
+            _label, prior_annot = _label.split(";priors=")
+            prior_annot = f" ({prior_annot})"
+        _label = PREFERENCE_LABELS2.get(
+            _label, OPTIMIZER_LABELS2.get(_label, _label)
+        )
+        _label = f"{_label}{prior_annot}"
         new_labels.append(_label)
     return new_labels
 
