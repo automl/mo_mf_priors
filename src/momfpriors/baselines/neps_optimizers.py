@@ -226,7 +226,7 @@ class NepsRW(NepsOptimizer):
             seed=seed,
             working_directory=working_directory,
             random_weighted_opt=True,
-            constant_weights=False,
+            constant_weights=True,
             scalarization_weights=scalarization_weights,
             initial_design_size=kwargs.get("initial_design_size", "ndim"),
         )
@@ -284,7 +284,7 @@ class NepsHyperbandRW(NepsOptimizer):
             working_directory=working_directory,
             fidelities=_fid,
             random_weighted_opt=True,
-            constant_weights=False,
+            constant_weights=True,
             scalarization_weights=scalarization_weights,
             eta=eta,
         )
@@ -669,7 +669,7 @@ class NepsMOASHABO(NepsOptimizer):
             fidelities=_fid,
             mo_selector=mo_selector,
             eta=eta,
-            initial_design_size=kwargs.get("initial_design_size", 10),
+            initial_design_size=kwargs.get("initial_design_size", 5),
             bo_scalar_weights=weights,
         )
 
@@ -742,7 +742,7 @@ class NepsMOASHAPiBORW(NepsOptimizer):
             mo_selector=mo_selector,
             eta=eta,
             sampler=kwargs.get("sampler", "uniform"),
-            initial_design_size=kwargs.get("initial_design_size", 10),
+            initial_design_size=kwargs.get("initial_design_size", 5),
             prior_centers=prior_centers,
             prior_confidences=prior_confidences,
         )
