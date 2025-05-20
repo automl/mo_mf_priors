@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --partition bosch_cpu-cascadelake
-#SBATCH --job-name prior_opts
+#SBATCH --job-name ablation1
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
-#SBATCH --cpus-per-task 30
-#SBATCH --array=0-134%12   # 135 total combinations
+#SBATCH --cpus-per-task 20
+#SBATCH --array=0-1799%15   # 1800 total combinations
 
 echo "Workingdir: $PWD";
 echo "Started at $(date)";
@@ -20,9 +20,9 @@ if [[ ! -f "${config_dir}/.generated" ]]; then
     echo "Generating YAML configs in Bash..."
 
     optimizers=(
-        "RandomSearchWithPriors"
-        "NepsMOPriorband"
-        "NepsPriorMOASHA"
+        "NepsRW"
+        "NepsMOASHA_RS"
+        "NepsMOASHABO"
         "NepsPiBORW"
         "NepsMOASHAPiBORW"
     )
@@ -86,7 +86,7 @@ cat "$yaml_file"
 
 start=$(date +%s)
 
-python3 -m momfpriors.run -y "$yaml_file" -e "all_priors_25"
+python3 -m momfpriors.run -y "$yaml_file" -e "ablation1_25"
 
 end=$(date +%s)
 runtime=$((end - start))

@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --partition bosch_cpu-cascadelake
-#SBATCH --job-name prior_opts
+#SBATCH --job-name subset1_100
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-134%12   # 135 total combinations
+#SBATCH --array=0-2474%15   # 2475 total combinations
 
 echo "Workingdir: $PWD";
 echo "Started at $(date)";
@@ -21,9 +21,11 @@ if [[ ! -f "${config_dir}/.generated" ]]; then
 
     optimizers=(
         "RandomSearchWithPriors"
-        "NepsMOPriorband"
-        "NepsPriorMOASHA"
-        "NepsPiBORW"
+        "RandomSearch"
+        "SMAC_ParEGO"
+        "NepsRW"
+        "NepsHyperbandRW"
+        "Nevergrad_EvolutionStrategy"
         "NepsMOASHAPiBORW"
     )
 
@@ -59,7 +61,7 @@ if [[ ! -f "${config_dir}/.generated" ]]; then
                     echo "      $obj1: $val1"
                     echo "      $obj2: $val2"
                     echo "num_seeds: 25"
-                    echo "num_iterations: 25"
+                    echo "num_iterations: 100"
                 } > "$yaml_file"
 
                 ((config_id++))
@@ -86,7 +88,7 @@ cat "$yaml_file"
 
 start=$(date +%s)
 
-python3 -m momfpriors.run -y "$yaml_file" -e "all_priors_25"
+python3 -m momfpriors.run -y "$yaml_file" -e "subset1_100"
 
 end=$(date +%s)
 runtime=$((end - start))

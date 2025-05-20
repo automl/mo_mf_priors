@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from momfpriors.baselines.ablation import NepsMOASHA_RS
 from momfpriors.baselines.momfbo import MOMFBO_Optimizer
 from momfpriors.baselines.neps_optimizers import (
     NepsHyperbandRW,
@@ -30,6 +31,7 @@ OPTIMIZERS = {
     NepsMOASHABO.name: NepsMOASHABO,
     NepsPiBORW.name: NepsPiBORW,
     NepsMOASHAPiBORW.name: NepsMOASHAPiBORW,
+    NepsMOASHA_RS.name: NepsMOASHA_RS,
 }
 
 for opt in yield_nevergrad_optimizers():
