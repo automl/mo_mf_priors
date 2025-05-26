@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-2474%15   # 2475 total combinations
+#SBATCH --array=0-107%20   # 108 total combinations
 
 echo "Workingdir: $PWD";
 echo "Started at $(date)";
@@ -26,6 +26,7 @@ if [[ ! -f "${config_dir}/.generated" ]]; then
         "NepsRW"
         "NepsHyperbandRW"
         "Nevergrad_EvolutionStrategy"
+        "MOASHA"
         "NepsMOASHAPiBORW"
     )
 
