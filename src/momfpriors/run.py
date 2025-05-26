@@ -44,6 +44,7 @@ def exp(  # noqa: C901, PLR0912, PLR0913
     core_verbose: bool = False,
     overwrite: bool = False,
     use_continuations_as_budget: bool = False,
+    num_runs_only: bool = False,
     **kwargs: Any
 ) -> None:
     """Run experiments with specified optimizers and benchmarks.
@@ -74,6 +75,9 @@ def exp(  # noqa: C901, PLR0912, PLR0913
         overwrite: Whether to overwrite the results if they already exist.
 
         use_continuations_as_budget: Whether to use continuations as the budget.
+
+        num_runs_only: If set to True, only count the number of runs without
+            executing them or writing the YAMLs.
 
         **kwargs: Additional keyword arguments to pass to the Run.generate_run method.
 
@@ -138,26 +142,28 @@ def exp(  # noqa: C901, PLR0912, PLR0913
 
     root_logger.info(f"Generated {len(runs)} runs.")
 
-    write_yaml(
-        yaml_path=exp_yaml_path,
-        runs=runs,
-        exp_dir=exp_dir,
-        seeds=seeds,
-        num_seeds=num_seeds,
-        budget=num_iterations,
-    )
+    if not num_runs_only:
 
-    root_logger.info("Running the experiments")
-
-    for i, run in enumerate(runs):
-        root_logger.info(f"Running {i + 1}/{len(runs)} runs.")
-        run.run(
-            core_verbose=core_verbose,
-            overwrite=overwrite,
-            use_continuations_as_budget=use_continuations_as_budget,
+        write_yaml(
+            yaml_path=exp_yaml_path,
+            runs=runs,
+            exp_dir=exp_dir,
+            seeds=seeds,
+            num_seeds=num_seeds,
+            budget=num_iterations,
         )
 
-    root_logger.info(f"Completed {len(runs)} runs.")
+        root_logger.info("Running the experiments")
+
+        for i, run in enumerate(runs):
+            root_logger.info(f"Running {i + 1}/{len(runs)} runs.")
+            run.run(
+                core_verbose=core_verbose,
+                overwrite=overwrite,
+                use_continuations_as_budget=use_continuations_as_budget,
+            )
+
+        root_logger.info(f"Completed {len(runs)} runs.")
 
 def generate_seeds(
     num_seeds: int,
@@ -371,6 +377,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Whether to use continuations as the budget."
     )
+    parser.add_argument(
+        "--num_runs_only", "-nruns",
+        action="store_true",
+        help="If set, only count the number of runs without executing them or writing the YAMLs."
+    )
 
     args = parser.parse_args()
 
@@ -460,5 +471,6 @@ if __name__ == "__main__":
             core_verbose=args.core_verbose,
             overwrite=args.overwrite,
             use_continuations_as_budget=True,
+            num_runs_only=args.num_runs_only,
             **config.get("kwargs", {})
         )
