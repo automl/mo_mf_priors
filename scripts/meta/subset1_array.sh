@@ -26,7 +26,7 @@ if [[ ! -f "${config_dir}/.generated" ]]; then
         "NepsRW"
         "NepsHyperbandRW"
         "Nevergrad_EvolutionStrategy"
-        "MOASHA"
+        "NepsMOASHA"
         "NepsMOASHAPiBORW"
     )
 
