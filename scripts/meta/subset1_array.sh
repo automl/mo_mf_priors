@@ -5,6 +5,7 @@
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
 #SBATCH --array=0-107%20   # (2*27 + 6*9) = 108 total combinations
+#SBATCH --time=2-00:00:00
 
 echo "Workingdir: $PWD"
 echo "Started at $(date)"
