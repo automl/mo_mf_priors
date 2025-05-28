@@ -159,7 +159,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
                     raise NotImplementedError(f"Budget type {budget_type} not implemented")
 
 
-            if "single" in OPTIMIZERS[opt].support.fidelities:
+            if OPTIMIZERS[opt].support.continuations:
                 continuations = True
                 continuations_list = _df[CONTINUATIONS_COL].values.astype(np.float64)
                 continuations_list = np.cumsum(continuations_list)

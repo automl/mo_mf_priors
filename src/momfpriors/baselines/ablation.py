@@ -144,6 +144,7 @@ class NepsMOASHA_RS(NepsOptimizer):
         objectives=("many"),
         cost_awareness=(None,),
         tabular=False,
+        continuations=True,
     )
 
     env = Env(

@@ -414,6 +414,7 @@ class MOMFBO_Optimizer(Abstract_AskTellOptimizer):
         objectives=("many"),
         cost_awareness=(None,),
         tabular=False,
+        continuations=True,  # TODO: Check for correctness
     )
 
     env = Env(

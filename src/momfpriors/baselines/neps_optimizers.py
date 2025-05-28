@@ -242,6 +242,7 @@ class NepsHyperbandRW(NepsOptimizer):
         objectives=("many"),
         cost_awareness=(None,),
         tabular=False,
+        continuations=True,
     )
 
     env = Env(
@@ -300,6 +301,7 @@ class NepsMOASHA(NepsOptimizer):
         objectives=("many"),
         cost_awareness=(None,),
         tabular=False,
+        continuations=True,
     )
 
     env = Env(
@@ -354,6 +356,7 @@ class NepsMOHyperband(NepsOptimizer):
         objectives=("many"),
         cost_awareness=(None,),
         tabular=False,
+        continuations=True,
     )
 
     env = Env(
@@ -409,6 +412,7 @@ class NepsPriorMOASHA(NepsOptimizer):
         cost_awareness=(None,),
         tabular=False,
         priors=True,
+        continuations=True,
     )
 
     env = Env(
@@ -479,6 +483,7 @@ class NepsMOPriorband(NepsOptimizer):
         cost_awareness=(None,),
         tabular=False,
         priors=True,
+        continuations=True,
     )
 
     env = Env(
@@ -624,6 +629,7 @@ class NepsMOASHABO(NepsOptimizer):
         objectives=("many"),
         cost_awareness=(None,),
         tabular=False,
+        continuations=True,
     )
 
     env = Env(
@@ -685,6 +691,7 @@ class NepsMOASHAPiBORW(NepsOptimizer):
         cost_awareness=(None,),
         tabular=False,
         priors=True,
+        continuations=True,
     )
 
     env = Env(
