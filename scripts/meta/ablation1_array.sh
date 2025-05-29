@@ -53,7 +53,7 @@ if [[ ! -f "${config_dir}/.generated" ]]; then
             for prior_pair in "${priors[@]}"; do
                 read -r val1 val2 <<< "$prior_pair"
 
-                yaml_file="${config_dir}/prior_exp_${config_id}.yaml"
+                yaml_file="${config_dir}/ablation1_${config_id}.yaml"
                 {
                     echo "optimizers:"
                     echo "  - name: $optimizer"
