@@ -31,8 +31,13 @@ COLORS = {
     "NepsMOASHA": "darkviolet",
     "NepsMOASHA_w_continuations": "darkviolet",
 
+    "NepsMOASHA_RS": "violet",
+    "NepsMOASHA_RS_w_continuations": "violet",
+
     "NepsMOASHABO": "darkblue",
     "NepsMOASHABO_w_continuations": "darkblue",
+
+    # Optimizers with Priors
 
     # NepsPriorMOASHA
     "NepsPriorMOASHA": "darkgreen",
@@ -61,6 +66,9 @@ PREFERENCE_LABELS1 = {
 }
 
 OPTIMIZER_LABELS1 = {
+
+    # Optimizers without Priors
+
     "SMAC_ParEGO": "ParEGO",
     "RandomSearch": "Random Search",
     "NepsRW": "BO+RW",
@@ -70,9 +78,13 @@ OPTIMIZER_LABELS1 = {
 
     "NepsMOASHA": "MOASHA",
 
+    "NepsMOASHA_RS": "MOASHA+RS",
+
     "NepsMOASHABO": "MOASHA-BO+RW",
 
     "MOMFBO": "MOMF-BO",
+
+    # Optimizers with Priors
 
     "NepsPriorMOASHA-all": "MOASHA+Prior(all)",
     "NepsPriorMOASHA-good-good": "MOASHA+Prior(good-good)",
@@ -125,6 +137,8 @@ OPTIMIZER_LABELS2 = {
     "NepsHyperbandRW": "HB+RW",
 
     "NepsMOASHA": "MOASHA",
+
+    "NepsMOASHA_RS": "MOASHA+RS",
 
     "NepsMOASHABO": "MOASHA-BO+RW",
 
