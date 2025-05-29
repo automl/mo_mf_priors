@@ -4,27 +4,29 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-8%5   # 9 total combinations
+#SBATCH --array=0-8  # 9 total combinations
 
-echo "Workingdir: $PWD";
-echo "Started at $(date)";
-echo "Running job $SLURM_JOB_NAME, task $SLURM_ARRAY_TASK_ID";
+echo "Workingdir: $PWD"
+echo "Started at $(date)"
+echo "Running job $SLURM_JOB_NAME, task $SLURM_ARRAY_TASK_ID"
 
 source ~/repos/momfp_env/bin/activate
 
-# === Config generation ===
 config_dir="generated_configs"
 mkdir -p "$config_dir"
 
 if [[ ! -f "${config_dir}/.generated" ]]; then
     echo "Generating YAML configs in Bash..."
 
-    optimizers=(
-        # "NepsRW"
+    with_priors=(
+        # "RandomSearchWithPriors"
+        # "NepsMOASHAPiBORW"
+    )
+
+    without_priors=(
         "NepsMOASHA_RS"
         # "NepsMOASHABO"
-        # "NepsPiBORW"
-        # "NepsMOASHAPiBORW"
+        # "NepsRW"
     )
 
     benchmarks=(
@@ -40,10 +42,12 @@ if [[ ! -f "${config_dir}/.generated" ]]; then
     )
 
     priors=("good good" "bad good" "bad bad")
+    nulls="null null"
 
     config_id=0
 
-    for optimizer in "${optimizers[@]}"; do
+    # With priors (3 configs per benchmark)
+    for optimizer in "${with_priors[@]}"; do
         for benchmark_line in "${benchmarks[@]}"; do
             read -r name obj1 obj2 <<< "$benchmark_line"
             for prior_pair in "${priors[@]}"; do
@@ -64,6 +68,27 @@ if [[ ! -f "${config_dir}/.generated" ]]; then
 
                 ((config_id++))
             done
+        done
+    done
+
+    # Without priors (1 config per benchmark, using nulls)
+    for optimizer in "${without_priors[@]}"; do
+        for benchmark_line in "${benchmarks[@]}"; do
+            read -r name obj1 obj2 <<< "$benchmark_line"
+            yaml_file="${config_dir}/prior_exp_${config_id}.yaml"
+            {
+                echo "optimizers:"
+                echo "  - name: $optimizer"
+                echo "benchmarks:"
+                echo "  - name: $name"
+                echo "    objectives:"
+                echo "      $obj1: null"
+                echo "      $obj2: null"
+                echo "num_seeds: 25"
+                echo "num_iterations: 25"
+            } > "$yaml_file"
+
+            ((config_id++))
         done
     done
 
