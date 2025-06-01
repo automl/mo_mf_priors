@@ -11,7 +11,8 @@ from momfpriors.plotting.labels import (
     LABELS_1,
 )
 from momfpriors.plotting.plot_styles import (
-    COLORS,
+    COLORS_HPS,
+    COLORS_MAIN,
     MARKERS,
 )
 
@@ -60,15 +61,33 @@ def pareto_front(
 
 def get_style(instance: str) -> tuple[str, str, str, str | None]:
     """Function to get the plotting style for a given instance."""
-    prior_annot = instance.split("priors=")[-1] if "priors=" in instance else None
-    opt = instance.split(";")[0]
-    color = COLORS.get(opt)
-    if prior_annot:
-        color = COLORS.get(f"{opt}")
+    prior_annot = None
+    hps = None
+    opt_splits = instance.split(";")
+    if isinstance(opt_splits, str):
+        opt_splits = [opt_splits]
+    match len(opt_splits):
+        case 1:
+            pass
+        case 2:
+            if "priors=" in opt_splits[1]:
+                prior_annot = opt_splits[1].split("priors=")[-1]
+            else:
+                hps = opt_splits[1]
+        case 3:
+            hps = opt_splits[1]
+            prior_annot = opt_splits[2].split("priors=")[-1]
+        case _:
+            raise ValueError(
+                "Multiple HPs not yet supported"
+            )
+    opt = opt_splits[0]
+    color = COLORS_HPS.get((opt, hps)) if hps else COLORS_MAIN.get(opt)
     marker = MARKERS.get(prior_annot, "s")
     if color is None:
         print(f"No color found for {opt}")
-    return marker, color, opt, prior_annot
+        breakpoint()
+    return marker, color, opt, hps, prior_annot
 
 
 def edit_legend_labels(labels: list[str], which_labels: int | str = "1") -> list[str]:

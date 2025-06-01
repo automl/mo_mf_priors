@@ -15,9 +15,9 @@ MARKERS = {
     "medium": "8",         # Octagon
 }
 
-COLORS = {
+COLORS_MAIN = {
     # Optimizers without Priors
-    "SMAC_ParEGO": "goldenrod",
+    "SMAC_ParEGO": "saddlebrown",
     "RandomSearch": "peru",
     "NepsRW": "lightseagreen",
     "Nevergrad_EvolutionStrategy": "lime",
@@ -56,6 +56,18 @@ COLORS = {
 
     # RandomSearchWithPriors
     "RandomSearchWithPriors": "darkorange",
+}
+
+
+COLORS_HPS = {
+    ("NepsMOASHABO", "initial_design_size=5"): "darkblue",
+    ("NepsMOASHABO_w_continuations", "initial_design_size=5"): "darkblue",
+
+    ("NepsMOASHABO", "initial_design_size=7"): "limegreen",
+    ("NepsMOASHABO_w_continuations", "initial_design_size=7"): "limegreen",
+
+    ("NepsMOASHABO", "initial_design_size=10"): "goldenrod",
+    ("NepsMOASHABO_w_continuations", "initial_design_size=10"): "goldenrod",
 }
 
 RC_PARAMS = {
@@ -144,12 +156,12 @@ other_fig_params = {
         4: 4,
         5: 5,
         6: 3,
-        7: 4,
+        7: 5,
         8: 4,
-        9: 3,
+        9: 5,
         10: 5,
-        11: 4,
-        12: 4,
+        11: 5,
+        12: 5,
         13: 5,
         14: 5,
         15: 5,
@@ -158,12 +170,12 @@ other_fig_params = {
     "single_fig_leg_cols": {
         2: 2,
         3: 3,
-        4: 4,
-        5: 5,
+        4: 2,
+        5: 3,
         6: 3,
-        7: 3,
-        8: 2,
-        9: 3,
+        7: 4,
+        8: 4,
+        9: 4,
         10: 2,
         11: 3,
         12: 2,

@@ -86,7 +86,7 @@ def plot_average_rank(
         means = mean_ranks[instance]
         sems = sem_ranks[instance]
 
-        marker, color, _, _ = get_style(instance)
+        marker, color, _, _, _ = get_style(instance)
         ax.plot(
             means,
             linestyle="-",
@@ -131,7 +131,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
     for instance, instance_data in agg_data.items():
 
         # Get the marker, color, optimizer name and prior annotations for the optimizer instance
-        marker, color, opt, prior_annot = get_style(instance)
+        marker, color, opt, hps, prior_annot = get_style(instance)
 
         assert opt in OPTIMIZERS
 
@@ -184,6 +184,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
 
                     if not max_fid_flag:
                         if int(continuations_budget_used) > int(num_full_evals):
+                            if num_full_evals + 1 > budget:
+                                break
                             num_full_evals += 1
                             if len(hv_vals) > 0:
                                 hv_vals.append(hv_vals[-1])
@@ -191,6 +193,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
                                 hv_vals.append(np.nan)
                         continue
                 # Compute hypervolume
+                if num_full_evals + 1 > budget:
+                    break
                 num_full_evals += 1
                 acc_costs.append(costs)
                 pareto = pareto_front(acc_costs)
@@ -201,15 +205,16 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
                 hypervolume = hv.do(pareto)
                 hv_vals.append(hypervolume)
 
-                if num_full_evals == budget:
-                    break
-
             budget_list = np.arange(1, num_full_evals + 1, 1)
 
             if continuations:
                 seed_cont_dict[seed] = pd.Series(hv_vals, index=budget_list)
                 seed_incumbents = seed_cont_dict[seed].cummax()
-                instance_name = f"{instance}_w_continuations"
+                instance_name = (
+                    f"{opt}_w_continuations" +
+                    (";" + hps if hps is not None else "") +
+                    (";priors=" + prior_annot if prior_annot is not None else "")
+                )
             else:
                 seed_hv_dict[seed] = pd.Series(hv_vals, index=budget_list)
                 seed_incumbents = seed_hv_dict[seed].cummax()
@@ -256,7 +261,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
         # For plotting continuations
         else:
 
-            _, _color, _, _ = get_style(f"{instance}_w_continuations")
+            _, _color, _, _, _ = get_style(instance_name)
             seed_cont_df = pd.DataFrame(seed_cont_dict)
             seed_cont_df = seed_cont_df.ffill(axis=0)
             means_cont = pd.Series(seed_cont_df.mean(axis=1), name=f"means_{instance}")
@@ -666,27 +671,28 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     hv_labels, hv_handles = zip(
         *sorted(
             zip(hv_labels, hv_handles, strict=False),
-            key=lambda x: x[0]
+            key=lambda x: len(x[0])
         ),
         strict=False
     )
     pareto_labels, pareto_handles = zip(
         *sorted(
             zip(pareto_labels, pareto_handles, strict=False),
-            key=lambda x: x[0]
+            key=lambda x: len(x[0])
         ),
         strict=False
     )
     rank_labels, rank_handles = zip(
         *sorted(
             zip(rank_labels, rank_handles, strict=False),
-            key=lambda x: x[0]),
+            key=lambda x: len(x[0])
+        ),
         strict=False
     )
     ov_rank_labels, ov_rank_handles = zip(
         *sorted(
             zip(ov_rank_labels, ov_rank_handles, strict=False),
-            key=lambda x: x[0]
+            key=lambda x: len(x[0])
         ),
         strict=False
     )
