@@ -726,6 +726,8 @@ class NepsMOASHAPiBORW(NepsOptimizer):
                 raise TypeError("Fidelity must be a tuple or a Mapping.")
         set_seed(seed)
 
+        weights = np.random.uniform(size=len(problem.objectives))  # noqa: NPY002
+
         prior_centers = {
             obj: prior.values
             for obj, prior in problem.priors[1].items()
@@ -752,4 +754,5 @@ class NepsMOASHAPiBORW(NepsOptimizer):
             initial_design_size=kwargs.get("initial_design_size", 5),
             prior_centers=prior_centers,
             prior_confidences=prior_confidences,
+            bo_scalar_weights=weights,
         )
