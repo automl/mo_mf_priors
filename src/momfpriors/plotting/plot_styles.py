@@ -58,103 +58,6 @@ COLORS = {
     "RandomSearchWithPriors": "darkorange",
 }
 
-PREFERENCE_LABELS1 = {
-    "NepsMOASHAPiBORW-all": "Our Method(all)",
-    "NepsMOASHAPiBORW-good-good": "Our Method(good-good)",
-    "NepsMOASHAPiBORW-bad-bad": "Our Method(bad-bad)",
-    "NepsMOASHAPiBORW-bad-good": "Our Method(bad-good)",
-}
-
-OPTIMIZER_LABELS1 = {
-
-    # Optimizers without Priors
-
-    "SMAC_ParEGO": "ParEGO",
-    "RandomSearch": "Random Search",
-    "NepsRW": "BO+RW",
-    "Nevergrad_EvolutionStrategy": "NSGA-II",
-
-    "NepsHyperbandRW": "HB+RW",
-
-    "NepsMOASHA": "MOASHA",
-
-    "NepsMOASHA_RS": "MOASHA+RS",
-
-    "NepsMOASHABO": "MOASHA-BO+RW",
-
-    "MOMFBO": "MOMF-BO",
-
-    # Optimizers with Priors
-
-    "NepsPriorMOASHA-all": "MOASHA+Prior(all)",
-    "NepsPriorMOASHA-good-good": "MOASHA+Prior(good-good)",
-    "NepsPriorMOASHA-bad-bad": "MOASHA+Prior(bad-bad)",
-    "NepsPriorMOASHA-bad-good": "MOASHA+Prior(bad-good)",
-
-    "NepsMOPriorband-all": "MO-Priorband(all)",
-    "NepsMOPriorband-good-good": "MO-Priorband(good-good)",
-    "NepsMOPriorband-bad-bad": "MO-Priorband(bad-bad)",
-    "NepsMOPriorband-bad-good": "MO-Priorband(bad-good)",
-
-    "NepsPiBORW-all": "πBO+RW(all)",
-    "NepsPiBORW-good-good": "πBO+RW(good-good)",
-    "NepsPiBORW-bad-bad": "πBO+RW(bad-bad)",
-    "NepsPiBORW-bad-good": "πBO+RW(bad-good)",
-
-    "NepsMOASHAPiBORW-all": "MOASHA+πBO(all)",
-    "NepsMOASHAPiBORW-good-good": "MOASHA+πBO(good-good)",
-    "NepsMOASHAPiBORW-bad-bad": "MOASHA+πBO(bad-bad)",
-    "NepsMOASHAPiBORW-bad-good": "MOASHA+πBO(bad-good)",
-
-    "RandomSearchWithPriors-all": "RS+Prior(all)",
-    "RandomSearchWithPriors-good-good": "RS+Prior(good-good)",
-    "RandomSearchWithPriors-good-bad": "RS+Prior(good-bad)",
-    "RandomSearchWithPriors-good-medium": "RS+Prior(good-medium)",
-    "RandomSearchWithPriors-good-None": "RS+Prior(good-None)",
-    "RandomSearchWithPriors-None-good": "RS+Prior(None-good)",
-    "RandomSearchWithPriors-bad-good": "RS+Prior(bad-good)",
-    "RandomSearchWithPriors-bad-bad": "RS+Prior(bad-bad)",
-    "RandomSearchWithPriors-bad-medium": "RS+Prior(bad-medium)",
-    "RandomSearchWithPriors-bad-None": "RS+Prior(bad-None)",
-    "RandomSearchWithPriors-None-bad": "RS+Prior(None-bad)",
-    "RandomSearchWithPriors-medium-good": "RS+Prior(medium-good)",
-    "RandomSearchWithPriors-medium-bad": "RS+Prior(medium-bad)",
-    "RandomSearchWithPriors-medium-medium": "RS+Prior(medium-medium)",
-    "RandomSearchWithPriors-medium-None": "RS+Prior(medium-None)",
-    "RandomSearchWithPriors-None-medium": "RS+Prior(None-medium)",
-}
-
-PREFERENCE_LABELS2 = {
-    "NepsMOASHAPiBORW": "Our Method",
-}
-
-OPTIMIZER_LABELS2 = {
-    "SMAC_ParEGO": "ParEGO",
-    "RandomSearch": "Random Search",
-    "NepsRW": "BO+RW",
-    "Nevergrad_EvolutionStrategy": "NSGA-II",
-
-    "NepsHyperbandRW": "HB+RW",
-
-    "NepsMOASHA": "MOASHA",
-
-    "NepsMOASHA_RS": "MOASHA+RS",
-
-    "NepsMOASHABO": "MOASHA-BO+RW",
-
-    "MOMFBO": "MOMF-BO",
-
-    "NepsPriorMOASHA": "MOASHA+Prior",
-
-    "NepsMOPriorband": "MO-Priorband",
-
-    "NepsPiBORW": "πBO+RW",
-
-    "NepsMOASHAPiBORW": "MOASHA+πBO",
-
-    "RandomSearchWithPriors": "RS+Prior",
-}
-
 RC_PARAMS = {
     "text.usetex": False,  # True,
     # "pgf.texsystem": "pdflatex",
@@ -196,6 +99,8 @@ XTICKS = {
 
 other_fig_params = {
     "fig_size": (20, 15),
+    "ovrank_xsize": 7,
+    "ovrank_ysize": 7,
     "n_rows_cols": {
         2: (1, 2),
         3: (1, 3),
@@ -253,8 +158,8 @@ other_fig_params = {
     "single_fig_leg_cols": {
         2: 2,
         3: 3,
-        4: 2,
-        5: 2,
+        4: 4,
+        5: 5,
         6: 3,
         7: 3,
         8: 2,

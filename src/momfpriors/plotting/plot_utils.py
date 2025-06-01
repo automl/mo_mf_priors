@@ -5,14 +5,21 @@ from collections.abc import Mapping
 import numpy as np
 import pandas as pd
 
+from momfpriors.plotting.labels import (
+    ABLATION_LABELS,
+    INTRO_LABELS,
+    LABELS_1,
+)
 from momfpriors.plotting.plot_styles import (
     COLORS,
     MARKERS,
-    OPTIMIZER_LABELS1,
-    OPTIMIZER_LABELS2,
-    PREFERENCE_LABELS1,
-    PREFERENCE_LABELS2,
 )
+
+map_labels = {
+    "1": LABELS_1,
+    "intro": INTRO_LABELS,
+    "ablation": ABLATION_LABELS,
+}
 
 
 def dynamic_reference_point(
@@ -64,7 +71,7 @@ def get_style(instance: str) -> tuple[str, str, str, str | None]:
     return marker, color, opt, prior_annot
 
 
-def edit_legend_labels(labels: list[str]) -> list[str]:
+def edit_legend_labels(labels: list[str], which_labels: int | str = "1") -> list[str]:
     """Edit the legend labels to be more readable."""
     new_labels = []
     for label in labels:
@@ -75,9 +82,8 @@ def edit_legend_labels(labels: list[str]) -> list[str]:
         if ";priors=" in _label:
             _label, prior_annot = _label.split(";priors=")
             prior_annot = f" ({prior_annot})"
-        _label = PREFERENCE_LABELS2.get(
-            _label, OPTIMIZER_LABELS2.get(_label, _label)
-        )
+        _label = map_labels[which_labels].get(
+            _label, _label)
         _label = f"{_label}{prior_annot}"
         new_labels.append(_label)
     return new_labels
