@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-35  # (1 NepsRW + 3 NepsMOASHABO variants) × 9 benchmarks = 36
+#SBATCH --array=0-35%20  # 4 optimizers × 9 benchmarks = 36
 #SBATCH --time=2-00:00:00
 
 echo "Workingdir: $PWD"
