@@ -501,7 +501,7 @@ def gen_plots_per_bench(  # noqa: C901, PLR0912
 
 
 
-def make_subplots(  # noqa: C901, PLR0912, PLR0915
+def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     exp_dir: Path,
     *,
     cut_off_iteration: int | None = None,
@@ -512,8 +512,17 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     skip_non_avg: bool = False,
     skip_priors: bool = False,
     avg_prior_label: str = "all",
+    file_type: str = "pdf",
+    output_dir: Path | None = None,
+    which_labels: str = "1",
+    which_plots: list[str] | None = None,
+    turn_off_legends: list[str] | None = None,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
+    if which_plots is None:
+        which_plots = ["all"]
+    if which_plots is None:
+        which_plots = ["hv", "pareto", "rank", "ov_rank"]
     fig_size = other_fig_params["fig_size"]
     benchmarks_dict, total_budget = agg_data(exp_dir, skip_opt=skip_opt)
     if cut_off_iteration:
@@ -546,7 +555,10 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     fig_ov_rank, axs_ov_rank = plt.subplots(
         nrows=1,
         ncols=1,
-        figsize=(7, 7),
+        figsize=(
+            other_fig_params["ovrank_xsize"],
+            other_fig_params["ovrank_ysize"],
+        ),
     )
 
     plt.rcParams.update(RC_PARAMS)
@@ -642,10 +654,10 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
     rank_handles, rank_labels = axs_rank[0].get_legend_handles_labels()
     ov_rank_handles, ov_rank_labels = axs_ov_rank[0].get_legend_handles_labels()
 
-    hv_labels = edit_legend_labels(hv_labels)
-    pareto_labels = edit_legend_labels(pareto_labels)
-    rank_labels = edit_legend_labels(rank_labels)
-    ov_rank_labels = edit_legend_labels(ov_rank_labels)
+    hv_labels = edit_legend_labels(hv_labels, which_labels=which_labels)
+    pareto_labels = edit_legend_labels(pareto_labels, which_labels=which_labels)
+    rank_labels = edit_legend_labels(rank_labels, which_labels=which_labels)
+    ov_rank_labels = edit_legend_labels(ov_rank_labels, which_labels=which_labels)
 
     logger.info(f"Final Optimizer labels: {hv_labels}")
 
@@ -693,18 +705,19 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
         fig_hv.delaxes(axs_hv[j])
 
     # Legend for hypervolume plot
-    hv_leg = fig_hv.legend(
-        hv_handles,
-        hv_labels,
-        fontsize=legend_fontsize,
-        loc="lower center",
-        bbox_to_anchor=bbox_to_anchor,
-        ncol=multi_cols,
-        frameon=True,
-        markerscale=2,
-    )
-    for item in hv_leg.legend_handles:
-        item.set_linewidth(2)
+    if "all" not in turn_off_legends or "hv" not in turn_off_legends:
+        hv_leg = fig_hv.legend(
+            hv_handles,
+            hv_labels,
+            fontsize=legend_fontsize,
+            loc="lower center",
+            bbox_to_anchor=bbox_to_anchor,
+            ncol=multi_cols,
+            frameon=True,
+            markerscale=2,
+        )
+        for item in hv_leg.legend_handles:
+            item.set_linewidth(2)
 
     fig_hv.tight_layout(**tight_layout_pads)
 
@@ -713,18 +726,19 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
         fig_pareto.delaxes(axs_pareto[j])
 
     # Legend for pareto plot
-    pareto_leg = fig_pareto.legend(
-        pareto_handles,
-        pareto_labels,
-        fontsize=legend_fontsize,
-        loc="lower center",
-        bbox_to_anchor=bbox_to_anchor,
-        ncol=multi_cols,
-        frameon=True,
-        markerscale=2,
-    )
-    for item in pareto_leg.legend_handles:
-        item.set_linewidth(2)
+    if "all" not in turn_off_legends or "pareto" not in turn_off_legends:
+        pareto_leg = fig_pareto.legend(
+            pareto_handles,
+            pareto_labels,
+            fontsize=legend_fontsize,
+            loc="lower center",
+            bbox_to_anchor=bbox_to_anchor,
+            ncol=multi_cols,
+            frameon=True,
+            markerscale=2,
+        )
+        for item in pareto_leg.legend_handles:
+            item.set_linewidth(2)
 
     fig_pareto.tight_layout(**tight_layout_pads)
 
@@ -733,55 +747,71 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0915
         fig_rank.delaxes(axs_rank[j])
 
     # Legend for rank plot
-    rank_leg = fig_rank.legend(
-        rank_handles,
-        rank_labels,
-        fontsize=legend_fontsize,
-        loc="lower center",
-        bbox_to_anchor=bbox_to_anchor,
-        ncol=multi_cols,
-        frameon=True,
-        markerscale=2,
-    )
-    for item in rank_leg.legend_handles:
-        item.set_linewidth(2)
+    if "all" not in turn_off_legends or "rank" not in turn_off_legends:
+        rank_leg = fig_rank.legend(
+            rank_handles,
+            rank_labels,
+            fontsize=legend_fontsize,
+            loc="lower center",
+            bbox_to_anchor=bbox_to_anchor,
+            ncol=multi_cols,
+            frameon=True,
+            markerscale=2,
+        )
+        for item in rank_leg.legend_handles:
+            item.set_linewidth(2)
 
     fig_rank.tight_layout(**tight_layout_pads)
 
     # Legend for overall rank plot
-    ov_rank_leg = fig_ov_rank.legend(
-        ov_rank_handles,
-        ov_rank_labels,
-        fontsize=10,
-        loc="lower center",
-        bbox_to_anchor=(0.5, -0.15),
-        ncol=single_cols,
-        frameon=True,
-        markerscale=2,
-    )
-    for item in ov_rank_leg.legend_handles:
-        item.set_linewidth(2)
+    if "all" not in turn_off_legends or "ov_rank" not in turn_off_legends:
+        ov_rank_leg = fig_ov_rank.legend(
+            ov_rank_handles,
+            ov_rank_labels,
+            fontsize=10,
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.05),
+            ncol=single_cols,
+            frameon=True,
+            markerscale=2,
+        )
+        for item in ov_rank_leg.legend_handles:
+            item.set_linewidth(2)
 
     fig_ov_rank.tight_layout(**tight_layout_pads)
 
     save_dir = exp_dir/ "plots" / "subplots"
+    if output_dir is not None:
+        save_dir = output_dir
     save_dir.mkdir(parents=True, exist_ok=True)
 
     if save_suffix:
         save_suffix = f"_{save_suffix}"
     if not no_save:
-        fig_hv.savefig(
-            save_dir / f"hypervolume_subplots{save_suffix}.png", dpi=300, bbox_inches="tight"
-        )
-        fig_pareto.savefig(
-            save_dir / f"pareto_subplots{save_suffix}.png", dpi=300, bbox_inches="tight"
-        )
-        fig_rank.savefig(
-            save_dir / f"rank_subplots{save_suffix}.png", dpi=300, bbox_inches="tight"
-        )
-        fig_ov_rank.savefig(
-            save_dir / f"rank_overall_subplots{save_suffix}.png", dpi=300, bbox_inches="tight"
-        )
+        if "all" in which_plots or "hv" in which_plots:
+            fig_hv.savefig(
+                save_dir / f"hypervolume_subplots{save_suffix}.{file_type}",
+                dpi=300, bbox_inches="tight"
+            )
+            logger.info("Saved hv plot")
+        if "all" in which_plots or "pareto" in which_plots:
+            fig_pareto.savefig(
+                save_dir / f"pareto_subplots{save_suffix}.{file_type}",
+                dpi=300, bbox_inches="tight"
+            )
+            logger.info("Saved pareto plot")
+        if "all" in which_plots or "rank" in which_plots:
+            fig_rank.savefig(
+                save_dir / f"rank_subplots{save_suffix}.{file_type}",
+                dpi=300, bbox_inches="tight"
+            )
+            logger.info("Saved rank plot")
+        if "all" in which_plots or "ov_rank" in which_plots:
+            fig_ov_rank.savefig(
+                save_dir / f"rank_overall_subplots{save_suffix}.{file_type}",
+                dpi=300, bbox_inches="tight"
+            )
+            logger.info("Saved overall rank plot")
 
 
 if __name__ == "__main__":
@@ -789,13 +819,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "--exp_dir", "-e",
         type=str,
-        required=True,
+        default=None,
         help="Main experiment directory containing the runs to plot."
     )
     parser.add_argument(
-        "--make_subplots", "-s",
-        action="store_true",
-        help="make subplot for all plots in the same experiment directory."
+        "--output_dir", "-o",
+        type=str,
+        default=None,
+        help="Absolute path to the output directory where the plots will be saved. "
+            "If not provided, the plots will be saved in the 'plots' subdirectory"
+            "of the experiment directory."
     )
     parser.add_argument(
         "--cut_off_iteration", "-i",
@@ -846,10 +879,110 @@ if __name__ == "__main__":
         default="all",
         help="Label for the averaged priors."
     )
+    parser.add_argument(
+        "--file_type", "-file",
+        type=str,
+        choices=["pdf", "png", "svg", "jpg"],
+        default="pdf",
+        help="File type to save the plots."
+    )
+    parser.add_argument(
+        "--which_labels", "-labels",
+        type=str,
+        default="1",
+        help="Which labels to use for the plots."
+    )
+    parser.add_argument(
+        "--which_plots", "-plots",
+        nargs="+",
+        type=str,
+        default="all",
+        help="Which plots to generate. 'all' generates all plots, "
+            "'hv' generates only hypervolume plots, "
+            "'pareto' generates only pareto plots, "
+            "'rank' generates only rank plots, "
+            "'ov_rank' generates only overall rank plots."
+    )
+    parser.add_argument(
+        "--from_yaml", "-yaml",
+        type=str,
+        default=None,
+        help="Path to a YAML file containing the plotting configuration."
+    )
+    parser.add_argument(
+        "--specific_rc_params", "-rc",
+        nargs="+",
+        type=str,
+        default=None,
+        help="Specific rcParams to set for the plots. "
+            "Format: 'param1=value1 param2=value2 ...'. "
+            "If not provided, default rcParams will be used."
+    )
+    parser.add_argument(
+        "--specific_fig_params", "-figparams",
+        nargs="+",
+        type=str,
+        default=None,
+        help="Specific figure parameters to set for the plots. "
+            "Format: 'param1=value1 param2=value2 ...'. "
+            "If not provided, default figure parameters will be used."
+    )
+    parser.add_argument(
+        "--turn_off_legends", "-nolegends",
+        nargs="+",
+        type=str,
+        default="all",
+        help="Turn off legend for the plots. "
+            "If 'all' is provided, legend will be turned off for all plots. "
+            "hv, pareto, rank, ov_rank can be specified to turn off legend for specific plots."
+    )
     args = parser.parse_args()
+
+    if args.from_yaml:
+        with Path(args.from_yaml).open("r") as f:
+            yaml_config = yaml.safe_load(f)
+        args.exp_dir = yaml_config.get("exp_dir", args.exp_dir)
+        args.output_dir = yaml_config.get("output_dir", args.output_dir)
+        args.cut_off_iteration = yaml_config.get("cut_off_iteration", args.cut_off_iteration)
+        args.no_save = yaml_config.get("no_save", args.no_save)
+        args.save_suffix = yaml_config.get("save_suffix", args.save_suffix)
+        args.skip_opt = yaml_config.get("skip_opt", args.skip_opt)
+        args.priors_to_avg = yaml_config.get("priors_to_avg", args.priors_to_avg)
+        args.skip_non_avg = yaml_config.get("skip_non_avg", args.skip_non_avg)
+        args.skip_priors = yaml_config.get("skip_priors", args.skip_priors)
+        args.avg_prior_label = yaml_config.get("avg_prior_label", args.avg_prior_label)
+        args.file_type = yaml_config.get("file_type", args.file_type)
+        args.which_labels = yaml_config.get("which_labels", args.which_labels)
+        args.which_plots = yaml_config.get("which_plots", args.which_plots)
+        args.specific_rc_params = yaml_config.get("specific_rc_params", args.specific_rc_params)
+        args.specific_fig_params = yaml_config.get("specific_fig_params", args.specific_fig_params)
+        args.turn_off_legends = yaml_config.get("turn_off_legends", args.turn_off_legends)
+
+    if args.specific_rc_params:
+        for param in args.specific_rc_params:
+            key, value = param.split("=")
+            RC_PARAMS[key] = value
+
+    if args.specific_fig_params:
+        for param in args.specific_fig_params:
+            key, value = param.split("=")
+            if key in other_fig_params:
+                other_fig_params[key] = int(value)
+            else:
+                logger.warning(f"Unknown figure parameter: {key}. Skipping.")
+
+    assert args.exp_dir is not None, "Experiment directory must be specified."
     exp_dir: Path = DEFAULT_RESULTS_DIR / args.exp_dir
 
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
+    if args.output_dir is not None:
+        output_dir = Path(args.output_dir)
+
+    if isinstance(args.which_plots, str):
+        args.which_plots = [args.which_plots]
+
+    if isinstance(args.turn_off_legends, str):
+        args.turn_off_legends = [args.turn_off_legends]
 
     make_subplots(
         exp_dir=exp_dir,
@@ -861,4 +994,9 @@ if __name__ == "__main__":
         skip_non_avg=args.skip_non_avg,
         skip_priors=args.skip_priors,
         avg_prior_label=args.avg_prior_label,
+        file_type=args.file_type,
+        output_dir=output_dir if args.output_dir else None,
+        which_labels=args.which_labels,
+        which_plots=args.which_plots,
+        turn_off_legends=args.turn_off_legends
     )
