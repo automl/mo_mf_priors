@@ -68,6 +68,9 @@ COLORS_HPS = {
 
     ("NepsMOASHABO", "initial_design_size=10"): "goldenrod",
     ("NepsMOASHABO_w_continuations", "initial_design_size=10"): "goldenrod",
+
+    ("NepsMOASHAPiBORW", "sampler=etaprior"): "green",
+    ("NepsMOASHAPiBORW_w_continuations", "sampler=etaprior"): "green",
 }
 
 RC_PARAMS = {
@@ -124,7 +127,7 @@ other_fig_params = {
         12: (3, 4),
     },
     "tight_layout_pads": {
-        "pad": 0,
+        "pad": 0.2,
         "h_pad": 0.5,
     },
     "bbox_to_anchor": (0.5, -0.08),
@@ -180,5 +183,20 @@ other_fig_params = {
         11: 3,
         12: 2,
         13: 5,
-    }
+    },
+    "stitched_cols": {
+        2: 2,
+        3: 3,
+        4: 4,
+        5: 4,
+        6: 4,
+        7: 4,
+        8: 4,
+        9: 4,
+        10: 4,
+        11: 4,
+        12: 4,
+    },
+    "stitched_xylabel_fontsize": 20,
+    "stitched_leg_fontsize": 18,
 }
