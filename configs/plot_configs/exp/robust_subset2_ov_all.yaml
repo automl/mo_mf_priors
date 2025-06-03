@@ -1,15 +1,21 @@
-exp_dir: subset1
+exp_dir: subset2
 output_dir: /home/soham/Master_Thesis/plots/exp/
-skip_priors:
+skip_non_avg: true
+priors_to_avg:
   - good-good
   - bad-good
-save_suffix: subset1_robust_bad-bad
+  - bad-bad
+avg_prior_label: overall-all
+save_suffix: subset2_robust_ov_all
 skip_opt:
-  - RandomSearchWithPriors
+  - NepsMOASHA
+  - NepsMOASHABO
+  - NepsPriorMOASHA
 which_labels: "1"
 which_plots:
   - hv
   - pareto
+  - ov_rank
 specific_fig_params:
   - xylabel_fontsize=20
   - ovrank_xsize=6

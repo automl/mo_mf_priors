@@ -1,0 +1,9 @@
+yaml_files:
+  - configs/plot_configs/exp/exp_subset1.yaml
+  - configs/plot_configs/exp/exp_subset2.yaml
+output_dir: /home/soham/Master_Thesis/plots/exp/
+save_suffix: exp_good_ranking
+file_type: pdf
+figsize:
+  - 14
+  - 6

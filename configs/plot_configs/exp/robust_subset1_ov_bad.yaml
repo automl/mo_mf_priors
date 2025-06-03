@@ -1,9 +1,11 @@
 exp_dir: subset1
 output_dir: /home/soham/Master_Thesis/plots/exp/
-skip_priors:
-  - good-good
+skip_non_avg: true
+priors_to_avg:
   - bad-good
-save_suffix: subset1_robust_bad-bad
+  - bad-bad
+avg_prior_label: overall-bad
+save_suffix: subset1_robust_ov_bad
 skip_opt:
   - RandomSearchWithPriors
 which_labels: "1"

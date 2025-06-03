@@ -1,11 +1,13 @@
-exp_dir: subset1
+exp_dir: subset12_merge
 output_dir: /home/soham/Master_Thesis/plots/exp/
-skip_priors:
+skip_non_avg: true
+priors_to_avg:
   - good-good
-  - bad-good
-save_suffix: subset1_robust_bad-bad
-skip_opt:
-  - RandomSearchWithPriors
+  - bad-bad
+avg_prior_label: overall-extreme
+save_suffix: subset12_robust_ov_ex
+# skip_opt:
+#   - RandomSearchWithPriors
 which_labels: "1"
 which_plots:
   - hv

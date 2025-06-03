@@ -1,11 +1,16 @@
-exp_dir: subset1
+exp_dir: subset2
 output_dir: /home/soham/Master_Thesis/plots/exp/
-skip_priors:
-  - good-good
+priors_to_avg:
+  - bad-bad
   - bad-good
-save_suffix: subset1_robust_bad-bad
+save_suffix: exp_naive_ov_bad
+avg_prior_label: overall-bad
+skip_non_avg: true
 skip_opt:
-  - RandomSearchWithPriors
+  - NepsMOASHABO
+  - NepsMOASHAPiBORW
+  - NepsMOPriorband
+  - NepsPiBORW
 which_labels: "1"
 which_plots:
   - hv
