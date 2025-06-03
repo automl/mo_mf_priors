@@ -709,7 +709,9 @@ class NepsMOASHAPiBORW(NepsOptimizer):
         working_directory: str | Path = DEFAULT_RESULTS_DIR,
         mo_selector: Literal["nsga2", "epsnet"] = "epsnet",
         eta: int = 3,
-        **kwargs: Any,
+        sampler: Literal["uniform", "mopriorband"] = "uniform",
+        initial_design_size: int = 5,
+        **kwargs: Any,  # noqa: ARG002
     ) -> None:
         """Initialize the optimizer."""
         space = convert_configspace(problem.config_space)
@@ -725,8 +727,6 @@ class NepsMOASHAPiBORW(NepsOptimizer):
             case _:
                 raise TypeError("Fidelity must be a tuple or a Mapping.")
         set_seed(seed)
-
-        weights = np.random.uniform(size=len(problem.objectives))  # noqa: NPY002
 
         prior_centers = {
             obj: prior.values
@@ -750,9 +750,8 @@ class NepsMOASHAPiBORW(NepsOptimizer):
             fidelities=_fid,
             mo_selector=mo_selector,
             eta=eta,
-            sampler=kwargs.get("sampler", "uniform"),
-            initial_design_size=kwargs.get("initial_design_size", 5),
+            sampler=sampler,
+            initial_design_size= initial_design_size,
             prior_centers=prior_centers,
             prior_confidences=prior_confidences,
-            bo_scalar_weights=weights,
         )
