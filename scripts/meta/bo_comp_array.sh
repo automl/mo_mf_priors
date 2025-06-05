@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-107 # 1 opt x 4 hps x 3 priors x 9 benches = 108 jobs
+#SBATCH --array=0-107%20 # 1 opt x 4 hps x 3 priors x 9 benches = 108 jobs
 #SBATCH --time=2-00:00:00
 
 echo "Workingdir: $PWD"
