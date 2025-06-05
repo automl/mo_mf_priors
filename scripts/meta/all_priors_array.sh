@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-134%12   # 135 total combinations
+#SBATCH --array=0-26%20   # 27 total combinations
 
 echo "Workingdir: $PWD";
 echo "Started at $(date)";
@@ -20,10 +20,10 @@ if [[ ! -f "${config_dir}/.generated" ]]; then
     echo "Generating YAML configs in Bash..."
 
     optimizers=(
-        "RandomSearchWithPriors"
-        "NepsMOPriorband"
-        "NepsPriorMOASHA"
-        "NepsPiBORW"
+        # "RandomSearchWithPriors"
+        # "NepsMOPriorband"
+        # "NepsPriorMOASHA"
+        # "NepsPiBORW"
         "NepsMOASHAPiBORW"
     )
 
@@ -86,7 +86,7 @@ cat "$yaml_file"
 
 start=$(date +%s)
 
-python3 -m momfpriors.run -y "$yaml_file" -e "all_priors_25"
+python3 -m momfpriors.run -y "$yaml_file" -e "all_priors_25_2"
 
 end=$(date +%s)
 runtime=$((end - start))
