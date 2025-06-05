@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-35%20  # 4 optimizers × 9 benchmarks = 36
+#SBATCH --array=0-107 # 1 opt x 4 hps x 3 priors x 9 benches = 108 jobs
 #SBATCH --time=2-00:00:00
 
 echo "Workingdir: $PWD"
@@ -15,12 +15,19 @@ source ~/repos/momfp_env/bin/activate
 
 start=$(date +%s)
 
-# === Optimizers (no priors)
-optimizers=(
-    "NepsRW:"
-    "NepsMOASHABO:5"
-    "NepsMOASHABO:7"
-    "NepsMOASHABO:10"
+# === Optimizers
+with_priors=(
+    "NepsMOASHAPiBORW:3"
+    "NepsMOASHAPiBORW:5"
+    "NepsMOASHAPiBORW:7"
+    "NepsMOASHAPiBORW:10"
+)
+
+without_priors=(
+    # "NepsRW:"
+    # "NepsMOASHABO:5"
+    # "NepsMOASHABO:7"
+    # "NepsMOASHABO:10"
 )
 
 # === Benchmarks with keys
@@ -36,19 +43,35 @@ benchmarks=(
     "yahpo-lcbench-168868 val_cross_entropy time"
 )
 
-# === Generate job list
+priors=("good:good" "bad:good" "bad:bad")
+
+# === Create job list
 job_list=()
-for opt_line in "${optimizers[@]}"; do
+
+# With priors: 4 opts × 9 benches × 3 priors = 108
+for opt_line in "${with_priors[@]}"; do
     IFS=":" read -r opt init_size <<< "$opt_line"
     for bench_line in "${benchmarks[@]}"; do
         read -r bench key1 key2 <<< "$bench_line"
-        job_list+=("$opt:$init_size:$bench:$key1:$key2")
+        for prior in "${priors[@]}"; do
+            IFS=":" read -r val1 val2 <<< "$prior"
+            job_list+=("with:$opt:$init_size:$bench:$key1:$val1:$key2:$val2")
+        done
+    done
+done
+
+# Without priors: 4 opts × 9 benches = 36
+for opt_line in "${without_priors[@]}"; do
+    IFS=":" read -r opt init_size <<< "$opt_line"
+    for bench_line in "${benchmarks[@]}"; do
+        read -r bench key1 key2 <<< "$bench_line"
+        job_list+=("without:$opt:$init_size:$bench:$key1:null:$key2:null")
     done
 done
 
 # === Select current job
 job="${job_list[$SLURM_ARRAY_TASK_ID]}"
-IFS=":" read -r optimizer init_size benchmark obj1 obj2 <<< "$job"
+IFS=":" read -r mode optimizer init_size benchmark obj1 val1 obj2 val2 <<< "$job"
 
 # === Create config
 config_dir="generated_configs"
@@ -58,15 +81,15 @@ yaml_file="${config_dir}/bo_comp_${SLURM_ARRAY_TASK_ID}.yaml"
 {
     echo "optimizers:"
     echo "  - name: $optimizer"
-    if [[ "$optimizer" == "NepsMOASHABO" ]]; then
+    if [[ "$init_size" != "" ]]; then
         echo "    hyperparameters:"
         echo "      initial_design_size: $init_size"
     fi
     echo "benchmarks:"
     echo "  - name: $benchmark"
     echo "    objectives:"
-    echo "      $obj1: null"
-    echo "      $obj2: null"
+    echo "      $obj1: $val1"
+    echo "      $obj2: $val2"
     echo "num_seeds: 25"
     echo "num_iterations: 25"
 } > "$yaml_file"
