@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --partition bosch_cpu-cascadelake
-#SBATCH --job-name subset1_100
+#SBATCH --job-name subset1_25
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-107%20   # (2*27 + 6*9) = 108 total combinations
+#SBATCH --array=0-107%20   # (1*3*9) = 27 total combinations
 #SBATCH --time=2-00:00:00
 
 echo "Workingdir: $PWD"
@@ -15,8 +15,18 @@ source ~/repos/momfp_env/bin/activate
 start=$(date +%s)
 
 # Optimizers
-prior_opts=("RandomSearchWithPriors" "NepsMOASHAPiBORW")
-nonprior_opts=("RandomSearch" "SMAC_ParEGO" "NepsRW" "NepsHyperbandRW" "Nevergrad_EvolutionStrategy" "NepsMOASHA")
+prior_opts=(
+  # "RandomSearchWithPriors"
+  "NepsMOASHAPiBORW"
+)
+nonprior_opts=(
+  # "RandomSearch"
+  # "SMAC_ParEGO"
+  # "NepsRW"
+  # "NepsHyperbandRW"
+  # "Nevergrad_EvolutionStrategy"
+  # "NepsMOASHA"
+)
 
 # Benchmarks with known objective types (used for both prior and non-prior)
 benchmarks=(
@@ -89,14 +99,14 @@ benchmarks:
       $key1: ${obj1}
       $key2: ${obj2}
 num_seeds: 25
-num_iterations: 100
+num_iterations: 25
 EOF
 
 echo "Generated config:"
 cat "$yaml_file"
 
 # === Run the experiment ===
-python3 -m momfpriors.run -y "$yaml_file" -e "subset1_100"
+python3 -m momfpriors.run -y "$yaml_file" -e "subset1_25"
 
 end=$(date +%s)
 runtime=$((end - start))
