@@ -25,6 +25,7 @@ from momfpriors.plotting.plot_utils import (
     edit_legend_labels,
     fid_perc_momfbo,
     get_style,
+    hv_low_cutoffs,
     pareto_front,
     reference_points_dict,
 )
@@ -471,7 +472,14 @@ def gen_plots_per_bench(  # noqa: C901, PLR0912
                 continue
             if instance not in agg_dict:
                 agg_dict[instance] = {}
-            seed = f"{seed}_{_df['optimizer'][0]}_{annotations}"
+            seed = (
+                f"{seed}_{_df['optimizer'][0]}" +
+                (
+                    ";" + _df[HP_COL][0]
+                    if "default" not in _df[HP_COL][0]
+                    else ""
+                ) + f"_{annotations}"
+            )
             agg_dict[instance][seed] = {
                 "_df": _df,
                 "results": _results,
@@ -522,6 +530,8 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     which_labels: str = "1",
     which_plots: list[str] | None = None,
     turn_off_legends: list[str] | None = None,
+    plot_title: str | None = None,
+    hv_cut_off: bool = False,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     if which_plots is None:
@@ -565,6 +575,31 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
             other_fig_params["ovrank_ysize"],
         ),
     )
+    suptitle_x = other_fig_params["suptitle_bbox"][0]
+    suptitle_y = other_fig_params["suptitle_bbox"][1]
+
+    # Set the title of the plots
+    if plot_title is not None:
+        fig_hv.suptitle(
+            plot_title,
+            x=suptitle_x,
+            y=suptitle_y,
+            fontsize=other_fig_params["title_fontsize"])
+        fig_pareto.suptitle(
+            plot_title,
+            x=suptitle_x,
+            y=suptitle_y,
+            fontsize=other_fig_params["title_fontsize"])
+        fig_rank.suptitle(
+            plot_title,
+            x=suptitle_x,
+            y=suptitle_y,
+            fontsize=other_fig_params["title_fontsize"])
+        fig_ov_rank.suptitle(
+            plot_title,
+            x=suptitle_x,
+            y=suptitle_y,
+            fontsize=other_fig_params["title_fontsize"])
 
     plt.rcParams.update(RC_PARAMS)
 
@@ -604,6 +639,8 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
             axs_hv[i].grid(visible=True)
             axs_hv[i].set_title(benchmark)
             axs_hv[i].set_xlim(1, total_budget)
+            if hv_cut_off:
+                axs_hv[i].set_ylim(hv_low_cutoffs[benchmark])
 
 
             axs_pareto[i].set_xlabel(conf_tuple[0][0], fontsize=xylabel_fontsize)
@@ -942,6 +979,17 @@ if __name__ == "__main__":
             "If 'all' is provided, legend will be turned off for all plots. "
             "hv, pareto, rank, ov_rank can be specified to turn off legend for specific plots."
     )
+    parser.add_argument(
+        "--plot_title", "-title",
+        type=str,
+        default="",
+        help="Title for the plots. If not provided, no title will be set."
+    )
+    parser.add_argument(
+        "--hv_cut_off", "-hv_cut",
+        action="store_true",
+        help="Cut off the hypervolume plot at the specified ylim."
+    )
     args = parser.parse_args()
 
     if args.from_yaml:
@@ -963,6 +1011,8 @@ if __name__ == "__main__":
         args.specific_rc_params = yaml_config.get("specific_rc_params", args.specific_rc_params)
         args.specific_fig_params = yaml_config.get("specific_fig_params", args.specific_fig_params)
         args.turn_off_legends = yaml_config.get("turn_off_legends", args.turn_off_legends)
+        args.plot_title = yaml_config.get("plot_title", args.plot_title)
+        args.hv_cut_off = yaml_config.get("hv_cut_off", args.hv_cut_off)
 
     if args.specific_rc_params:
         for param in args.specific_rc_params:
@@ -1004,5 +1054,7 @@ if __name__ == "__main__":
         output_dir=output_dir if args.output_dir else None,
         which_labels=args.which_labels,
         which_plots=args.which_plots,
-        turn_off_legends=args.turn_off_legends
+        turn_off_legends=args.turn_off_legends,
+        plot_title=args.plot_title,
+        hv_cut_off=args.hv_cut_off
     )

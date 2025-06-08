@@ -391,7 +391,14 @@ def gen_plots_per_bench(  # noqa: C901, PLR0912
                 continue
             if instance not in agg_dict:
                 agg_dict[instance] = {}
-            seed = f"{seed}_{_df['optimizer'][0]}_{annotations}"
+            seed = (
+                f"{seed}_{_df['optimizer'][0]}" +
+                (
+                    ";" + _df[HP_COL][0]
+                    if "default" not in _df[HP_COL][0]
+                    else ""
+                ) + f"_{annotations}"
+            )
             agg_dict[instance][seed] = {
                 "_df": _df,
                 "results": _results,
@@ -487,7 +494,7 @@ def make_subplots(
     ax.grid(visible=True)
     ax.set_xlim(1, total_budget)
     if ax_title is not None:
-        ax.set_title(ax_title, fontsize=xylabelsize)
+        ax.set_title(ax_title, fontsize=other_fig_params["title_fontsize"])
 
 
 
@@ -516,7 +523,7 @@ if __name__ == "__main__":
             "Useful for distinguishing between different runs or configurations."
     )
     parser.add_argument(
-        "--cut_off_iteration", "-c",
+        "--cut_off_iteration", "-i",
         type=int,
         default=None,
         help="Cut off iteration for the plots. "
@@ -565,8 +572,8 @@ if __name__ == "__main__":
             for yaml_file in yaml_config.get("yaml_files", []):
                 yaml_paths.append(Path(yaml_file))
         args.output_dir = yaml_config.get("output_dir", args.output_dir)
-        args.cut_off_iteration = yaml_config.get("cut_off_iteration", None)
-        args.no_save = yaml_config.get("no_save", False)
+        args.cut_off_iteration = yaml_config.get("cut_off_iteration", args.cut_off_iteration)
+        args.no_save = yaml_config.get("no_save", args.no_save)
         args.save_suffix = yaml_config.get("save_suffix", args.save_suffix)
         args.file_type = yaml_config.get("file_type", args.file_type)
         args.figsize = yaml_config.get("figsize", args.figsize)
