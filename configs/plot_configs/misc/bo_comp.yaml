@@ -1,6 +1,9 @@
 exp_dir: bo_comp_25
 output_dir: /home/soham/Master_Thesis/plots/misc/
 save_suffix: bo_comp_25
+skip_priors:
+  - good-good
+  - bad-good
 which_labels: "1"
 which_plots:
   - hv
