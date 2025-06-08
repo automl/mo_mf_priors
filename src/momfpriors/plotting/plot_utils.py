@@ -5,11 +5,7 @@ from collections.abc import Mapping
 import numpy as np
 import pandas as pd
 
-from momfpriors.plotting.labels import (
-    ABLATION_LABELS,
-    INTRO_LABELS,
-    LABELS_1,
-)
+from momfpriors.plotting.labels import ABLATION_LABELS, HP_LABELS, INTRO_LABELS, LABELS_1
 from momfpriors.plotting.plot_styles import (
     COLORS_HPS,
     COLORS_MAIN,
@@ -86,24 +82,53 @@ def get_style(instance: str) -> tuple[str, str, str, str | None]:
     marker = MARKERS.get(prior_annot, "s")
     if color is None:
         print(f"No color found for {opt}")
-        breakpoint()
+        breakpoint()  # noqa: T100
     return marker, color, opt, hps, prior_annot
 
 
-def edit_legend_labels(labels: list[str], which_labels: int | str = "1") -> list[str]:
+def edit_legend_labels(  # noqa: C901
+    labels: list[str],
+    which_labels: int | str = "1",
+) -> list[str]:
     """Edit the legend labels to be more readable."""
+    if isinstance(which_labels, int):
+        which_labels = str(which_labels)
     new_labels = []
     for label in labels:
         prior_annot = ""
+        hps = None
         _label = label
         if "_w_continuations" in _label:
             _label = _label.replace("_w_continuations", "")
-        if ";priors=" in _label:
-            _label, prior_annot = _label.split(";priors=")
-            prior_annot = f" ({prior_annot})"
+        opt_splits = _label.split(";")
+        if isinstance(opt_splits, str):
+            opt_splits = [opt_splits]
+        match len(opt_splits):
+            case 1:
+                pass
+            case 2:
+                if "priors=" in opt_splits[1]:
+                    prior_annot = opt_splits[1].split("priors=")[-1]
+                else:
+                    hps = opt_splits[1]
+            case 3:
+                hps = opt_splits[1]
+                prior_annot = opt_splits[2].split("priors=")[-1]
+            case _:
+                raise ValueError(
+                    "Multiple HPs not yet supported"
+                )
+        _label = opt_splits[0]
         _label = map_labels[which_labels].get(
             _label, _label)
-        _label = f"{_label}{prior_annot}"
+        if hps is not None:
+            hps, value = hps.split("=")
+            hps = HP_LABELS.get(
+                hps, hps)
+            hps = f"{hps}={value}"
+            _label = f"{_label} ({hps})"
+        elif prior_annot:
+            _label = f"{_label} ({prior_annot})"
         new_labels.append(_label)
     return new_labels
 
@@ -361,6 +386,18 @@ reference_points_dict = {
         "val_cross_entropy": 1,
         "time": 10000
     }
+}
+
+hv_low_cutoffs = {
+    "MOMFPark": 1.2,
+    "pd1-cifar100-wide_resnet-2048": 10,
+    "pd1-imagenet-resnet-512": 2600,
+    "pd1-lm1b-transformer-2048": 275,
+    "pd1-translate_wmt-xformer_translate-64": 7200,
+    "yahpo-lcbench-126026": 45,
+    "yahpo-lcbench-146212": 15,
+    "yahpo-lcbench-168330": 150,
+    "yahpo-lcbench-168868": 45,
 }
 
 fid_perc_momfbo = {

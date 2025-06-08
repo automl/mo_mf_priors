@@ -428,6 +428,8 @@ def agg_data(
 
     all_benches = [(bench.pop("name"), bench) for bench in exp_config["benchmarks"]]
 
+    breakpoint()
+
     total_budget = int(exp_config.get("budget"))
 
     seed_for_pareto = exp_config.get("seeds")[0]
@@ -456,6 +458,7 @@ def agg_data(
             # Add default benchmark fidelity to a blackbox Optimizer to compare it
             # alongside MF optimizers if the latter exist in the study
             if fidelities is None:
+                breakpoint()
                 fid = next(
                     bench[1]["fidelities"]
                     for bench in all_benches

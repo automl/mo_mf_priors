@@ -51,6 +51,10 @@ ABLATION_LABELS = {
     "NepsPiBORW": "Priors + Model",
 }
 
+HP_LABELS = {
+    "initial_design_size": "init",
+}
+
 
 
 

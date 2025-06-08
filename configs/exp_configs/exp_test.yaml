@@ -1,37 +1,66 @@
 optimizers:
+  # - name: RandomSearchWithPriors
   # - name: Nevergrad_EvolutionStrategy
   # - name: NepsMOHyperband
   # - name: NepsRW
   # - name: NepsHyperbandRW  
   # - name: SMAC_ParEGO
   # - name: MOMFBO
-  - name: NepsMOASHA
-  - name: NepsPriorMOASHA
-  - name: RandomSearchWithPriors
+  # - name: NepsMOPriorband
+  # - name: NepsMOASHA
+  # - name: NepsPriorMOASHA
+  - name: NepsMOASHAPiBORW
+  # - name: NepsMOASHABO
+  # - name: NepsPiBORW
+  # - name: NepsMOASHA_RS 
 benchmarks:
-  - name: MOMFPark
-    objectives: 
-      value1: good
-      value2: good
-  # - name: yahpo-lcbench-126026
-  #   objectives:
-  #     val_cross_entropy: null
-  #     time: null
+  # - name: MOMFPark
+  #   objectives: 
+  #     value1: good
+  #     value2: good
   # - name: pd1-cifar100-wide_resnet-2048
   #   objectives:
-  #     valid_error_rate: null
-  #     train_cost: null
-  - name: pd1-imagenet-resnet-512
+  #     valid_error_rate: good
+  #     train_cost: good
+  # - name: pd1-imagenet-resnet-512
+  #   objectives:
+  #     valid_error_rate: good
+  #     train_cost: good
+  # - name: yahpo-lcbench-146212
+  #   objectives:
+  #     val_cross_entropy: good
+  #     time: good
+  - name: yahpo-lcbench-168330
     objectives:
-      valid_error_rate: good
-      train_cost: good
-  - name: MOMFPark
-    objectives: 
-      value1: bad
-      value2: bad
-  - name: pd1-imagenet-resnet-512
+      val_cross_entropy: good
+      time: good
+  # - name: yahpo-lcbench-168868
+  #   objectives:
+  #     val_cross_entropy: good
+  #     time: good
+  # - name: MOMFPark
+  #   objectives: 
+  #     value1: bad
+  #     value2: bad
+  # - name: pd1-cifar100-wide_resnet-2048
+  #   objectives:
+  #     valid_error_rate: bad
+  #     train_cost: bad
+  # - name: pd1-imagenet-resnet-512
+  #   objectives:
+  #     valid_error_rate: bad
+  #     train_cost: bad
+  # - name: yahpo-lcbench-146212
+  #   objectives:
+  #     val_cross_entropy: bad
+  #     time: bad
+  - name: yahpo-lcbench-168330
     objectives:
-      valid_error_rate: bad
-      train_cost: bad
-num_seeds: 3
+      val_cross_entropy: bad
+      time: bad
+  # - name: yahpo-lcbench-168868
+  #   objectives:
+  #     val_cross_entropy: bad
+  #     time: bad
+num_seeds: 5
 num_iterations: 25

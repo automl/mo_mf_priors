@@ -122,10 +122,12 @@ XTICKS = {
 
 
 other_fig_params = {
+    "suptitle_bbox": (0.5, 1.02),
     "fig_size": (20, 15),
     "ovrank_xsize": 7,
     "ovrank_ysize": 7,
     "n_rows_cols": {
+        1: (1, 1),
         2: (1, 2),
         3: (1, 3),
         4: (2, 2),
@@ -139,10 +141,12 @@ other_fig_params = {
         "pad": 0.2,
         "h_pad": 0.5,
     },
-    "bbox_to_anchor": (0.5, -0.08),
+    "bbox_to_anchor": (0.5, -0.05),
     "legend_fontsize": 18,
+    "title_fontsize": 20,
     "xylabel_fontsize": 20,
     "xlabel_start_i": {
+        1 : 0,
         2 : 0,
         3 : 0,
         4 : 2,
@@ -153,6 +157,7 @@ other_fig_params = {
         12: 8,
     },
     "ylabel_i_inc": {
+        1 : 0,
         2 : 0,
         3 : 0,
         4 : 2,
@@ -163,6 +168,7 @@ other_fig_params = {
         12: 4,
     },
     "multi_fig_leg_cols": {
+        1: 1,
         2: 2,
         3: 3,
         4: 4,
@@ -180,6 +186,7 @@ other_fig_params = {
         16: 4,
     },
     "single_fig_leg_cols": {
+        1: 1,
         2: 2,
         3: 3,
         4: 2,
@@ -194,10 +201,11 @@ other_fig_params = {
         13: 5,
     },
     "stitched_cols": {
+        1: 1,
         2: 2,
         3: 3,
         4: 4,
-        5: 4,
+        5: 5,
         6: 4,
         7: 4,
         8: 4,
