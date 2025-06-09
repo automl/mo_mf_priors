@@ -1,9 +1,0 @@
-yaml_files:
-  - configs/plot_configs/exp/robust_subset1_badbad.yaml
-  - configs/plot_configs/exp/robust_subset2_badbad.yaml
-output_dir: /home/soham/Master_Thesis/plots/exp/
-save_suffix: exp_robust_badbad_ranking
-file_type: pdf
-figsize:
-  - 14
-  - 6

@@ -1,9 +1,9 @@
 exp_dir: subset2
-output_dir: /home/soham/Master_Thesis/plots/exp/
+output_dir: /home/soham/Master_Thesis/plots/appendix_extra/
 skip_priors:
   - good-good
-  - bad-good
-save_suffix: subset2_robust_bad-bad
+  - bad-bad
+save_suffix: addexp_subset2_bad-good
 skip_opt:
   - NepsMOASHA
   - NepsMOASHABO

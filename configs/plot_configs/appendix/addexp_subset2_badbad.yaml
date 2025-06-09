@@ -1,11 +1,13 @@
-exp_dir: subset1
-output_dir: /home/soham/Master_Thesis/plots/exp/
+exp_dir: subset2
+output_dir: /home/soham/Master_Thesis/plots/appendix_extra/
 skip_priors:
   - good-good
   - bad-good
-save_suffix: subset1_robust_bad-bad
+save_suffix: addexp_subset2_bad-bad
 skip_opt:
-  - RandomSearchWithPriors
+  - NepsMOASHA
+  - NepsMOASHABO
+  - NepsPriorMOASHA
 which_labels: "1"
 which_plots:
   - hv
