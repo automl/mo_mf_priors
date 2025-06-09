@@ -1020,10 +1020,11 @@ if __name__ == "__main__":
             RC_PARAMS[key] = value
 
     if args.specific_fig_params:
+        import ast
         for param in args.specific_fig_params:
             key, value = param.split("=")
             if key in other_fig_params:
-                other_fig_params[key] = int(value)
+                other_fig_params[key] = ast.literal_eval(value)
             else:
                 logger.warning(f"Unknown figure parameter: {key}. Skipping.")
 
