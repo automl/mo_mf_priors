@@ -42,11 +42,11 @@ ABLATION_LABELS = {
 
     "NepsRW": "Model",
 
-    "NepsMOASHA_RS": "MF Initial Design + RS",
+    "NepsMOASHA_RS": "MOMF Initial Design + RS",
 
-    "NepsMOASHAPiBORW": "MF initial design + Priors + Model",
+    "NepsMOASHAPiBORW": "MOMF initial design + Priors + Model",
 
-    "NepsMOASHABO": "MF initial design + Model",
+    "NepsMOASHABO": "MOMF initial design + Model",
 
     "NepsPiBORW": "Priors + Model",
 }
