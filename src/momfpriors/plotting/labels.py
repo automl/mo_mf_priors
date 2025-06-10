@@ -55,6 +55,14 @@ HP_LABELS = {
     "initial_design_size": "init",
 }
 
+SO_LABELS = {
+
+    "NepsHyperband": "HyperBand",
+    "NepsBO": "BO",
+    "NepsPriorband": "Priorband",
+    "NepsMFBO": "Our Algorithm",
+    "NepsPiBO": "πBO",
+}
 
 
 

@@ -5,10 +5,11 @@ from collections.abc import Mapping
 import numpy as np
 import pandas as pd
 
-from momfpriors.plotting.labels import ABLATION_LABELS, HP_LABELS, INTRO_LABELS, LABELS_1
+from momfpriors.plotting.labels import ABLATION_LABELS, HP_LABELS, INTRO_LABELS, LABELS_1, SO_LABELS
 from momfpriors.plotting.plot_styles import (
     COLORS_HPS,
     COLORS_MAIN,
+    COLORS_SO,
     MARKERS,
 )
 
@@ -16,6 +17,7 @@ map_labels = {
     "1": LABELS_1,
     "intro": INTRO_LABELS,
     "ablation": ABLATION_LABELS,
+    "SO": SO_LABELS,
 }
 
 
@@ -78,7 +80,7 @@ def get_style(instance: str) -> tuple[str, str, str, str | None]:
                 "Multiple HPs not yet supported"
             )
     opt = opt_splits[0]
-    color = COLORS_HPS.get((opt, hps)) if hps else COLORS_MAIN.get(opt)
+    color = COLORS_HPS.get((opt, hps)) if hps else COLORS_MAIN.get(opt, COLORS_SO.get(opt))
     marker = MARKERS.get(prior_annot, "s")
     if color is None:
         print(f"No color found for {opt}")
@@ -161,6 +163,19 @@ def avg_seed_dfs_for_ranking(
                 assert instance not in final_dict[seed]
             final_dict[seed][instance] = pd.DataFrame(df_list).mean()
     return final_dict
+
+
+regret_bounds = {
+    "pd1-cifar100-wide_resnet-2048": (0.0, 1.0),
+    "pd1-imagenet-resnet-512": (0.0, 1.0),
+    "pd1-lm1b-transformer-2048": (0.0, 1.0),
+    "pd1-translate_wmt-xformer_translate-64": (0.0, 1.0),
+    "yahpo-lcbench-126026": (0.0, 2.0),
+    "yahpo-lcbench-167190": (0.0, 2.0),
+    "yahpo-lcbench-168330": (0.0, 2.0),
+    "yahpo-lcbench-189906": (0.0, 2.0),
+}
+
 
 reference_points_dict = {
 

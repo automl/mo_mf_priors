@@ -59,6 +59,23 @@ COLORS_MAIN = {
 }
 
 
+# Color for Single Objective Optimizers
+COLORS_SO = {
+    "NepsHyperband": "darkslategray",
+    "NepsHyperband_w_continuations": "darkviolet",
+
+    "NepsBO": "darkcyan",
+
+    "NepsPriorband": "cornflowerblue",
+    "NepsPriorband_w_continuations": "blue",
+
+    "NepsMFBO": "darkviolet",
+    "NepsMFBO_w_continuations": "crimson",
+
+    "NepsPiBO": "olive",
+}
+
+
 COLORS_HPS = {
     ("NepsMOASHABO", "initial_design_size=5"): "darkblue",
     ("NepsMOASHABO_w_continuations", "initial_design_size=5"): "darkblue",
