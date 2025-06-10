@@ -99,14 +99,14 @@ benchmarks:
       $key1: ${obj1}
       $key2: ${obj2}
 num_seeds: 25
-num_iterations: 25
+num_iterations: 100
 EOF
 
 echo "Generated config:"
 cat "$yaml_file"
 
 # === Run the experiment ===
-python3 -m momfpriors.run -y "$yaml_file" -e "subset1_25"
+python3 -m momfpriors.run -y "$yaml_file" -e "subset1_100"
 
 end=$(date +%s)
 runtime=$((end - start))
