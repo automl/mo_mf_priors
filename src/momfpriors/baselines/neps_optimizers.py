@@ -711,6 +711,7 @@ class NepsMOASHAPiBORW(NepsOptimizer):
         eta: int = 3,
         sampler: Literal["uniform", "mopriorband"] = "uniform",
         initial_design_size: int = 5,
+        epsilon=0.25,
         **kwargs: Any,  # noqa: ARG002
     ) -> None:
         """Initialize the optimizer."""
@@ -754,4 +755,5 @@ class NepsMOASHAPiBORW(NepsOptimizer):
             initial_design_size= initial_design_size,
             prior_centers=prior_centers,
             prior_confidences=prior_confidences,
+            epsilon=epsilon,
         )
