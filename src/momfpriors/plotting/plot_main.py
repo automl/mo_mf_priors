@@ -162,8 +162,6 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
 
             if OPTIMIZERS[opt].support.continuations:
                 continuations = True
-                continuations_list = _df[CONTINUATIONS_COL].values.astype(np.float64)
-                continuations_list = np.cumsum(continuations_list)
 
             num_full_evals = 0
             for i, costs in enumerate(results, start=1):
@@ -409,20 +407,11 @@ def gen_plots_per_bench(  # noqa: C901, PLR0912
 ) -> dict[int, pd.DataFrame]:
     """Function to generate plots for a given benchmark and its config dict."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
-    df_agg = {}
     objectives = conf_tuple[0]
     fidelity = conf_tuple[1]
     for _df in _all_dfs:
         if _df.empty:
             continue
-        instance = _df[OPTIMIZER_COL].iloc[0]
-        if _df[HP_COL].iloc[0] is not None:
-            instance = f"{instance}_{_df[HP_COL].iloc[0]}"
-        seed = _df[SEED_COL].iloc[0]
-        if instance not in df_agg:
-            df_agg[instance] = {}
-        if int(seed) not in df_agg[instance]:
-            df_agg[instance][int(seed)] = {"results": _df}
         assert objectives is not None
 
 
