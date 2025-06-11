@@ -1,13 +1,12 @@
 optimizers:
-  - name: RandomSearchWithPriors
   - name: RandomSearch
   - name: SMAC_ParEGO
   - name: NepsRW
   - name: NepsHyperbandRW
   - name: Nevergrad_EvolutionStrategy
   - name: NepsMOASHA
-  - name: NepsPriorMOASHA
   - name: NepsMOASHABO
+  - name: NepsMOASHAPiBORW
 benchmarks:
   - name: MOMFPark
     objectives:
