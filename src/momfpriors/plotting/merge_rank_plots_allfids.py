@@ -144,6 +144,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
             acc_costs = []
             pareto = None
             hv_vals = []
+            all_hvs = []
             budget_type = "TrialBudget" if fidelity is None else "FidelityBudget"
             match budget_type:
                 case "FidelityBudget":
@@ -163,36 +164,6 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
 
             num_full_evals = 0
             for i, costs in enumerate(results, start=1):
-                if budget_type == "FidelityBudget" and _df[FIDELITY_COL][0] is not None:
-                    fidelity_queried = _df[FIDELITY_COL].iloc[i-1]
-                    bench_max_fid = _df[BENCH_FIDELITY_MAX_COL].iloc[0]
-                    continuations_budget_used = _df[CONTINUATIONS_BUDGET_USED].iloc[i-1]
-                    max_fid_flag = True
-                    match instance:
-                        case "MOMFBO":
-                            max_fid_flag = (
-                                float(fidelity_queried) / float(bench_max_fid)
-                                > float(fid_perc_momfbo[benchmark])
-                            )
-                        case str():
-                            max_fid_flag = float(fidelity_queried) == float(bench_max_fid)
-                        case _:
-                            print("Huh?")
-
-                    if not max_fid_flag:
-                        if int(continuations_budget_used) > int(num_full_evals):
-                            if num_full_evals + 1 > budget:
-                                break
-                            num_full_evals += 1
-                            if len(hv_vals) > 0:
-                                hv_vals.append(hv_vals[-1])
-                            else:
-                                hv_vals.append(np.nan)
-                        continue
-                # Compute hypervolume
-                if num_full_evals + 1 > budget:
-                    break
-                num_full_evals += 1
                 acc_costs.append(costs)
                 pareto = pareto_front(acc_costs)
                 pareto = np.array([list(ac.values()) for ac in acc_costs])[pareto]
@@ -200,6 +171,24 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
                 agg_pareto_costs.extend(pareto)
                 hv = Hypervolume(ref_point=reference_point)
                 hypervolume = hv.do(pareto)
+                all_hvs.append(hypervolume)
+                if budget_type == "FidelityBudget" and _df[FIDELITY_COL][0] is not None:
+                    fidelity_queried = _df[FIDELITY_COL].iloc[i-1]
+                    bench_max_fid = _df[BENCH_FIDELITY_MAX_COL].iloc[0]
+                    continuations_budget_used = _df[CONTINUATIONS_BUDGET_USED].iloc[i-1]
+                    max_fid_flag = float(fidelity_queried) == float(bench_max_fid)
+
+                    if not max_fid_flag:
+                        if int(continuations_budget_used) > int(num_full_evals):
+                            if num_full_evals + 1 > budget:
+                                break
+                            num_full_evals += 1
+                            hv_vals.append(max(all_hvs))
+                        continue
+                # Compute hypervolume
+                if num_full_evals + 1 > budget:
+                    break
+                num_full_evals += 1
                 hv_vals.append(hypervolume)
 
             budget_list = np.arange(1, num_full_evals + 1, 1)
