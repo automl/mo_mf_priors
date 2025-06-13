@@ -29,7 +29,7 @@ source ~/repos/momfp_env/bin/activate
 # Running the job
 start=`date +%s`
 
-python3 -m momfpriors.generate_priors -y configs/prior_gen/pd1.yaml -n 100000
+python3 -m momfpriors.generate_priors -y configs/prior_gen/mfzdt.yaml -n 100
 
 end=`date +%s`
 runtime=$((end-start))
