@@ -23,7 +23,6 @@ from momfpriors.plotting.plot_styles import (
 from momfpriors.plotting.plot_utils import (
     avg_seed_dfs_for_ranking,
     edit_legend_labels,
-    fid_perc_momfbo,
     get_style,
     pareto_front,
     reference_points_dict,
@@ -110,7 +109,6 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
     objectives: list[str],
     budget: int,
     fidelity: str | None = None,
-    is_single_opt: bool = False,
 ) -> dict[str, pd.DataFrame]:
     """Function to plot the dominated hypervolume over
     iterations and pareto fronts from a pandas Series
@@ -302,7 +300,7 @@ def agg_data(
     return benchmarks_dict, total_budget
 
 
-def gen_plots_per_bench(  # noqa: C901, PLR0912
+def gen_plots_per_bench(  # noqa: C901
     total_budget: int,
     *,
     benchmark: str,
@@ -402,9 +400,6 @@ def gen_plots_per_bench(  # noqa: C901, PLR0912
             "_df": _df,
             "results": _results,
         }
-    is_single_opt = False
-    if len(agg_dict) == 1:
-        is_single_opt = True
     assert len(objectives) > 0, "Objectives not found in results file."
 
 
@@ -413,7 +408,6 @@ def gen_plots_per_bench(  # noqa: C901, PLR0912
         benchmark=benchmark,
         budget=total_budget,
         fidelity=fidelity,
-        is_single_opt=is_single_opt,
         objectives=objectives,
     )
 

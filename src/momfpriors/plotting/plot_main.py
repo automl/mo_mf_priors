@@ -391,7 +391,7 @@ def agg_data(
     return benchmarks_dict, total_budget
 
 
-def gen_plots_per_bench(  # noqa: C901, PLR0912
+def gen_plots_per_bench(  # noqa: C901
     ax_hv: plt.Axes,
     ax_pareto: plt.Axes,
     total_budget: int,

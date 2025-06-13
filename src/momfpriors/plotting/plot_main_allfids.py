@@ -23,7 +23,6 @@ from momfpriors.plotting.plot_styles import (
 from momfpriors.plotting.plot_utils import (
     avg_seed_dfs_for_ranking,
     edit_legend_labels,
-    fid_perc_momfbo,
     get_style,
     hv_low_cutoffs,
     pareto_front,
