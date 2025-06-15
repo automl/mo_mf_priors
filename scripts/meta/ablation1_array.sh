@@ -17,7 +17,7 @@ start=$(date +%s)
 
 # === Optimizers
 with_priors=(
-    # "NepsMOASHAPiBORW"
+    # "NepsPriMO"
 )
 
 without_priors=(

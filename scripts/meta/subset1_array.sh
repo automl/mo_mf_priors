@@ -17,7 +17,7 @@ start=$(date +%s)
 # Optimizers
 prior_opts=(
   # "RandomSearchWithPriors"
-  "NepsMOASHAPiBORW"
+  "NepsPriMO"
 )
 nonprior_opts=(
   # "RandomSearch"

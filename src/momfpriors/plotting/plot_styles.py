@@ -50,9 +50,9 @@ COLORS_MAIN = {
     # NepsPiBORW
     "NepsPiBORW": "olive",
 
-    # NepsMOASHAPiBORW
-    "NepsMOASHAPiBORW": "crimson",
-    "NepsMOASHAPiBORW_w_continuations": "crimson",
+    # NepsPriMO
+    "NepsPriMO": "crimson",
+    "NepsPriMO_w_continuations": "crimson",
 
     # RandomSearchWithPriors
     "RandomSearchWithPriors": "darkorange",
@@ -86,17 +86,17 @@ COLORS_HPS = {
     ("NepsMOASHABO", "initial_design_size=10"): "goldenrod",
     ("NepsMOASHABO_w_continuations", "initial_design_size=10"): "goldenrod",
 
-    ("NepsMOASHAPiBORW", "initial_design_size=5"): "crimson",
-    ("NepsMOASHAPiBORW_w_continuations", "initial_design_size=5"): "crimson",
+    ("NepsPriMO", "initial_design_size=5"): "crimson",
+    ("NepsPriMO_w_continuations", "initial_design_size=5"): "crimson",
 
-    ("NepsMOASHAPiBORW", "initial_design_size=7"): "darkorange",
-    ("NepsMOASHAPiBORW_w_continuations", "initial_design_size=7"): "darkorange",
+    ("NepsPriMO", "initial_design_size=7"): "darkorange",
+    ("NepsPriMO_w_continuations", "initial_design_size=7"): "darkorange",
 
-    ("NepsMOASHAPiBORW", "initial_design_size=10"): "darkslateblue",
-    ("NepsMOASHAPiBORW_w_continuations", "initial_design_size=10"): "darkslateblue",
+    ("NepsPriMO", "initial_design_size=10"): "darkslateblue",
+    ("NepsPriMO_w_continuations", "initial_design_size=10"): "darkslateblue",
 
-    ("NepsMOASHAPiBORW", "sampler=etaprior"): "green",
-    ("NepsMOASHAPiBORW_w_continuations", "sampler=etaprior"): "green",
+    ("NepsPriMO", "sampler=etaprior"): "green",
+    ("NepsPriMO_w_continuations", "sampler=etaprior"): "green",
 }
 
 RC_PARAMS = {

@@ -6,7 +6,7 @@ from momfpriors.baselines.neps_optimizers import (
     NepsHyperbandRW,
     NepsMOASHA,
     NepsMOASHABO,
-    NepsMOASHAPiBORW,
+    NepsPriMO,
     NepsMOHyperband,
     NepsMOPriorband,
     NepsPiBORW,
@@ -30,7 +30,7 @@ OPTIMIZERS = {
     NepsMOPriorband.name: NepsMOPriorband,
     NepsMOASHABO.name: NepsMOASHABO,
     NepsPiBORW.name: NepsPiBORW,
-    NepsMOASHAPiBORW.name: NepsMOASHAPiBORW,
+    NepsPriMO.name: NepsPriMO,
     NepsMOASHA_RS.name: NepsMOASHA_RS,
 }
 

@@ -3,7 +3,7 @@ optimizers:
   - name: NepsMOPriorband
   - name: NepsPriorMOASHA
   - name: NepsPiBORW
-  - name: NepsMOASHAPiBORW
+  - name: NepsPriMO
 benchmarks:
 
   # good-good

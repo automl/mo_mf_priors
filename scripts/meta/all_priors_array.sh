@@ -24,7 +24,7 @@ if [[ ! -f "${config_dir}/.generated" ]]; then
         # "NepsMOPriorband"
         # "NepsPriorMOASHA"
         # "NepsPiBORW"
-        "NepsMOASHAPiBORW"
+        "NepsPriMO"
     )
 
     benchmarks=(

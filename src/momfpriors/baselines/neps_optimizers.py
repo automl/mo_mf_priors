@@ -620,7 +620,7 @@ class NepsPiBORW(NepsOptimizer):
 
 
 class NepsMOASHABO(NepsOptimizer):
-    """NepsMOASHABO."""
+    """NePS PriMO without MO-priors, only vanilla BO with MOMF initial design."""
 
     name = "NepsMOASHABO"
 
@@ -669,7 +669,7 @@ class NepsMOASHABO(NepsOptimizer):
         super().__init__(
             problem=problem,
             space=space,
-            optimizer="moashabo",
+            optimizer="primo",
             seed=seed,
             working_directory=working_directory,
             fidelities=_fid,
@@ -680,10 +680,10 @@ class NepsMOASHABO(NepsOptimizer):
         )
 
 
-class NepsMOASHAPiBORW(NepsOptimizer):
-    """NepsMOASHAPiBORW."""
+class NepsPriMO(NepsOptimizer):
+    """The PriMO optimizer from NePS."""
 
-    name = "NepsMOASHAPiBORW"
+    name = "NepsPriMO"
 
     support = Problem.Support(
         fidelities=("single",),
@@ -720,9 +720,9 @@ class NepsMOASHAPiBORW(NepsOptimizer):
         _fid = None
         match problem.fidelities:
             case None:
-                raise ValueError("NepsMOASHAPiBORW requires a fidelity.")
+                raise ValueError("NepsPriMO requires a fidelity.")
             case Mapping():
-                raise NotImplementedError("Many-fidelity not yet implemented for NepsMOASHAPiBORW.")
+                raise NotImplementedError("Many-fidelity not yet implemented for NepsPriMO.")
             case (fid_name, fidelity):
                 _fid = (fid_name, fidelity)
             case _:
@@ -745,7 +745,7 @@ class NepsMOASHAPiBORW(NepsOptimizer):
         super().__init__(
             problem=problem,
             space=space,
-            optimizer="moashabo",
+            optimizer="primo",
             seed=seed,
             working_directory=working_directory,
             fidelities=_fid,

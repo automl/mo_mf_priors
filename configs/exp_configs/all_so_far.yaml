@@ -6,7 +6,7 @@ optimizers:
   - name: NepsHyperbandRW
   - name: Nevergrad_EvolutionStrategy
   - name: NepsMOASHA
-  - name: NepsMOASHAPiBORW
+  - name: NepsPriMO
 benchmarks:
   - name: MOMFPark
     objectives:

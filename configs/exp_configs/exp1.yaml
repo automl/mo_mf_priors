@@ -7,7 +7,7 @@ optimizers:
   - name: NepsMOASHA
   - name: NepsPiBORW
   - name: NepsMOASHABO
-  - name: NepsMOASHAPiBORW
+  - name: NepsPriMO
 benchmarks:
   - name: MOMFPark
     objectives:

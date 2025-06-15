@@ -3,7 +3,7 @@ from __future__ import annotations
 INTRO_LABELS = {
     "NepsRW": "BO+RW",
     "RandomSearchWithPriors": "RS+Prior",
-    "NepsMOASHAPiBORW": "Our Method",
+    "NepsPriMO": "PriMO",
     "NepsMOASHA": "MOASHA",
 }
 
@@ -11,7 +11,7 @@ INTRO_LABELS = {
 
 LABELS_1 = {
 
-    "NepsMOASHAPiBORW": "Our Method",
+    "NepsPriMO": "PriMO",
 
     "SMAC_ParEGO": "ParEGO",
     "RandomSearch": "Random Search",
@@ -44,7 +44,7 @@ ABLATION_LABELS = {
 
     "NepsMOASHA_RS": "MOMF Initial Design + RS",
 
-    "NepsMOASHAPiBORW": "MOMF initial design + Priors + Model",
+    "NepsPriMO": "MOMF initial design + Priors + Model",
 
     "NepsMOASHABO": "MOMF initial design + Model",
 
@@ -60,7 +60,7 @@ SO_LABELS = {
     "NepsHyperband": "HyperBand",
     "NepsBO": "BO",
     "NepsPriorband": "Priorband",
-    "NepsMFBO": "Our Algorithm",
+    "NepsMFBO": "PriMO",
     "NepsPiBO": "πBO",
 }
 
@@ -76,10 +76,10 @@ LABELS_99 = {
 
     # Our Optimizer
 
-    "NepsMOASHAPiBORW-all": "Our Method(all)",
-    "NepsMOASHAPiBORW-good-good": "Our Method(good-good)",
-    "NepsMOASHAPiBORW-bad-bad": "Our Method(bad-bad)",
-    "NepsMOASHAPiBORW-bad-good": "Our Method(bad-good)",
+    "NepsPriMO-all": "PriMO(all)",
+    "NepsPriMO-good-good": "PriMO(good-good)",
+    "NepsPriMO-bad-bad": "PriMO(bad-bad)",
+    "NepsPriMO-bad-good": "PriMO(bad-good)",
 
     # Optimizers without Priors
 

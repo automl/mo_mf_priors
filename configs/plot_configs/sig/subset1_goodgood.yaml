@@ -1,0 +1,13 @@
+exp_dir: subset1
+output_dir: /home/soham/Master_Thesis/plots/sig_analysis/
+skip_priors:
+  - bad-good
+  - bad-bad
+save_suffix: subset1_good-good
+skip_opt:
+  - RandomSearchWithPriors
+  - RandomSearch
+  - SMAC_ParEGO
+  - Nevergrad_EvolutionStrategy
+  - NepsHyperbandRW
+which_labels: "1"

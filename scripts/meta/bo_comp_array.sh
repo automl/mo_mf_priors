@@ -17,10 +17,10 @@ start=$(date +%s)
 
 # === Optimizers
 with_priors=(
-    "NepsMOASHAPiBORW:3"
-    "NepsMOASHAPiBORW:5"
-    "NepsMOASHAPiBORW:7"
-    "NepsMOASHAPiBORW:10"
+    "NepsPriMO:3"
+    "NepsPriMO:5"
+    "NepsPriMO:7"
+    "NepsPriMO:10"
 )
 
 without_priors=(
