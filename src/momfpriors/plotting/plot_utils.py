@@ -80,6 +80,8 @@ def get_style(instance: str) -> tuple[str, str, str, str | None]:
                 "Multiple HPs not yet supported"
             )
     opt = opt_splits[0]
+    if opt == "NepsMOASHAPiBORW":
+        opt = "NepsPriMO"
     color = COLORS_HPS.get((opt, hps)) if hps else COLORS_MAIN.get(opt, COLORS_SO.get(opt))
     marker = MARKERS.get(prior_annot, "s")
     if color is None:

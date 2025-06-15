@@ -10,7 +10,7 @@ skip_non_avg: True
 skip_opt:
   - NepsMOASHA_RS
   - NepsRW
-  - NepsPriMO
+  - NepsMOASHAPiBORW
 which_labels: ablation
 which_plots:
   - ov_rank

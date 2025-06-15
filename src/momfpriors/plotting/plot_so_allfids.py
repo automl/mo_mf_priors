@@ -54,8 +54,28 @@ def normalized_regret(
 ) -> pd.Series:
     """Calculate the normalized regret for a given benchmark and set of results."""
     bounds = regret_bounds[benchmark]
-    return (results - bounds[0]) / (bounds[1] - bounds[0])
+    normalized_regret = (results - bounds[0]) / (bounds[1] - bounds[0])
+    # breakpoint()
+    return normalized_regret
 
+
+def calc_eqv_full_evals(
+    results: pd.Series,
+    budget_total: float,
+    benchmark: str
+) -> pd.Series:
+    """Calculate equivalent full evaluations for fractional costs."""
+    evals = np.arange(1, budget_total + 1)
+    _df = results.reset_index()
+    _df.columns = ["index", "performance"]
+    bins = pd.cut(_df["index"], bins=[-np.inf, *evals], right=False, labels=evals)
+    _df["group"] = bins
+    group_min = _df.groupby("group", observed=True)["performance"].min()
+    result = group_min.reindex(evals)
+    return normalized_regret(
+        benchmark=benchmark,
+        results=result,
+    )
 
 def plot_average_rank(
     ax: plt.Axes,
@@ -141,44 +161,20 @@ def create_plots(  # noqa: PLR0915
 
             budget_list = results[BUDGET_USED_COL].values.astype(np.float64)
 
+            # Check if continuations col is not NA
             if not results[CONTINUATIONS_COL].isna().all():
                 continuations = True
-
-            num_full_evals = 0
-            if is_fid_opt:
-                final_perfs = []
-                for i, perf in enumerate(perf_vals, start=1):
-                    fidelity_queried = results[FIDELITY_COL].iloc[i-1]
-                    bench_max_fid = results[BENCH_FIDELITY_MAX_COL].iloc[0]
-                    budget_used = results[BUDGET_USED_COL].iloc[i-1]
-                    if continuations:
-                        budget_used = results[CONTINUATIONS_BUDGET_USED].iloc[i-1]
-                    max_fid_flag = float(fidelity_queried) == float(bench_max_fid)
-
-                    if not max_fid_flag:
-                        if int(budget_used) > int(num_full_evals):
-                            if num_full_evals + 1 > budget:
-                                break
-                            num_full_evals += 1
-                            if len(final_perfs) > 0:
-                                final_perfs.append(final_perfs[-1])
-                            else:
-                                final_perfs.append(np.nan)
-                        continue
-                    if num_full_evals + 1 > budget:
-                        break
-                    num_full_evals += 1
-                    final_perfs.append(perf)
-
-                perf_vals = final_perfs
-                budget_list = np.arange(1, num_full_evals + 1, 1)
-
-
+                continuations_list = results[CONTINUATIONS_BUDGET_USED].values.astype(np.float64)
 
 
             # For MF Opts that support continuations
             if continuations:
-                seed_cont_dict[seed] = pd.Series(perf_vals, index=budget_list)
+                seed_cont_dict[seed] = pd.Series(perf_vals, index=continuations_list)
+                seed_cont_dict[seed] = calc_eqv_full_evals(
+                    seed_cont_dict[seed],
+                    total_study_budget,
+                    benchmark=benchmark,
+                )
                 seed_incumbents = seed_cont_dict[seed].cummin()
                 instance_name = (
                     f"{opt}_w_continuations" +
@@ -189,6 +185,11 @@ def create_plots(  # noqa: PLR0915
             # For MF Opts that do not support continuations
             elif is_fid_opt:
                 seed_perf_dict[seed] = pd.Series(perf_vals, index=budget_list)
+                seed_perf_dict[seed] = calc_eqv_full_evals(
+                    seed_perf_dict[seed],
+                    total_study_budget,
+                    benchmark=benchmark,
+                )
                 seed_incumbents = seed_perf_dict[seed].cummin()
                 instance_name = instance
 
@@ -203,6 +204,9 @@ def create_plots(  # noqa: PLR0915
             if seed not in seed_means_dict:
                 seed_means_dict[seed] = {}
             seed_means_dict[seed][instance_name] = seed_incumbents
+
+            # if "MFBO" in instance and "cifar" in benchmark:
+                # breakpoint()
 
 
         # Aggregating Performance - calculating means, cumulative max and std_error

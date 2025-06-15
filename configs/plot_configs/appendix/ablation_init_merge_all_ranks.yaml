@@ -1,5 +1,5 @@
 yaml_files:
-  - configs/plot_configs/appendix/ablation_init_good_good.yaml
+  - configs/plot_configs/appendix/ablation_init_goodgood.yaml
   - configs/plot_configs/appendix/ablation_init_ov_bad.yaml
   - configs/plot_configs/appendix/ablation_init_ov_all.yaml
 output_dir: /home/soham/Master_Thesis/plots/appendix_ablation/

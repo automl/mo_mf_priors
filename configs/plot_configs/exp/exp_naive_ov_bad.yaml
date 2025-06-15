@@ -8,7 +8,7 @@ avg_prior_label: overall-bad
 skip_non_avg: true
 skip_opt:
   - NepsMOASHABO
-  - NepsPriMO
+  - NepsMOASHAPiBORW
   - NepsMOPriorband
   - NepsPiBORW
 which_labels: "1"

@@ -6,10 +6,10 @@ from momfpriors.baselines.neps_optimizers import (
     NepsHyperbandRW,
     NepsMOASHA,
     NepsMOASHABO,
-    NepsPriMO,
     NepsMOHyperband,
     NepsMOPriorband,
     NepsPiBORW,
+    NepsPriMO,
     NepsPriorMOASHA,
     NepsRW,
 )
