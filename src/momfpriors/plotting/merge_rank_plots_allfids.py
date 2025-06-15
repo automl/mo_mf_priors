@@ -22,6 +22,7 @@ from momfpriors.plotting.plot_styles import (
 )
 from momfpriors.plotting.plot_utils import (
     avg_seed_dfs_for_ranking,
+    change_opt_names,
     edit_legend_labels,
     get_style,
     pareto_front,
@@ -347,13 +348,17 @@ def gen_plots_per_bench(  # noqa: C901
 
         annotations = None
 
+        optimizer_name = change_opt_names(
+            _df[OPTIMIZER_COL][0],
+        )
+
         if _df["prior_annotations"][0] is not None:
             annotations = "-".join(
                 [a.split("=")[-1] for a in _df["prior_annotations"][0].split(",")]
             )
 
         instance = (
-            _df["optimizer"][0] +
+            optimizer_name +
             (
                 ";" + _df[HP_COL][0]
                 if "default" not in _df[HP_COL][0]
@@ -366,19 +371,19 @@ def gen_plots_per_bench(  # noqa: C901
 
         if priors_to_avg and annotations in priors_to_avg:
             instance = (
-                _df["optimizer"][0] +
+                optimizer_name +
                 (
                     ";" + _df[HP_COL][0]
                     if "default" not in _df[HP_COL][0]
                     else ""
                 ) + f";priors={avg_prior_label}"
             )
-            if skip_opt and _df["optimizer"][0] in skip_opt:
+            if skip_opt and optimizer_name in skip_opt:
                 continue
             if instance not in agg_dict:
                 agg_dict[instance] = {}
             seed = (
-                f"{seed}_{_df['optimizer'][0]}" +
+                f"{seed}_{optimizer_name}" +
                 (
                     ";" + _df[HP_COL][0]
                     if "default" not in _df[HP_COL][0]

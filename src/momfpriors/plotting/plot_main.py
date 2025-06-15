@@ -22,6 +22,7 @@ from momfpriors.plotting.plot_styles import (
 )
 from momfpriors.plotting.plot_utils import (
     avg_seed_dfs_for_ranking,
+    change_opt_names,
     edit_legend_labels,
     fid_perc_momfbo,
     get_style,
@@ -431,13 +432,17 @@ def gen_plots_per_bench(  # noqa: C901
 
         annotations = None
 
+        optimizer_name = change_opt_names(
+            _df[OPTIMIZER_COL][0],
+        )
+
         if _df["prior_annotations"][0] is not None:
             annotations = "-".join(
                 [a.split("=")[-1] for a in _df["prior_annotations"][0].split(",")]
             )
 
         instance = (
-            _df["optimizer"][0] +
+            optimizer_name +
             (
                 ";" + _df[HP_COL][0]
                 if "default" not in _df[HP_COL][0]
@@ -450,19 +455,19 @@ def gen_plots_per_bench(  # noqa: C901
 
         if priors_to_avg and annotations in priors_to_avg:
             instance = (
-                _df["optimizer"][0] +
+                optimizer_name +
                 (
                     ";" + _df[HP_COL][0]
                     if "default" not in _df[HP_COL][0]
                     else ""
                 ) + f";priors={avg_prior_label}"
             )
-            if skip_opt and _df["optimizer"][0] in skip_opt:
+            if skip_opt and optimizer_name in skip_opt:
                 continue
             if instance not in agg_dict:
                 agg_dict[instance] = {}
             seed = (
-                f"{seed}_{_df['optimizer'][0]}" +
+                f"{seed}_{optimizer_name}" +
                 (
                     ";" + _df[HP_COL][0]
                     if "default" not in _df[HP_COL][0]
@@ -521,6 +526,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     turn_off_legends: list[str] | None = None,
     plot_title: str | None = None,
     hv_cut_off: bool = False,
+    prior_annotations: str | None = None
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     if which_plots is None:
@@ -685,10 +691,26 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     rank_handles, rank_labels = axs_rank[0].get_legend_handles_labels()
     ov_rank_handles, ov_rank_labels = axs_ov_rank[0].get_legend_handles_labels()
 
-    hv_labels = edit_legend_labels(hv_labels, which_labels=which_labels)
-    pareto_labels = edit_legend_labels(pareto_labels, which_labels=which_labels)
-    rank_labels = edit_legend_labels(rank_labels, which_labels=which_labels)
-    ov_rank_labels = edit_legend_labels(ov_rank_labels, which_labels=which_labels)
+    hv_labels = edit_legend_labels(
+        hv_labels,
+        which_labels=which_labels,
+        prior_annotations=prior_annotations
+    )
+    pareto_labels = edit_legend_labels(
+        pareto_labels,
+        which_labels=which_labels,
+        prior_annotations=prior_annotations
+    )
+    rank_labels = edit_legend_labels(
+        rank_labels,
+        which_labels=which_labels,
+        prior_annotations=prior_annotations
+    )
+    ov_rank_labels = edit_legend_labels(
+        ov_rank_labels,
+        which_labels=which_labels,
+        prior_annotations=prior_annotations
+    )
 
     logger.info(f"Final Optimizer labels: {hv_labels}")
 
@@ -979,6 +1001,13 @@ if __name__ == "__main__":
         action="store_true",
         help="Cut off the hypervolume plot at the specified ylim."
     )
+    parser.add_argument(
+        "--prior_annotations", "-annots",
+        type=str,
+        default="default",
+        help="Custom prior annotations to overwrite the existing ones. "
+            "Only supports single prior combination."
+    )
     args = parser.parse_args()
 
     if args.from_yaml:
@@ -1002,6 +1031,7 @@ if __name__ == "__main__":
         args.turn_off_legends = yaml_config.get("turn_off_legends", args.turn_off_legends)
         args.plot_title = yaml_config.get("plot_title", args.plot_title)
         args.hv_cut_off = yaml_config.get("hv_cut_off", args.hv_cut_off)
+        args.prior_annotations = yaml_config.get("prior_annotations", args.prior_annotations)
 
     if args.specific_rc_params:
         for param in args.specific_rc_params:
@@ -1046,5 +1076,6 @@ if __name__ == "__main__":
         which_plots=args.which_plots,
         turn_off_legends=args.turn_off_legends,
         plot_title=args.plot_title,
-        hv_cut_off=args.hv_cut_off
+        hv_cut_off=args.hv_cut_off,
+        prior_annotations=args.prior_annotations
     )

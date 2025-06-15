@@ -42,7 +42,6 @@ app_extra = {
         "addexp_subset1_badbad",
         "addexp_subset2_badbad",
         "addexp_momfbo_goodgood",
-        "addexp_momfbo_ov_bad",
     ]
 }
 

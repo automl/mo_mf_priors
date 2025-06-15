@@ -80,8 +80,6 @@ def get_style(instance: str) -> tuple[str, str, str, str | None]:
                 "Multiple HPs not yet supported"
             )
     opt = opt_splits[0]
-    if opt == "NepsMOASHAPiBORW":
-        opt = "NepsPriMO"
     color = COLORS_HPS.get((opt, hps)) if hps else COLORS_MAIN.get(opt, COLORS_SO.get(opt))
     marker = MARKERS.get(prior_annot, "s")
     if color is None:
@@ -90,9 +88,17 @@ def get_style(instance: str) -> tuple[str, str, str, str | None]:
     return marker, color, opt, hps, prior_annot
 
 
+def change_opt_names(optimizer: str) -> str:
+    """Function to change the optimizer names."""
+    if optimizer == "NepsMOASHAPiBORW":
+        optimizer = "NepsPriMO"
+    return optimizer
+
+
 def edit_legend_labels(  # noqa: C901
     labels: list[str],
     which_labels: int | str = "1",
+    prior_annotations: str | None = "default",
 ) -> list[str]:
     """Edit the legend labels to be more readable."""
     if isinstance(which_labels, int):
@@ -132,7 +138,8 @@ def edit_legend_labels(  # noqa: C901
             hps = f"{hps}={value}"
             _label = f"{_label} ({hps})"
         elif prior_annot:
-            _label = f"{_label} ({prior_annot})"
+            prior_annot = prior_annotations if prior_annotations != "default" else prior_annot
+            _label = _label if prior_annot is None else f"{_label} ({prior_annot})"
         new_labels.append(_label)
     return new_labels
 
