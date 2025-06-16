@@ -15,6 +15,12 @@ match_plot_files = {
     "main_so_allfids": "plot_so_allfids",
 }
 
+intro = {
+    "main_mo": [
+        "intro_good.yaml",
+    ]
+}
+
 main_exps = {
     "merge": [
         "exp_naive_all_3_rankings",
@@ -34,15 +40,21 @@ app_extra = {
     "merge": [
         "addexp_badgood_ranking",
         "addexp_badbad_ranking",
-        "addexp_momfbo_all_ranks"
+        "addexp_subset1_100_all_rankings",
+    ],
+    "merge_allfids": [
+        "addexp_momfbo_all_ranks",
     ],
     "main_mo": [
         "addexp_subset1_badgood",
         "addexp_subset2_badgood",
         "addexp_subset1_badbad",
         "addexp_subset2_badbad",
+        "addexp_subset1_100_goodgood",
+    ],
+    "main_mo_allfids": [
         "addexp_momfbo_goodgood",
-    ]
+    ],
 }
 
 app_ablation = {
@@ -59,6 +71,7 @@ app_ablation = {
 }
 
 match_jobs = {
+    "intro": (intro, "intro"),
     "main_exps": (main_exps, "exp"),
     "app_extra": (app_extra, "appendix"),
     "app_ablation": (app_ablation, "appendix"),
