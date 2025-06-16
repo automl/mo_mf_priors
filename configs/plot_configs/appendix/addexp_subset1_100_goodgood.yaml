@@ -6,6 +6,8 @@ skip_priors:
 save_suffix: addexp_subset1_100_good-good
 skip_opt:
   - RandomSearchWithPriors
+  - RandomSearch
+  - NepsHyperbandRW
 which_labels: "1"
 which_plots:
   - hv

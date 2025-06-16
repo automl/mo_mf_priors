@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 INTRO_LABELS = {
+    "SMAC_ParEGO": "ParEGO",
     "NepsRW": "BO+RW",
     "RandomSearchWithPriors": "RS+Prior",
     "NepsPriMO": "PriMO",

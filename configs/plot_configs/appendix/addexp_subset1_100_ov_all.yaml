@@ -9,6 +9,8 @@ avg_prior_label: overall-all
 save_suffix: addexp_subset1_100_ov_all
 skip_opt:
   - RandomSearchWithPriors
+  - RandomSearch
+  - NepsHyperbandRW
 which_labels: "1"
 which_plots:
   - hv
