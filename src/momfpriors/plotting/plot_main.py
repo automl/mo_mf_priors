@@ -147,6 +147,10 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
         for seed, data in instance_data.items():
             _df = data["_df"]
             results: list[dict[str, Any]] = _df[RESULTS_COL].values.tolist()
+            results = [
+                {k: v for k, v in res.items() if k in objectives}
+                for res in results
+            ]
             acc_costs = []
             pareto = None
             hv_vals = []
