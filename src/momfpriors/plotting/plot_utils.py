@@ -409,7 +409,9 @@ reference_points_dict = {
         "val_balanced_accuracy": 0,
         "val_cross_entropy": 1,
         "time": 10000
-    }
+    },
+    "MFZDT1": {"f1": 0.5, "f2": 0.6},
+    "MFZDT6": {"f1": 0.5, "f2": 0.6},
 }
 
 hv_low_cutoffs = {
@@ -466,5 +468,5 @@ fid_perc_momfbo = {
     "yahpo-lcbench-189873": 0.9,
     "yahpo-lcbench-189905": 0.9,
     "yahpo-lcbench-189908": 0.9,
-    "yahpo-lcbench-189909": 0.9
+    "yahpo-lcbench-189909": 0.9,
 }
