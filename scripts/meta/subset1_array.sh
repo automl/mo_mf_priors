@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --partition bosch_cpu-cascadelake
-#SBATCH --job-name subset1_25
+#SBATCH --job-name subset1_100
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
 #SBATCH --array=0   # (1*3*9) = 27 total combinations
-#SBATCH --time=2-00:00:00
+#SBATCH --time=3-00:00:00
 
 echo "Workingdir: $PWD"
 echo "Started at $(date)"
