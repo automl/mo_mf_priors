@@ -59,7 +59,7 @@ def wrapped_mfzdt1(
         query=query,
         fidelity=query.fidelity,
         values={
-            f"f{i}": -out[i-1] for i, _ in enumerate(out, start=1)
+            f"f{i}": out[i-1] for i, _ in enumerate(out, start=1)
         }
     )
 
@@ -67,8 +67,8 @@ MFZDT1Bench = FunctionalBenchmark(
     name="MFZDT1",
     config_space=_get_mfzdt1_space(),
     metrics={
-        "f1": Measure.metric((-np.inf, np.inf), minimize=True),
-        "f2": Measure.metric((-np.inf, np.inf), minimize=True)
+        "f1": Measure.metric((0, 1), minimize=True),
+        "f2": Measure.metric((0, 1), minimize=True)
     },
     fidelities={
         "s": RangeFidelity.from_tuple((1, 100, 1))
@@ -148,7 +148,7 @@ def wrapped_mfzdt6(
         query=query,
         fidelity=query.fidelity,
         values={
-            f"f{i}": -out[i-1] for i, _ in enumerate(out, start=1)
+            f"f{i}": out[i-1] for i, _ in enumerate(out, start=1)
         }
     )
 
@@ -156,8 +156,8 @@ MFZDT6Bench = FunctionalBenchmark(
     name="MFZDT6",
     config_space=_get_mfzdt6_space(),
     metrics={
-        "f1": Measure.metric((-np.inf, np.inf), minimize=True),
-        "f2": Measure.metric((-np.inf, np.inf), minimize=True)
+        "f1": Measure.metric((0, 1), minimize=True),
+        "f2": Measure.metric((0, 1), minimize=True)
     },
     fidelities={
         "s": RangeFidelity.from_tuple((1, 100, 1))
