@@ -44,6 +44,7 @@ BENCHMARK_COL = "benchmark"
 HP_COL = "optimizer_hyperparameters"
 OBJECTIVES_COL = "objectives"
 OBJECTIVES_MINIMIZE_COL = "minimize"
+RESULTS_COL = "results"
 BUDGET_USED_COL = "budget_used_total"
 BUDGET_TOTAL_COL = "budget_total"
 FIDELITY_COL = "fidelity"
@@ -144,8 +145,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
         seed_hv_dict = {}
         seed_cont_dict = {}
         for seed, data in instance_data.items():
-            results: list[dict[str, Any]] = data["results"]
             _df = data["_df"]
+            results: list[dict[str, Any]] = _df[RESULTS_COL].values.tolist()
             acc_costs = []
             pareto = None
             hv_vals = []
@@ -422,14 +423,6 @@ def gen_plots_per_bench(  # noqa: C901
             "Can only plot pareto front for 2D cost space."
         )
 
-        minimize: dict[str, bool] = _df["minimize"][0]
-
-        _results = _df["results"].apply(
-            lambda x, objectives=objectives, minimize=minimize: {
-                k: x[k] if minimize[k] else -x[k] for k in objectives
-            }
-        )
-
         annotations = None
 
         optimizer_name = change_opt_names(
@@ -476,7 +469,6 @@ def gen_plots_per_bench(  # noqa: C901
             )
             agg_dict[instance][seed] = {
                 "_df": _df,
-                "results": _results,
             }
             continue
         if annotations and skip_non_avg and priors_to_avg and annotations not in priors_to_avg:
@@ -487,7 +479,6 @@ def gen_plots_per_bench(  # noqa: C901
             agg_dict[instance] = {}
         agg_dict[instance][seed] = {
             "_df": _df,
-            "results": _results,
         }
     is_single_opt = False
     if len(agg_dict) == 1:
