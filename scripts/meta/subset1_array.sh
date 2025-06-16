@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-26%20   # (1*3*9) = 27 total combinations
+#SBATCH --array=0   # (1*3*9) = 27 total combinations
 #SBATCH --time=2-00:00:00
 
 echo "Workingdir: $PWD"
@@ -30,19 +30,23 @@ nonprior_opts=(
 
 # Benchmarks with known objective types (used for both prior and non-prior)
 benchmarks=(
-  "MOMFPark"
-  "pd1-cifar100-wide_resnet-2048"
-  "pd1-imagenet-resnet-512"
-  "pd1-lm1b-transformer-2048"
-  "pd1-translate_wmt-xformer_translate-64"
-  "yahpo-lcbench-126026"
-  "yahpo-lcbench-146212"
-  "yahpo-lcbench-168330"
+  # "MOMFPark"
+  # "pd1-cifar100-wide_resnet-2048"
+  # "pd1-imagenet-resnet-512"
+  # "pd1-lm1b-transformer-2048"
+  # "pd1-translate_wmt-xformer_translate-64"
+  # "yahpo-lcbench-126026"
+  # "yahpo-lcbench-146212"
+  # "yahpo-lcbench-168330"
   "yahpo-lcbench-168868"
 )
 
 # Prior benchmark settings (good-good, bad-good, bad-bad)
-prior_settings=("good:good" "bad:good" "bad:bad")
+prior_settings=(
+  # "good:good"
+  "bad:good"
+  # "bad:bad"
+)
 
 # === Compute total jobs
 total_jobs=()
@@ -98,7 +102,7 @@ benchmarks:
     objectives:
       $key1: ${obj1}
       $key2: ${obj2}
-num_seeds: 25
+seeds: 3356806662
 num_iterations: 100
 EOF
 
