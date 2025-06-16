@@ -1,9 +1,0 @@
-yaml_files:
-  - configs/plot_configs/exp/robust_subset12_ov_all.yaml
-  - configs/plot_configs/exp/robust_subset12_ov_ex.yaml
-output_dir: /home/soham/Master_Thesis/plots/exp/
-save_suffix: exp_robust_ov_all_ex_ranking
-file_type: pdf
-figsize:
-  - 14
-  - 6
