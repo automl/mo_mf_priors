@@ -146,10 +146,6 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
         for seed, data in instance_data.items():
             _df = data["_df"]
             results: list[dict[str, Any]] = _df[RESULTS_COL].values.tolist()
-            results = [
-                {k: v for k, v in res.items() if k in objectives}
-                for res in results
-            ]
             acc_costs = []
             pareto = None
             hv_vals = []
@@ -414,6 +410,14 @@ def gen_plots_per_bench(  # noqa: C901
             f"{objectives}. "
             "Can only plot pareto front for 2D cost space."
         )
+
+        _results = _df[RESULTS_COL].apply(
+            lambda x, objectives=objectives: {
+                k: x[k] for k in objectives
+            }
+        )
+
+        _df[RESULTS_COL] = _results
 
         annotations = None
 
