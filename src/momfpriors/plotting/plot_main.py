@@ -14,6 +14,8 @@ import yaml
 from pymoo.indicators.hv import Hypervolume
 
 from momfpriors.baselines import OPTIMIZERS
+from momfpriors.benchmarks.botorch_momf import run_rs
+from momfpriors.benchmarks.mf_zdt import _calc_pareto_front_zdt1, _calc_pareto_front_zdt6
 from momfpriors.constants import DEFAULT_RESULTS_DIR
 from momfpriors.plotting.plot_styles import (
     RC_PARAMS,
@@ -116,6 +118,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
     budget: int,
     fidelity: str | None = None,
     is_single_opt: bool = False,
+    plot_true_pareto: bool = False,
+    fixed_pareto_seed: int | None = None,
 ) -> dict[str, pd.DataFrame]:
     """Function to plot the dominated hypervolume over
     iterations and pareto fronts from a pandas Series
@@ -123,9 +127,12 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
     """
     print("================================================")
     logger.info(f"Plots for runs on benchmark: {benchmark}")
+    fixed_pareto = None
 
     seed_means_dict = {}
     rank_means_dict = {}
+
+    true_pareto_front = plot_true_pareto
 
     reference_point = np.array([
         reference_points_dict[benchmark][obj]
@@ -227,6 +234,9 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
                 seed_means_dict[seed] = {}
             seed_means_dict[seed][instance_name] = seed_incumbents
 
+            if fixed_pareto_seed is not None and seed == fixed_pareto_seed:
+                fixed_pareto = pareto
+
 
         # Aggregating Hypervolumes - calculating means, cumulative max and std_error
 
@@ -287,20 +297,62 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
                 edgecolor=None,
             )
 
+        if fixed_pareto is None:
 
-        # Aggregated Pareto front over all seeds
+            # Aggregated Pareto front over all seeds
 
-        agg_pareto_costs = np.array(agg_pareto_costs)
-        agg_pareto_front = pareto_front(agg_pareto_costs)
-        agg_pareto_front = np.array(agg_pareto_costs)[agg_pareto_front]
-        agg_pareto_front = agg_pareto_front[agg_pareto_front[:, 0].argsort()]
+            agg_pareto_costs = np.array(agg_pareto_costs)
+            agg_pareto_front = pareto_front(agg_pareto_costs)
+            agg_pareto_front = np.array(agg_pareto_costs)[agg_pareto_front]
+            agg_pareto_front = agg_pareto_front[agg_pareto_front[:, 0].argsort()]
+            ax_pareto.step(
+                agg_pareto_front[:, 0],
+                agg_pareto_front[:, 1],
+                where="post",
+                marker=marker,
+                color=color if not continuations else _color,
+                label=instance if not continuations else f"{instance}_w_continuations",
+            )
+        else:
+            # Plotting the fixed Pareto front for the given seed
+            ax_pareto.step(
+                fixed_pareto[:, 0],
+                fixed_pareto[:, 1],
+                where="post",
+                marker=marker,
+                color=color if not continuations else _color,
+                label=instance if not continuations else f"{instance}_w_continuations",
+            )
+
+    # Plotting the true Pareto front if available
+    if true_pareto_front:
+        match benchmark:
+            case "MFZDT1":
+                true_pareto = _calc_pareto_front_zdt1(n_pareto_points=20)
+            case "MFZDT6":
+                true_pareto = _calc_pareto_front_zdt6(n_pareto_points=20)
+            case "MOMFPark":
+                rs_results = run_rs(
+                    fn="MOMFPark",
+                    n_samples=100000,
+                    seed=fixed_pareto_seed,
+                )
+                true_pareto = pareto_front(
+                    np.array(rs_results),
+                )
+                true_pareto = np.array(rs_results)[true_pareto]
+                true_pareto = true_pareto[true_pareto[:, 0].argsort()]
+            case _:
+                logger.warning(
+                    f"True Pareto front not available for benchmark {benchmark}. "
+                )
         ax_pareto.step(
-            agg_pareto_front[:, 0],
-            agg_pareto_front[:, 1],
+            true_pareto[:, 0],
+            true_pareto[:, 1],
             where="post",
-            marker=marker,
-            color=color if not continuations else _color,
-            label=instance if not continuations else f"{instance}_w_continuations",
+            color="black",
+            label="True Pareto Front",
+            marker="s",
         )
 
     seed_means_dict = avg_seed_dfs_for_ranking(seed_means_dict)
@@ -317,6 +369,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
 def agg_data(
     exp_dir: Path,
     skip_opt: list[str] | None = None,
+    which_benchmarks: list[str] | None = None,
 ) -> tuple[
     Mapping[str, Mapping[tuple[str, str], list[pd.DataFrame]]],
     int,
@@ -330,12 +383,20 @@ def agg_data(
         for f in exp_dir.iterdir() if f.is_dir() and "benchmark=" in f.name]
     benchmarks_in_dir = list(set(benchmarks_in_dir))
     benchmarks_in_dir.sort()
-    logger.info(f"Found benchmarks: {benchmarks_in_dir}")
 
     with (exp_dir / "exp.yaml").open("r") as f:
         exp_config = yaml.safe_load(f)
 
-    all_benches = [(bench.pop("name"), bench) for bench in exp_config["benchmarks"]]
+    if which_benchmarks is not None:
+        print(which_benchmarks)
+        benchmarks_in_dir = list(set(which_benchmarks))
+    logger.info(f"Found benchmarks: {benchmarks_in_dir}")
+
+    all_benches = [
+        (bench.pop("name"), bench)
+        for bench in exp_config["benchmarks"]
+        if bench["name"] in benchmarks_in_dir
+    ]
 
     total_budget = int(exp_config.get("budget"))
 
@@ -393,7 +454,7 @@ def agg_data(
     return benchmarks_dict, total_budget
 
 
-def gen_plots_per_bench(  # noqa: C901
+def gen_plots_per_bench(  # noqa: C901, PLR0913
     ax_hv: plt.Axes,
     ax_pareto: plt.Axes,
     total_budget: int,
@@ -406,6 +467,8 @@ def gen_plots_per_bench(  # noqa: C901
     skip_priors: bool = False,
     skip_opt: list[str] | None = None,
     avg_prior_label: str = "all",
+    plot_true_pareto: bool = False,
+    fixed_pareto_seed: int | None = None,
 ) -> dict[int, pd.DataFrame]:
     """Function to generate plots for a given benchmark and its config dict."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
@@ -503,6 +566,8 @@ def gen_plots_per_bench(  # noqa: C901
         fidelity=fidelity,
         is_single_opt=is_single_opt,
         objectives=objectives,
+        plot_true_pareto=plot_true_pareto,
+        fixed_pareto_seed=fixed_pareto_seed,
     )
 
 
@@ -514,6 +579,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     no_save: bool = False,
     save_suffix: str = "",
     skip_opt: list[str] | None = None,
+    which_benchmarks: list[str] | None = None,
     priors_to_avg: list[str] | None = None,
     skip_non_avg: bool = False,
     skip_priors: bool = False,
@@ -525,19 +591,30 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     turn_off_legends: list[str] | None = None,
     plot_title: str | None = None,
     hv_cut_off: bool = False,
-    prior_annotations: str | None = None
+    prior_annotations: str | None = None,
+    plot_true_pareto: bool = False,
+    fixed_pareto_seed: int | None = None,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
+    if which_benchmarks is not None and not isinstance(which_benchmarks, Iterable):
+        which_benchmarks = [which_benchmarks]
     if which_plots is None:
         which_plots = ["all"]
     if which_plots is None:
         which_plots = ["hv", "pareto", "rank", "ov_rank"]
     fig_size = other_fig_params["fig_size"]
-    benchmarks_dict, total_budget = agg_data(exp_dir, skip_opt=skip_opt)
+    benchmarks_dict, total_budget = agg_data(
+        exp_dir,
+        skip_opt=skip_opt,
+        which_benchmarks=which_benchmarks,
+    )
     if cut_off_iteration:
         total_budget = cut_off_iteration
     num_plots = len(benchmarks_dict)
     nrows, ncols = other_fig_params["n_rows_cols"][num_plots]
+
+    if which_benchmarks is not None and not isinstance(which_benchmarks, Iterable):
+        which_benchmarks = [which_benchmarks]
 
     # Hypervolume plot
     fig_hv, axs_hv = plt.subplots(
@@ -627,6 +704,8 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 skip_priors=skip_priors,
                 skip_opt=skip_opt,
                 avg_prior_label=avg_prior_label,
+                plot_true_pareto=plot_true_pareto,
+                fixed_pareto_seed=fixed_pareto_seed,
             )
 
             axs_hv[i].set_xticks(XTICKS[(1, total_budget)])
@@ -908,6 +987,14 @@ if __name__ == "__main__":
         help="Skip the given optimizers."
     )
     parser.add_argument(
+        "--which_benchmarks", "-bench",
+        nargs="+",
+        type=str,
+        default=None,
+        help="Which benchmarks to plot. If not provided, all benchmarks in the experiment directory"
+        "will be plotted."
+    )
+    parser.add_argument(
         "--priors_to_avg", "-avg",
         nargs="+",
         type=str,
@@ -1007,6 +1094,18 @@ if __name__ == "__main__":
         help="Custom prior annotations to overwrite the existing ones. "
             "Only supports single prior combination."
     )
+    parser.add_argument(
+        "--plot_true_pareto", "-true_pareto",
+        action="store_true",
+        help="Plot the true Pareto front if available for the benchmark."
+    )
+    parser.add_argument(
+        "--fixed_pareto_seed", "-fpseed",
+        type=int,
+        default=None,
+        help="fixed seed for the Pareto front. "
+            "If not provided, the Pareto front will be aggregated over all seeds."
+    )
     args = parser.parse_args()
 
     if args.from_yaml:
@@ -1018,6 +1117,7 @@ if __name__ == "__main__":
         args.no_save = yaml_config.get("no_save", args.no_save)
         args.save_suffix = yaml_config.get("save_suffix", args.save_suffix)
         args.skip_opt = yaml_config.get("skip_opt", args.skip_opt)
+        args.which_benchmarks = yaml_config.get("which_benchmarks", args.which_benchmarks)
         args.priors_to_avg = yaml_config.get("priors_to_avg", args.priors_to_avg)
         args.skip_non_avg = yaml_config.get("skip_non_avg", args.skip_non_avg)
         args.skip_priors = yaml_config.get("skip_priors", args.skip_priors)
@@ -1031,6 +1131,8 @@ if __name__ == "__main__":
         args.plot_title = yaml_config.get("plot_title", args.plot_title)
         args.hv_cut_off = yaml_config.get("hv_cut_off", args.hv_cut_off)
         args.prior_annotations = yaml_config.get("prior_annotations", args.prior_annotations)
+        args.plot_true_pareto = yaml_config.get("plot_true_pareto", args.plot_true_pareto)
+        args.fixed_pareto_seed = yaml_config.get("fixed_pareto_seed", args.fixed_pareto_seed)
 
     if args.specific_rc_params:
         for param in args.specific_rc_params:
@@ -1065,6 +1167,7 @@ if __name__ == "__main__":
         no_save=args.no_save,
         save_suffix=args.save_suffix,
         skip_opt=args.skip_opt,
+        which_benchmarks=args.which_benchmarks,
         priors_to_avg=args.priors_to_avg,
         skip_non_avg=args.skip_non_avg,
         skip_priors=args.skip_priors,
@@ -1076,5 +1179,7 @@ if __name__ == "__main__":
         turn_off_legends=args.turn_off_legends,
         plot_title=args.plot_title,
         hv_cut_off=args.hv_cut_off,
-        prior_annotations=args.prior_annotations
+        prior_annotations=args.prior_annotations,
+        plot_true_pareto=args.plot_true_pareto,
+        fixed_pareto_seed=args.fixed_pareto_seed,
     )
