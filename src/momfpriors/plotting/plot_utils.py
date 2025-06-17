@@ -200,6 +200,10 @@ reference_points_dict = {
     "pd1-lm1b-transformer-2048": {"valid_error_rate": 1, "train_cost": 1000},
     "pd1-translate_wmt-xformer_translate-64": {"valid_error_rate": 1, "train_cost": 20000},
 
+    # MF-ZDT Benchmarks
+    "MFZDT1": {"f1": 2, "f2": 2},
+    "MFZDT6": {"f1": 2, "f2": 2},
+
     # JAHSBench
     "jahs-CIFAR10": {"valid_acc": 0, "runtime": 200000},
     "jahs-ColorectalHistology": {"valid_acc": 0, "runtime": 200000},
@@ -410,8 +414,6 @@ reference_points_dict = {
         "val_cross_entropy": 1,
         "time": 10000
     },
-    "MFZDT1": {"f1": 0.5, "f2": 0.6},
-    "MFZDT6": {"f1": 0.5, "f2": 0.6},
 }
 
 hv_low_cutoffs = {

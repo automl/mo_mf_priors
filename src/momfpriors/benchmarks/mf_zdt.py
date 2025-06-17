@@ -14,8 +14,8 @@ def mf_zdt1_fn(x: np.ndarray, s: float) -> list[float]:
     multi-objective zdt-1 test function for optimization algorithms.
     It is defined as:
         f1(x) = x[0] + 0.1 * (1 - z)
-        g(x) = 0.9 + 0.1 / z + 9 * sum(x[i] for i in range(1, len(x))) / (len(x) - 1)
-        f2(x) = g(x) * (1 - sqrt(f1(x) / g(x)))
+        g(x) = 1 + 9 * sum(x[i] for i in range(1, len(x))) / (len(x) - 1)
+        f2(x) = (1 - sqrt(f1(x) / g(x)) + 0.5 * (1 - z))
 
     where:
         g(x) = 1 + 9 * sum(x[i] for i in range(1, len(x))) / (len(x) - 1)

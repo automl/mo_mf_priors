@@ -10,6 +10,7 @@ skip_opt:
   - NepsMOPriorband
   - NepsHyperbandRW
   - NepsRW
+  - RandomSearch
 which_labels: "1"
 which_plots:
   - hv
