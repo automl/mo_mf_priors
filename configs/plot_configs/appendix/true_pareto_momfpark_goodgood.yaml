@@ -1,22 +1,24 @@
-exp_dir: mfzdt_all_25
+exp_dir: subset12_merge
 output_dir: /home/soham/Master_Thesis/plots/appendix_extra/
 skip_priors:
   - bad-good
   - bad-bad
-save_suffix: addexp_mfzdt_good-good
+save_suffix: true_pareto_momfpark_goodgood
 skip_opt:
   - RandomSearchWithPriors
-  - NepsPiBORW
-  - NepsMOPriorband
-  - NepsHyperbandRW
-  - NepsRW
   - RandomSearch
+  - Nevergrad_EvolutionStrategy
+  - NepsHyperbandRW
+  - SMAC_ParEGO
 which_labels: "1"
 which_plots:
-  - hv
+  # - hv
   - pareto
+  # - ov_rank
+which_benchmarks:
+  - MOMFPark
 plot_true_pareto: true
-file_type: pdf
+fixed_pareto_seed: 383329928
 specific_fig_params:
   - xylabel_fontsize=20
   - ovrank_xsize=6

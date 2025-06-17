@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 import numpy as np
 import torch
 from botorch.test_functions.multi_objective_multi_fidelity import MOMFBraninCurrin, MOMFPark
@@ -82,3 +84,32 @@ MOMFPark_Bench = FunctionalBenchmark(
     query=wrapped_MOMFPark
 )
 
+
+def run_rs(
+    fn: Literal["MOMFBC", "MOMFPark"] = "MOMFPark",
+    n_samples: int = 1000,
+    seed: int = 0,
+) -> list[Result]:
+    """Run random search on the specified MOMF function."""
+    from hpoglue import Config
+    results = []
+    bench_space = None
+    bench = None
+    match fn:
+        case "MOMFBC":
+            bench_space = _get_MOMFBC_space(seed)
+            bench = wrapped_MOMFBC
+        case "MOMFPark":
+            bench_space = _get_MOMFPark_space()
+            bench = wrapped_MOMFPark
+        case _:
+            raise ValueError(f"Unknown function: {fn}")
+
+    for i in range(n_samples):
+        config = Config(
+            config_id=str(i),
+            values=dict(bench_space.sample_configuration()),
+        )
+        query = Query(config=config, fidelity=None)
+        results.append(list(bench(query).values.values()))
+    return results
