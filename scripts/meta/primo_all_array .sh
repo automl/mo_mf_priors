@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --partition bosch_cpu-cascadelake
-#SBATCH --job-name subset1_20
+#SBATCH --job-name PriMO_20_evals
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-107%20   # (2 prior opts * 3 priors + 6 non prior opts) * 9 benches = 108 total combinations
+#SBATCH --array=0-26%20   # (1*3*9) = 27 total combinations
 #SBATCH --time=3-00:00:00
 
 echo "Workingdir: $PWD"
@@ -16,16 +16,16 @@ start=$(date +%s)
 
 # Optimizers
 prior_opts=(
-  "RandomSearchWithPriors"
+  # "RandomSearchWithPriors"
   "NepsPriMO"
 )
 nonprior_opts=(
-  "RandomSearch"
-  "SMAC_ParEGO"
-  "NepsRW"
-  "NepsHyperbandRW"
-  "Nevergrad_EvolutionStrategy"
-  "NepsMOASHA"
+  # "RandomSearch"
+  # "SMAC_ParEGO"
+  # "NepsRW"
+  # "NepsHyperbandRW"
+  # "Nevergrad_EvolutionStrategy"
+  # "NepsMOASHA"
 )
 
 # Benchmarks with known objective types (used for both prior and non-prior)
@@ -110,7 +110,7 @@ echo "Generated config:"
 cat "$yaml_file"
 
 # === Run the experiment ===
-python3 -m momfpriors.run -y "$yaml_file" -e "subset1_20"
+python3 -m momfpriors.run -y "$yaml_file" -e "primo_20_evals"
 
 end=$(date +%s)
 runtime=$((end - start))
