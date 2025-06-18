@@ -29,6 +29,7 @@ from momfpriors.plotting.plot_styles import (
 )
 from momfpriors.plotting.plot_utils import (
     avg_seed_dfs_for_ranking,
+    change_opt_names,
     edit_legend_labels,
     fid_perc_momfbo,
     get_style,
@@ -49,6 +50,7 @@ BENCHMARK_COL = "benchmark"
 HP_COL = "optimizer_hyperparameters"
 OBJECTIVES_COL = "objectives"
 OBJECTIVES_MINIMIZE_COL = "minimize"
+RESULTS_COL = "results"
 BUDGET_USED_COL = "budget_used_total"
 BUDGET_TOTAL_COL = "budget_total"
 FIDELITY_COL = "fidelity"
@@ -60,6 +62,45 @@ CONTINUATIONS_COL = "continuations_cost"
 CONTINUATIONS_BUDGET_USED = "continuations_budget_used_total"
 
 
+best_hv_dict = {
+    "MOMFPark": 0.0,
+    "pd1-cifar100-wide_resnet-2048": 0.0,
+    "pd1-imagenet-resnet-512": 0.0,
+    "pd1-lm1b-transformer-2048": 0.0,
+    "pd1-translate_wmt-xformer_translate-64": 0.0,
+    "yahpo-lcbench-126026": 0.0,
+    "yahpo-lcbench-146212": 0.0,
+    "yahpo-lcbench-168330": 0.0,
+    "yahpo-lcbench-168868": 0.0,
+}
+
+worst_hv_dict = {
+    "MOMFPark": np.inf,
+    "pd1-cifar100-wide_resnet-2048": np.inf,
+    "pd1-imagenet-resnet-512": np.inf,
+    "pd1-lm1b-transformer-2048": np.inf,
+    "pd1-translate_wmt-xformer_translate-64": np.inf,
+    "yahpo-lcbench-126026": np.inf,
+    "yahpo-lcbench-146212": np.inf,
+    "yahpo-lcbench-168330": np.inf,
+    "yahpo-lcbench-168868": np.inf,
+}
+
+
+def calc_hv_norm_regret(
+    *,
+    best: float,
+    worst: float,
+    hv: float,
+) -> float:
+    """Function to calculate the normalized regret of the hypervolume values."""
+    if best == worst:
+        return 0.0
+    if pd.isna(hv):
+        return 1.0
+    return (best - hv) / (best - worst)
+
+
 def prep_results_for_cd(  # noqa: C901, PLR0912, PLR0915
     *,
     agg_data: Mapping[str, Mapping[str, Any]],
@@ -67,13 +108,13 @@ def prep_results_for_cd(  # noqa: C901, PLR0912, PLR0915
     objectives: list[str],
     budget: int,
     fidelity: str | None = None,
-) -> dict[str, pd.DataFrame]:
-    """Function to plot the dominated hypervolume over
+) -> tuple[dict[str, pd.DataFrame], dict[str, pd.DataFrame]]:
+    """Function to calculate the dominated hypervolume over
     iterations and pareto fronts from a pandas Series
     of Results, i.e., Mapping[str, float] objects.
     """
     print("================================================")
-    logger.info(f"Plots for runs on benchmark: {benchmark}")
+    logger.info(f"Benchmark: {benchmark}")
 
     seed_means_dict = {}
 
@@ -89,12 +130,12 @@ def prep_results_for_cd(  # noqa: C901, PLR0912, PLR0915
         assert opt in OPTIMIZERS
 
         continuations = False
-        logger.info(f"Plots for instance: {instance}")
+        logger.info(f"Calculating Hypervolume for instance: {instance}")
         seed_hv_dict = {}
         seed_cont_dict = {}
         for seed, data in instance_data.items():
-            results: list[dict[str, Any]] = data["results"]
             _df = data["_df"]
+            results: list[dict[str, Any]] = _df[RESULTS_COL].values.tolist()
             acc_costs = []
             pareto = None
             hv_vals = []
@@ -155,6 +196,9 @@ def prep_results_for_cd(  # noqa: C901, PLR0912, PLR0915
 
             budget_list = np.arange(1, num_full_evals + 1, 1)
 
+            best_hv_dict[benchmark] = max(best_hv_dict[benchmark], *hv_vals)
+            worst_hv_dict[benchmark] = min(worst_hv_dict[benchmark], *hv_vals)
+
             if continuations:
                 seed_cont_dict[seed] = pd.Series(hv_vals, index=budget_list)
                 seed_cont_dict[seed] = seed_cont_dict[seed].cummax()
@@ -196,28 +240,46 @@ def prep_results_for_cd(  # noqa: C901, PLR0912, PLR0915
     return seed_dict, rank_means_dict
 
 
-def extract_iteration_data(means_dict, iteration):
+def extract_iteration_data(
+    *,
+    means_dict: Mapping[str, Mapping[str, pd.DataFrame]],
+    iteration: int | None = None,
+    normalize_hv: bool = False,
+):
     """Extracts data for a specific iteration from the nested dict."""
     rows = []
 
     for seed, benchmark_dict in means_dict.items():
+
         for benchmark, df in benchmark_dict.items():
-            if "cifar" not in benchmark.lower():
-                continue
-            assert iteration < len(df)
-            # Extract the row for the given iteration
-            iteration_row = df.iloc[iteration]
+            if iteration:
+                assert iteration < len(df)
+                iteration_rows = [df.iloc[iteration]]
+            else:
+                iteration_rows = df.to_dict(orient="records")
 
-            # For each optimizer (column) in this iteration
-            for optimizer in df.columns:
-                hypervolume = iteration_row[optimizer]
+            for row in iteration_rows:
 
-                rows.append({
-                    "algorithm": optimizer,
-                    "benchmark": benchmark,
-                    "value": hypervolume,
-                    "seed": str(seed)  # Optional: include seed for reference
-                })
+                for optimizer in df.columns:
+                    prior_annot = optimizer.split("priors=")[-1] if "priors=" in optimizer else None
+                    hypervolume = row[optimizer]
+
+                    opt = edit_legend_labels([optimizer])[0]
+
+                    hv_regret = calc_hv_norm_regret(
+                        best=best_hv_dict[benchmark],
+                        worst=worst_hv_dict[benchmark],
+                        hv=hypervolume
+                    )
+                    hv = hv_regret if normalize_hv else hypervolume
+
+                    rows.append({
+                        "algorithm": opt,
+                        "benchmark": benchmark,
+                        "value": hv,
+                        "seed": str(seed),
+                        "prior": prior_annot,
+                    })
 
     return pd.DataFrame(rows)
 
@@ -240,16 +302,17 @@ def significance_analysis(
     post_hoc_results=mod.post_hoc("algorithm")
 
     # Plotting the results
-    cd_diagram(post_hoc_results)
+    cd_diagram(
+        result = post_hoc_results,
+    )
 
     plt.show()
 
     # 3. Run a custom hypothesis test, comparing model_1 and model_2
     model_1 = model("value ~ algorithm", data)
     model_2 = model("value ~ 1", data)
-    glrt(model_1, model_2)
-
-
+    glrt_res = glrt(model_1, model_2)
+    logger.info(f"GLRT results: {glrt_res}")
 
 def agg_data(
     exp_dir: Path,
@@ -341,7 +404,7 @@ def gen_plots_per_bench(
     skip_priors: bool = False,
     skip_opt: list[str] | None = None,
     avg_prior_label: str = "all",
-) -> dict[int, pd.DataFrame]:
+) -> tuple[dict[int, pd.DataFrame], dict[int, pd.DataFrame]]:
     """Function to generate plots for a given benchmark and its config dict."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
     objectives = conf_tuple[0]
@@ -358,15 +421,19 @@ def gen_plots_per_bench(
             "Can only plot pareto front for 2D cost space."
         )
 
-        minimize: dict[str, bool] = _df["minimize"][0]
-
-        _results = _df["results"].apply(
-            lambda x, objectives=objectives, minimize=minimize: {
-                k: x[k] if minimize[k] else -x[k] for k in objectives
+        _results = _df[RESULTS_COL].apply(
+            lambda x, objectives=objectives: {
+                k: x[k] for k in objectives
             }
         )
 
+        _df[RESULTS_COL] = _results
+
         annotations = None
+
+        optimizer_name = change_opt_names(
+            _df[OPTIMIZER_COL][0]
+        )
 
         if _df["prior_annotations"][0] is not None:
             annotations = "-".join(
@@ -374,7 +441,7 @@ def gen_plots_per_bench(
             )
 
         instance = (
-            _df["optimizer"][0] +
+            optimizer_name +
             (
                 ";" + _df[HP_COL][0]
                 if "default" not in _df[HP_COL][0]
@@ -387,19 +454,19 @@ def gen_plots_per_bench(
 
         if priors_to_avg and annotations in priors_to_avg:
             instance = (
-                _df["optimizer"][0] +
+                optimizer_name +
                 (
                     ";" + _df[HP_COL][0]
                     if "default" not in _df[HP_COL][0]
                     else ""
                 ) + f";priors={avg_prior_label}"
             )
-            if skip_opt and _df["optimizer"][0] in skip_opt:
+            if skip_opt and optimizer_name in skip_opt:
                 continue
             if instance not in agg_dict:
                 agg_dict[instance] = {}
             seed = (
-                f"{seed}_{_df['optimizer'][0]}" +
+                f"{seed}_{optimizer_name}" +
                 (
                     ";" + _df[HP_COL][0]
                     if "default" not in _df[HP_COL][0]
@@ -449,6 +516,7 @@ def make_subplots(  # noqa: C901, PLR0913
     output_dir: Path | None = None,
     which_labels: str = "1",
     plot_title: str | None = None,
+    normalize_hv: bool = False,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     fig_size = other_fig_params["fig_size"]
@@ -462,10 +530,10 @@ def make_subplots(  # noqa: C901, PLR0913
             f"cannot be greater than total budget ({total_budget})."
         )
 
-    # Hypervolume plot
-    fig_hv, axs_hv = plt.subplots(
-        nrows = nrows,
-        ncols = ncols,
+    # CD plot
+    fig_cd, axs_cd = plt.subplots(
+        nrows=nrows,
+        ncols=ncols,
         figsize=fig_size,
     )
     suptitle_x = other_fig_params["suptitle_bbox"][0]
@@ -473,7 +541,7 @@ def make_subplots(  # noqa: C901, PLR0913
 
     # Set the title of the plots
     if plot_title is not None:
-        fig_hv.suptitle(
+        fig_cd.suptitle(
             plot_title,
             x=suptitle_x,
             y=suptitle_y,
@@ -481,7 +549,7 @@ def make_subplots(  # noqa: C901, PLR0913
 
     plt.rcParams.update(RC_PARAMS)
 
-    axs_hv: list[plt.Axes] = axs_hv.flatten() if num_plots > 1 else [axs_hv]
+    axs_cd: list[plt.Axes] = axs_cd.flatten() if num_plots > 1 else [axs_cd]
 
     means_dict = {}
     bench_dict = {}
@@ -503,10 +571,7 @@ def make_subplots(  # noqa: C901, PLR0913
                 avg_prior_label=avg_prior_label,
             )
 
-            # axs_hv[i].set_xticks(XTICKS[(1, total_budget)])
-            # axs_hv[i].grid(visible=True)
-            # axs_hv[i].set_title(benchmark)
-            # axs_hv[i].set_xlim(1, total_budget)
+            axs_cd[i].set_title(benchmark)
 
             for _seed, rank_df in seed_dict_per_bench.items():
                 if _seed not in means_dict:
@@ -519,52 +584,41 @@ def make_subplots(  # noqa: C901, PLR0913
 
             bench_dict = {}
 
-    # hv_handles, hv_labels = axs_hv[0].get_legend_handles_labels()
-    # hv_labels = edit_legend_labels(hv_labels, which_labels=which_labels)
+    cd_handles, cd_labels = axs_cd[0].get_legend_handles_labels()
+    cd_labels = edit_legend_labels(cd_labels, which_labels=which_labels)
 
-
+    # Aggregate the data into a single DataFrame for the given iteration
     agg_df = extract_iteration_data(
-        means_dict,
-        at_iteration
+        means_dict=means_dict,
+        iteration=at_iteration,
+        normalize_hv=normalize_hv,
     )
-
-    breakpoint()
     # Perform significance analysis on the aggregated data
     significance_analysis(agg_df)
 
-    # logger.info(f"Final Optimizer labels: {hv_labels}")
+    logger.info(f"Final Optimizer labels for CD Plots: {cd_labels}")
 
-    # Sort all labels and handles by label
+    # Remove empty subplots for CD plot
+    for j in range(i + 1, len(axs_cd)):
+        fig_cd.delaxes(axs_cd[j])
 
-    # hv_labels, hv_handles = zip(
-    #     *sorted(
-    #         zip(hv_labels, hv_handles, strict=False),
-    #         key=lambda x: len(x[0])
-    #     ),
-    #     strict=False
-    # )
-    # tight_layout_pads = other_fig_params["tight_layout_pads"]
+    tight_layout_pads = other_fig_params["tight_layout_pads"]
 
-    # Remove empty subplots for hypervolume plot
-    for j in range(i + 1, len(axs_hv)):
-        fig_hv.delaxes(axs_hv[j])
+    fig_cd.tight_layout(**tight_layout_pads)
 
+    save_dir = exp_dir/ "plots" / "subplots"
+    if output_dir is not None:
+        save_dir = output_dir
+    save_dir.mkdir(parents=True, exist_ok=True)
 
-    # fig_hv.tight_layout(**tight_layout_pads)
-
-    # save_dir = exp_dir/ "plots" / "subplots"
-    # if output_dir is not None:
-    #     save_dir = output_dir
-    # save_dir.mkdir(parents=True, exist_ok=True)
-
-    # if save_suffix:
-    #     save_suffix = f"_{save_suffix}"
-    # if not no_save:
-    #     fig_hv.savefig(
-    #         save_dir / f"hypervolume_subplots{save_suffix}.{file_type}",
-    #         dpi=300, bbox_inches="tight"
-    #     )
-    #     logger.info("Saved hv plot")
+    if save_suffix:
+        save_suffix = f"_{save_suffix}"
+    if not no_save:
+        fig_cd.savefig(
+            save_dir / f"cd_subplots{save_suffix}.{file_type}",
+            dpi=300, bbox_inches="tight"
+        )
+        logger.info("Saved CD plot")
 
 
 if __name__ == "__main__":
@@ -675,6 +729,11 @@ if __name__ == "__main__":
         default="",
         help="Title for the plots. If not provided, no title will be set."
     )
+    parser.add_argument(
+        "--normalize_hv", "-norm",
+        action="store_true",
+        help="Normalize regret for the hypervolume values for the LMEM significance analysis."
+    )
     args = parser.parse_args()
 
     if args.from_yaml:
@@ -695,6 +754,7 @@ if __name__ == "__main__":
         args.specific_rc_params = yaml_config.get("specific_rc_params", args.specific_rc_params)
         args.specific_fig_params = yaml_config.get("specific_fig_params", args.specific_fig_params)
         args.plot_title = yaml_config.get("plot_title", args.plot_title)
+        args.normalize_hv = yaml_config.get("normalize_hv", args.normalize_hv)
 
     if args.specific_rc_params:
         for param in args.specific_rc_params:
@@ -730,5 +790,6 @@ if __name__ == "__main__":
         output_dir=output_dir if args.output_dir else None,
         which_labels=args.which_labels,
         plot_title=args.plot_title,
-        at_iteration=args.at_iteration
+        at_iteration=args.at_iteration,
+        normalize_hv=args.normalize_hv
     )
