@@ -7,8 +7,9 @@ priors_to_avg:
   - bad-bad
 avg_prior_label: overall-all
 save_suffix: subset12_robust_ov_all
-# skip_opt:
-#   - RandomSearchWithPriors
+skip_opt:
+  - RandomSearchWithPriors
+  - Nevergrad_EvolutionStrategy
 which_labels: "1"
 which_plots:
   - hv
