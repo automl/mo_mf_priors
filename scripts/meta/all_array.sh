@@ -104,7 +104,7 @@ benchmarks:
     objectives:
       $key1: ${obj1}
       $key2: ${obj2}
-seeds: 3356806662
+num_seeds: 25
 num_iterations: 20
 EOF
 
