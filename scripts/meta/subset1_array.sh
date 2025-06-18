@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --partition bosch_cpu-cascadelake
-#SBATCH --job-name subset1_100
+#SBATCH --job-name PriMO_20_evals
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
@@ -30,22 +30,22 @@ nonprior_opts=(
 
 # Benchmarks with known objective types (used for both prior and non-prior)
 benchmarks=(
-  # "MOMFPark"
-  # "pd1-cifar100-wide_resnet-2048"
-  # "pd1-imagenet-resnet-512"
-  # "pd1-lm1b-transformer-2048"
-  # "pd1-translate_wmt-xformer_translate-64"
-  # "yahpo-lcbench-126026"
-  # "yahpo-lcbench-146212"
-  # "yahpo-lcbench-168330"
+  "MOMFPark"
+  "pd1-cifar100-wide_resnet-2048"
+  "pd1-imagenet-resnet-512"
+  "pd1-lm1b-transformer-2048"
+  "pd1-translate_wmt-xformer_translate-64"
+  "yahpo-lcbench-126026"
+  "yahpo-lcbench-146212"
+  "yahpo-lcbench-168330"
   "yahpo-lcbench-168868"
 )
 
 # Prior benchmark settings (good-good, bad-good, bad-bad)
 prior_settings=(
-  # "good:good"
+  "good:good"
   "bad:good"
-  # "bad:bad"
+  "bad:bad"
 )
 
 # === Compute total jobs
@@ -103,14 +103,14 @@ benchmarks:
       $key1: ${obj1}
       $key2: ${obj2}
 seeds: 3356806662
-num_iterations: 100
+num_iterations: 20
 EOF
 
 echo "Generated config:"
 cat "$yaml_file"
 
 # === Run the experiment ===
-python3 -m momfpriors.run -y "$yaml_file" -e "subset1_100"
+python3 -m momfpriors.run -y "$yaml_file" -e "primo_20_evals"
 
 end=$(date +%s)
 runtime=$((end - start))
