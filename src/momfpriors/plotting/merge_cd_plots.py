@@ -96,8 +96,6 @@ def calc_hv_norm_regret(
     """Function to calculate the normalized regret of the hypervolume values."""
     if best == worst:
         return 0.0
-    if pd.isna(hv):
-        return 1.0
     return (best - hv) / (best - worst)
 
 
@@ -243,8 +241,10 @@ def prep_results_for_cd(  # noqa: C901, PLR0912, PLR0915
 def extract_iteration_data(
     *,
     means_dict: Mapping[str, Mapping[str, pd.DataFrame]],
-    iteration: int | None = None,
+    iteration: int,
     normalize_hv: bool = False,
+    remove_prior_annots: bool = False,
+    which_labels: str = "1",
 ):
     """Extracts data for a specific iteration from the nested dict."""
     rows = []
@@ -252,41 +252,42 @@ def extract_iteration_data(
     for seed, benchmark_dict in means_dict.items():
 
         for benchmark, df in benchmark_dict.items():
-            if iteration:
-                assert iteration < len(df)
-                iteration_rows = [df.iloc[iteration]]
-            else:
-                iteration_rows = df.to_dict(orient="records")
+            assert iteration < len(df)
+            iteration_row = df.iloc[iteration]
 
-            for row in iteration_rows:
+            for optimizer in df.columns:
+                prior_annot = optimizer.split("priors=")[-1] if "priors=" in optimizer else None
+                hypervolume = iteration_row[optimizer]
 
-                for optimizer in df.columns:
-                    prior_annot = optimizer.split("priors=")[-1] if "priors=" in optimizer else None
-                    hypervolume = row[optimizer]
+                opt = edit_legend_labels(
+                    labels=[optimizer],
+                    which_labels=which_labels,
+                    prior_annotations=None if remove_prior_annots else "default",
+                )[0]
 
-                    opt = edit_legend_labels([optimizer])[0]
+                hv_regret = calc_hv_norm_regret(
+                    best=best_hv_dict[benchmark],
+                    worst=worst_hv_dict[benchmark],
+                    hv=hypervolume
+                )
+                hv = hv_regret if normalize_hv else hypervolume
 
-                    hv_regret = calc_hv_norm_regret(
-                        best=best_hv_dict[benchmark],
-                        worst=worst_hv_dict[benchmark],
-                        hv=hypervolume
-                    )
-                    hv = hv_regret if normalize_hv else hypervolume
-
-                    rows.append({
-                        "algorithm": opt,
-                        "benchmark": benchmark,
-                        "value": hv,
-                        "seed": str(seed),
-                        "prior": prior_annot,
-                    })
+                rows.append({
+                    "algorithm": opt,
+                    "benchmark": benchmark,
+                    "value": hv,
+                    "seed": str(seed),
+                    "prior_annot": prior_annot
+                })
 
     return pd.DataFrame(rows)
 
 
 
 def significance_analysis(
-    data: pd.DataFrame
+    *,
+    data: pd.DataFrame,
+    ax: plt.Axes,
 ) -> None:
     """Function to perform significance analysis on the data."""
     # 1. Generate/import dataset
@@ -301,16 +302,16 @@ def significance_analysis(
 
     # Plotting the results
     cd_diagram(
-        result = post_hoc_results,
+        parent_ax=ax,
+        result=post_hoc_results,
     )
-
-    plt.show()
 
     # 3. Run a custom hypothesis test, comparing model_1 and model_2
     model_1 = model("value ~ algorithm", data)
     model_2 = model("value ~ 1", data)
     glrt_res = glrt(model_1, model_2)
     logger.info(f"GLRT results: {glrt_res}")
+
 
 def agg_data(
     exp_dir: Path,
@@ -391,7 +392,7 @@ def agg_data(
     return benchmarks_dict, total_budget
 
 
-def gen_plots_per_bench(
+def gen_plots_per_bench(  # noqa: C901
     total_budget: int,
     *,
     benchmark: str,
@@ -405,11 +406,20 @@ def gen_plots_per_bench(
 ) -> tuple[dict[int, pd.DataFrame], dict[int, pd.DataFrame]]:
     """Function to generate plots for a given benchmark and its config dict."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
+    df_agg = {}
     objectives = conf_tuple[0]
     fidelity = conf_tuple[1]
     for _df in _all_dfs:
         if _df.empty:
             continue
+        instance = _df[OPTIMIZER_COL].iloc[0]
+        if _df[HP_COL].iloc[0] is not None:
+            instance = f"{instance}_{_df[HP_COL].iloc[0]}"
+        seed = _df[SEED_COL].iloc[0]
+        if instance not in df_agg:
+            df_agg[instance] = {}
+        if int(seed) not in df_agg[instance]:
+            df_agg[instance][int(seed)] = {"results": _df}
         assert objectives is not None
 
 
@@ -430,7 +440,7 @@ def gen_plots_per_bench(
         annotations = None
 
         optimizer_name = change_opt_names(
-            _df[OPTIMIZER_COL][0]
+            _df[OPTIMIZER_COL][0],
         )
 
         if _df["prior_annotations"][0] is not None:
@@ -473,7 +483,6 @@ def gen_plots_per_bench(
             )
             agg_dict[instance][seed] = {
                 "_df": _df,
-                "results": _results,
             }
             continue
         if annotations and skip_non_avg and priors_to_avg and annotations not in priors_to_avg:
@@ -484,7 +493,6 @@ def gen_plots_per_bench(
             agg_dict[instance] = {}
         agg_dict[instance][seed] = {
             "_df": _df,
-            "results": _results,
         }
     assert len(objectives) > 0, "Objectives not found in results file."
 
@@ -499,28 +507,23 @@ def gen_plots_per_bench(
 
 
 
-def make_subplots(  # noqa: C901, PLR0913
+def make_subplots(  # noqa: PLR0913
     exp_dir: Path,
+    ax: plt.Axes,
     *,
-    at_iteration: int | None = None,
-    no_save: bool = False,
-    save_suffix: str = "",
+    at_iteration: int,
     skip_opt: list[str] | None = None,
     priors_to_avg: list[str] | None = None,
     skip_non_avg: bool = False,
     skip_priors: bool = False,
     avg_prior_label: str = "all",
-    file_type: str = "pdf",
-    output_dir: Path | None = None,
-    which_labels: str = "1",
-    plot_title: str | None = None,
+    ax_title: str | None = None,
     normalize_hv: bool = False,
+    remove_prior_annots: bool = False,
+    which_labels: str = "1",
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
-    fig_size = other_fig_params["fig_size"]
     benchmarks_dict, total_budget = agg_data(exp_dir, skip_opt=skip_opt)
-    num_plots = len(benchmarks_dict)
-    nrows, ncols = other_fig_params["n_rows_cols"][num_plots]
 
     if at_iteration and at_iteration > total_budget:
         raise ValueError(
@@ -528,30 +531,11 @@ def make_subplots(  # noqa: C901, PLR0913
             f"cannot be greater than total budget ({total_budget})."
         )
 
-    # CD plot
-    fig_cd, axs_cd = plt.subplots(
-        nrows=nrows,
-        ncols=ncols,
-        figsize=fig_size,
-    )
-    suptitle_x = other_fig_params["suptitle_bbox"][0]
-    suptitle_y = other_fig_params["suptitle_bbox"][1]
-
-    # Set the title of the plots
-    if plot_title is not None:
-        fig_cd.suptitle(
-            plot_title,
-            x=suptitle_x,
-            y=suptitle_y,
-            fontsize=other_fig_params["title_fontsize"])
-
     plt.rcParams.update(RC_PARAMS)
-
-    axs_cd: list[plt.Axes] = axs_cd.flatten() if num_plots > 1 else [axs_cd]
 
     means_dict = {}
     bench_dict = {}
-    for i, (benchmark, conf_dict) in enumerate(benchmarks_dict.items()):
+    for _, (benchmark, conf_dict) in enumerate(benchmarks_dict.items()):
         assert len(conf_dict) == 1, (
             "Plotting more than 1 config for a benchmark not yet implemented."
             f" Found {len(conf_dict)} configs for benchmark {benchmark}."
@@ -569,8 +553,6 @@ def make_subplots(  # noqa: C901, PLR0913
                 avg_prior_label=avg_prior_label,
             )
 
-            axs_cd[i].set_title(benchmark)
-
             for _seed, rank_df in seed_dict_per_bench.items():
                 if _seed not in means_dict:
                     means_dict[_seed] = {}
@@ -582,23 +564,204 @@ def make_subplots(  # noqa: C901, PLR0913
 
             bench_dict = {}
 
-    cd_handles, cd_labels = axs_cd[0].get_legend_handles_labels()
-    cd_labels = edit_legend_labels(cd_labels, which_labels=which_labels)
 
     # Aggregate the data into a single DataFrame for the given iteration
     agg_df = extract_iteration_data(
         means_dict=means_dict,
         iteration=at_iteration,
         normalize_hv=normalize_hv,
+        remove_prior_annots=remove_prior_annots,
+        which_labels=which_labels,
     )
     # Perform significance analysis on the aggregated data
-    significance_analysis(agg_df)
+    significance_analysis(
+        data=agg_df,
+        ax=ax
+    )
+    if ax_title is not None:
+        ax.set_title(ax_title, fontsize=other_fig_params["title_fontsize"])
 
-    logger.info(f"Final Optimizer labels for CD Plots: {cd_labels}")
 
-    # Remove empty subplots for CD plot
-    for j in range(i + 1, len(axs_cd)):
-        fig_cd.delaxes(axs_cd[j])
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--output_dir", "-o",
+        type=str,
+        default=None,
+        help="Absolute path to the output directory where the plots will be saved. "
+            "If not provided, the plots will be saved in the 'plots' subdirectory"
+            "of the experiment directory."
+    )
+    parser.add_argument(
+        "--from_yaml", "-yaml",
+        type=str,
+        default=None,
+        required=True,
+        help="YAML containing the plot configs to merge CD plots from. "
+    )
+    parser.add_argument(
+        "--save_suffix", "-s",
+        type=str,
+        default="",
+        help="Suffix to add to the saved plot filenames. "
+            "Useful for distinguishing between different runs or configurations."
+    )
+    parser.add_argument(
+        "--at_iteration", "-i",
+        type=int,
+        default=None,
+        help="Perform the significance analysis at this iteration."
+    )
+    parser.add_argument(
+        "--no_save", "-ns",
+        action="store_true",
+        default=False,
+        help="If set, the plots will not be saved to disk."
+    )
+    parser.add_argument(
+        "--file_type", "-file",
+        type=str,
+        default="pdf",
+        choices=["pdf", "png", "svg", "jpg"],
+        help="File type to save the plots. "
+            "Can be 'pdf', 'png', 'svg', 'jpg. Default is 'pdf'."
+    )
+    parser.add_argument(
+        "--figsize", "-size",
+        type=int,
+        nargs=2,
+        default=(14, 6),
+        help="Figure size in inches (width height)."
+    )
+    parser.add_argument(
+        "--sub_labels", "-slabel",
+        nargs="+",
+        type=str,
+        help="Labels for the subplots. "
+    )
+    parser.add_argument(
+        "--remove_prior_annots", "-rm_annot",
+        action="store_true",
+        default=False,
+        help="If set, the prior annotations will be removed from the optimizer names in the plots."
+    )
+    parser.add_argument(
+        "--normalize_hv", "-norm",
+        action="store_true",
+        help="Normalize regret for the hypervolume values for the LMEM significance analysis."
+    )
+    parser.add_argument(
+        "--plot_title", "-title",
+        type=str,
+        default=None,
+        help="Title for the overall merged CD plot. "
+            "If not provided, no title will be set."
+    )
+    args = parser.parse_args()
+
+    yaml_paths: list[Path] = []
+
+    if args.from_yaml:
+        with Path(args.from_yaml).open("r") as f:
+            yaml_config = yaml.safe_load(f)
+            for yaml_file in yaml_config.get("yaml_files", []):
+                yaml_paths.append(Path(yaml_file))
+        args.output_dir = yaml_config.get("output_dir", args.output_dir)
+        args.at_iteration = yaml_config.get("at_iteration", args.at_iteration)
+        args.no_save = yaml_config.get("no_save", args.no_save)
+        args.save_suffix = yaml_config.get("save_suffix", args.save_suffix)
+        args.file_type = yaml_config.get("file_type", args.file_type)
+        args.figsize = yaml_config.get("figsize", args.figsize)
+        args.sub_labels = yaml_config.get("sub_labels", args.sub_labels)
+        args.remove_prior_annots = yaml_config.get(
+            "remove_prior_annots", args.remove_prior_annots
+        )
+        args.normalize_hv = yaml_config.get(
+            "normalize_hv", args.normalize_hv
+        )
+        args.plot_title = yaml_config.get("plot_title", args.plot_title)
+
+    num_plots = len(yaml_paths)
+    if args.sub_labels is not None:
+        assert len(args.sub_labels) == num_plots
+
+
+    if args.output_dir is not None:
+        output_dir = Path(args.output_dir)
+
+    nrows, ncols = other_fig_params["n_rows_cols"][num_plots]
+
+    # CD plot
+    fig_cd, axs_cd = plt.subplots(
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(
+            args.figsize[0],
+            args.figsize[1]
+        ),
+    )
+    suptitle_x = other_fig_params["suptitle_bbox"][0]
+    suptitle_y = other_fig_params["suptitle_bbox"][1]
+
+    # Set the title of the plots
+    if args.plot_title is not None:
+        fig_cd.suptitle(
+            args.plot_title,
+            x=suptitle_x,
+            y=suptitle_y,
+            fontsize=other_fig_params["title_fontsize"])
+
+    axs_cd: list[plt.Axes] = axs_cd.flatten() if num_plots > 1 else [axs_cd]
+
+    for i, yaml_path in enumerate(yaml_paths):
+        with yaml_path.open("r") as f:
+            yaml_config = yaml.safe_load(f)
+        exp_dir = yaml_config.get("exp_dir")
+        skip_opt = yaml_config.get("skip_opt")
+        priors_to_avg = yaml_config.get("priors_to_avg")
+        skip_non_avg = yaml_config.get("skip_non_avg", False)
+        skip_priors = yaml_config.get("skip_priors")
+        avg_prior_label = yaml_config.get("avg_prior_label", "all")
+        which_labels = yaml_config.get("which_labels", "1")
+        specific_rc_params = yaml_config.get("specific_rc_params")
+        specific_fig_params = yaml_config.get("specific_fig_params")
+
+
+        assert exp_dir is not None, "Experiment directory must be specified."
+        exp_dir: Path = DEFAULT_RESULTS_DIR / exp_dir
+
+        if specific_rc_params:
+            for param in specific_rc_params:
+                key, value = param.split("=")
+                RC_PARAMS[key] = value
+
+        if specific_fig_params:
+            import ast
+            for param in specific_fig_params:
+                key, value = param.split("=")
+                if key in other_fig_params:
+                    other_fig_params[key] = ast.literal_eval(value)
+                else:
+                    logger.warning(f"Unknown figure parameter: {key}. Skipping.")
+
+        logger.info(f"CD plot for: {yaml_path.name}")
+
+        make_subplots(
+            exp_dir=exp_dir,
+            ax=axs_cd[i],
+            at_iteration=args.at_iteration,
+            skip_opt=skip_opt,
+            priors_to_avg=priors_to_avg,
+            skip_non_avg=skip_non_avg,
+            skip_priors=skip_priors,
+            avg_prior_label=avg_prior_label,
+            ax_title=args.sub_labels[i] if args.sub_labels else None,
+            normalize_hv=args.normalize_hv,
+            remove_prior_annots=args.remove_prior_annots,
+            which_labels=which_labels,
+        )
+
 
     tight_layout_pads = other_fig_params["tight_layout_pads"]
 
@@ -609,185 +772,11 @@ def make_subplots(  # noqa: C901, PLR0913
         save_dir = output_dir
     save_dir.mkdir(parents=True, exist_ok=True)
 
-    if save_suffix:
-        save_suffix = f"_{save_suffix}"
-    if not no_save:
+    if args.save_suffix:
+        save_suffix = f"_{args.save_suffix}"
+    if not args.no_save:
         fig_cd.savefig(
-            save_dir / f"cd_subplots{save_suffix}.{file_type}",
+            save_dir / f"cd_subplots{save_suffix}.{args.file_type}",
             dpi=300, bbox_inches="tight"
         )
         logger.info("Saved CD plot")
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--exp_dir", "-e",
-        type=str,
-        default=None,
-        help="Main experiment directory containing the runs to plot."
-    )
-    parser.add_argument(
-        "--output_dir", "-o",
-        type=str,
-        default=None,
-        help="Absolute path to the output directory where the plots will be saved. "
-            "If not provided, the plots will be saved in the 'plots' subdirectory"
-            "of the experiment directory."
-    )
-    parser.add_argument(
-        "--at_iteration", "-i",
-        type=int,
-        default=None,
-        help="Plot CD at a specific iteration."
-    )
-    parser.add_argument(
-        "--no_save", "-ns",
-        action="store_true",
-        help="Do not save the plots."
-    )
-    parser.add_argument(
-        "--save_suffix", "-suffix",
-        type=str,
-        default="",
-        help="Suffix to add to the saved plots."
-    )
-    parser.add_argument(
-        "--skip_opt", "-skip",
-        nargs="+",
-        type=str,
-        default=None,
-        help="Skip the given optimizers."
-    )
-    parser.add_argument(
-        "--priors_to_avg", "-avg",
-        nargs="+",
-        type=str,
-        default=None,
-        help="Priors to average over."
-    )
-    parser.add_argument(
-        "--skip_non_avg", "-skipna",
-        action="store_true",
-        help="Skip the non-averaged priors."
-    )
-    parser.add_argument(
-        "--skip_priors", "-skp",
-        nargs="+",
-        type=str,
-        default=None,
-        help="Skip the given priors."
-    )
-    parser.add_argument(
-        "--avg_prior_label", "-avg_label",
-        type=str,
-        default="all",
-        help="Label for the averaged priors."
-    )
-    parser.add_argument(
-        "--file_type", "-file",
-        type=str,
-        choices=["pdf", "png", "svg", "jpg"],
-        default="pdf",
-        help="File type to save the plots."
-    )
-    parser.add_argument(
-        "--which_labels", "-labels",
-        type=str,
-        default="1",
-        help="Which labels to use for the plots."
-    )
-    parser.add_argument(
-        "--from_yaml", "-yaml",
-        type=str,
-        default=None,
-        help="Path to a YAML file containing the plotting configuration."
-    )
-    parser.add_argument(
-        "--specific_rc_params", "-rc",
-        nargs="+",
-        type=str,
-        default=None,
-        help="Specific rcParams to set for the plots. "
-            "Format: 'param1=value1 param2=value2 ...'. "
-            "If not provided, default rcParams will be used."
-    )
-    parser.add_argument(
-        "--specific_fig_params", "-figparams",
-        nargs="+",
-        type=str,
-        default=None,
-        help="Specific figure parameters to set for the plots. "
-            "Format: 'param1=value1 param2=value2 ...'. "
-            "If not provided, default figure parameters will be used."
-    )
-    parser.add_argument(
-        "--plot_title", "-title",
-        type=str,
-        default="",
-        help="Title for the plots. If not provided, no title will be set."
-    )
-    parser.add_argument(
-        "--normalize_hv", "-norm",
-        action="store_true",
-        help="Normalize regret for the hypervolume values for the LMEM significance analysis."
-    )
-    args = parser.parse_args()
-
-    if args.from_yaml:
-        with Path(args.from_yaml).open("r") as f:
-            yaml_config = yaml.safe_load(f)
-        args.exp_dir = yaml_config.get("exp_dir", args.exp_dir)
-        args.output_dir = yaml_config.get("output_dir", args.output_dir)
-        args.at_iteration = yaml_config.get("at_iteration", args.at_iteration)
-        args.no_save = yaml_config.get("no_save", args.no_save)
-        args.save_suffix = yaml_config.get("save_suffix", args.save_suffix)
-        args.skip_opt = yaml_config.get("skip_opt", args.skip_opt)
-        args.priors_to_avg = yaml_config.get("priors_to_avg", args.priors_to_avg)
-        args.skip_non_avg = yaml_config.get("skip_non_avg", args.skip_non_avg)
-        args.skip_priors = yaml_config.get("skip_priors", args.skip_priors)
-        args.avg_prior_label = yaml_config.get("avg_prior_label", args.avg_prior_label)
-        args.file_type = yaml_config.get("file_type", args.file_type)
-        args.which_labels = yaml_config.get("which_labels", args.which_labels)
-        args.specific_rc_params = yaml_config.get("specific_rc_params", args.specific_rc_params)
-        args.specific_fig_params = yaml_config.get("specific_fig_params", args.specific_fig_params)
-        args.plot_title = yaml_config.get("plot_title", args.plot_title)
-        args.normalize_hv = yaml_config.get("normalize_hv", args.normalize_hv)
-
-    if args.specific_rc_params:
-        for param in args.specific_rc_params:
-            key, value = param.split("=")
-            RC_PARAMS[key] = value
-
-    if args.specific_fig_params:
-        import ast
-        for param in args.specific_fig_params:
-            key, value = param.split("=")
-            if key in other_fig_params:
-                other_fig_params[key] = ast.literal_eval(value)
-            else:
-                logger.warning(f"Unknown figure parameter: {key}. Skipping.")
-
-    assert args.exp_dir is not None, "Experiment directory must be specified."
-    exp_dir: Path = DEFAULT_RESULTS_DIR / args.exp_dir
-
-    agg_dict: Mapping[str, Mapping[str, Any]] = {}
-    if args.output_dir is not None:
-        output_dir = Path(args.output_dir)
-
-    make_subplots(
-        exp_dir=exp_dir,
-        no_save=args.no_save,
-        save_suffix=args.save_suffix,
-        skip_opt=args.skip_opt,
-        priors_to_avg=args.priors_to_avg,
-        skip_non_avg=args.skip_non_avg,
-        skip_priors=args.skip_priors,
-        avg_prior_label=args.avg_prior_label,
-        file_type=args.file_type,
-        output_dir=output_dir if args.output_dir else None,
-        which_labels=args.which_labels,
-        plot_title=args.plot_title,
-        at_iteration=args.at_iteration,
-        normalize_hv=args.normalize_hv
-    )
