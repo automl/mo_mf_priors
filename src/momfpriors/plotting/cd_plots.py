@@ -245,6 +245,7 @@ def extract_iteration_data(
     means_dict: Mapping[str, Mapping[str, pd.DataFrame]],
     iteration: int | None = None,
     normalize_hv: bool = False,
+    which_labels: str = "sig",
 ):
     """Extracts data for a specific iteration from the nested dict."""
     rows = []
@@ -264,7 +265,10 @@ def extract_iteration_data(
                     prior_annot = optimizer.split("priors=")[-1] if "priors=" in optimizer else None
                     hypervolume = row[optimizer]
 
-                    opt = edit_legend_labels([optimizer])[0]
+                    opt = edit_legend_labels(
+                        labels=[optimizer],
+                        which_labels=which_labels,
+                    )[0]
 
                     hv_regret = calc_hv_norm_regret(
                         best=best_hv_dict[benchmark],
@@ -512,7 +516,7 @@ def make_subplots(  # noqa: C901, PLR0913
     avg_prior_label: str = "all",
     file_type: str = "pdf",
     output_dir: Path | None = None,
-    which_labels: str = "1",
+    which_labels: str = "sig",
     plot_title: str | None = None,
     normalize_hv: bool = False,
 ) -> None:
@@ -582,19 +586,15 @@ def make_subplots(  # noqa: C901, PLR0913
 
             bench_dict = {}
 
-    cd_handles, cd_labels = axs_cd[0].get_legend_handles_labels()
-    cd_labels = edit_legend_labels(cd_labels, which_labels=which_labels)
-
     # Aggregate the data into a single DataFrame for the given iteration
     agg_df = extract_iteration_data(
         means_dict=means_dict,
         iteration=at_iteration,
         normalize_hv=normalize_hv,
+        which_labels=which_labels,
     )
     # Perform significance analysis on the aggregated data
     significance_analysis(agg_df)
-
-    logger.info(f"Final Optimizer labels for CD Plots: {cd_labels}")
 
     # Remove empty subplots for CD plot
     for j in range(i + 1, len(axs_cd)):
@@ -694,7 +694,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--which_labels", "-labels",
         type=str,
-        default="1",
+        default="sig",
         help="Which labels to use for the plots."
     )
     parser.add_argument(

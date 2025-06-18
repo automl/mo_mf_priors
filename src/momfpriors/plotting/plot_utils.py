@@ -5,7 +5,14 @@ from collections.abc import Mapping
 import numpy as np
 import pandas as pd
 
-from momfpriors.plotting.labels import ABLATION_LABELS, HP_LABELS, INTRO_LABELS, LABELS_1, SO_LABELS
+from momfpriors.plotting.labels import (
+    ABLATION_LABELS,
+    HP_LABELS,
+    INTRO_LABELS,
+    LABELS_1,
+    SIG_LABELS,
+    SO_LABELS,
+)
 from momfpriors.plotting.plot_styles import (
     COLORS_HPS,
     COLORS_MAIN,
@@ -17,6 +24,7 @@ map_labels = {
     "1": LABELS_1,
     "intro": INTRO_LABELS,
     "ablation": ABLATION_LABELS,
+    "sig": SIG_LABELS,
     "SO": SO_LABELS,
 }
 

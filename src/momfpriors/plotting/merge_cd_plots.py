@@ -244,7 +244,7 @@ def extract_iteration_data(
     iteration: int,
     normalize_hv: bool = False,
     remove_prior_annots: bool = False,
-    which_labels: str = "1",
+    which_labels: str = "sig",
 ):
     """Extracts data for a specific iteration from the nested dict."""
     rows = []
@@ -520,7 +520,7 @@ def make_subplots(  # noqa: PLR0913
     ax_title: str | None = None,
     normalize_hv: bool = False,
     remove_prior_annots: bool = False,
-    which_labels: str = "1",
+    which_labels: str = "sig",
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     benchmarks_dict, total_budget = agg_data(exp_dir, skip_opt=skip_opt)
@@ -723,7 +723,7 @@ if __name__ == "__main__":
         skip_non_avg = yaml_config.get("skip_non_avg", False)
         skip_priors = yaml_config.get("skip_priors")
         avg_prior_label = yaml_config.get("avg_prior_label", "all")
-        which_labels = yaml_config.get("which_labels", "1")
+        which_labels = yaml_config.get("which_labels", "sig")
         specific_rc_params = yaml_config.get("specific_rc_params")
         specific_fig_params = yaml_config.get("specific_fig_params")
 

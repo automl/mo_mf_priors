@@ -56,6 +56,34 @@ HP_LABELS = {
     "initial_design_size": "init",
 }
 
+SIG_LABELS = {
+
+    "NepsPriMO": "PriMO",
+
+    "SMAC_ParEGO": "ParEGO",
+    "RandomSearch": "RS",
+    "NepsRW": "BO+RW",
+    "Nevergrad_EvolutionStrategy": "NSGA-II",
+
+    "NepsHyperbandRW": "HB+RW",
+
+    "NepsMOASHA": "MOASHA",
+
+    "NepsMOASHA_RS": "MOASHA+RS",
+
+    "NepsMOASHABO": "MOASHA-BO+RW",
+
+    "MOMFBO": "MOMF-BO",
+
+    "NepsPriorMOASHA": "MOASHA+Prior",
+
+    "NepsMOPriorband": "MO-PB",
+
+    "NepsPiBORW": "πBO+RW",
+
+    "RandomSearchWithPriors": "RS+Prior",
+}
+
 SO_LABELS = {
 
     "NepsHyperband": "HyperBand",
