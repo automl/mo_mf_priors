@@ -7,12 +7,12 @@ dependencies = [
   "pyarrow",
   "scikit-learn==1.3.2",
   "ConfigSpace>=1.0", # TODO: 0.6.1 needed for yahpo-lcbench. 1.2.1 works for PD1, MFH
-  "botorch",
   "hpoglue>=0.2.5",
   # "coco-experiment",
   # "cocopp",
   "xgboost>=1.7", # TODO: mfp-bench requires version >= 1.7, xgboost 1.5.2 for jahs and xgboost 1.3.1 for hpobench
   # "openml==0.10.2",
+  "matplotlib"
   ]
 authors = [
   { name = "Soham Basu", email = "soham.basu07@gmail.com" },
@@ -42,6 +42,8 @@ all = [
   "mf-prior-bench[pd1]>=1.10.0",
   "smac",
   "nevergrad",
+  "botorch",
+  "significance-analysis",
 ]
 
 # Install the following separately
@@ -49,6 +51,9 @@ all = [
 
 neps = ["neural-pipeline-search"]
 smac = ["smac"]
+nevergrad = ["nevergrad"]
+botorchmomf = ["botorch"]
+siganalysis = ["significance-analysis"]
 
 
 [project.urls]
