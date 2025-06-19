@@ -1,4 +1,5 @@
 optimizers:
+  - name: NepsPriMO
   - name: RandomSearchWithPriors
   - name: RandomSearch
   - name: SMAC_ParEGO
@@ -6,7 +7,8 @@ optimizers:
   - name: NepsHyperbandRW
   - name: Nevergrad_EvolutionStrategy
   - name: NepsMOASHA
-  - name: NepsPriMO
+  - name: NepsPiBORW
+  - name: NepsMOPriorband
 benchmarks:
   - name: MOMFPark
     objectives:
@@ -117,4 +119,4 @@ benchmarks:
       val_cross_entropy: bad
       time: bad
 num_seeds: 25
-num_iterations: 25
+num_iterations: 20
