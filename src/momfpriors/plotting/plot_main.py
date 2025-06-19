@@ -596,7 +596,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     fixed_pareto_seed: int | None = None,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
-    if which_benchmarks is not None and not isinstance(which_benchmarks, Iterable):
+    if which_benchmarks is not None and not isinstance(which_benchmarks, list):
         which_benchmarks = [which_benchmarks]
     if which_plots is None:
         which_plots = ["all"]
