@@ -40,19 +40,38 @@ license = { file = "LICENSE" }
 dev = ["ruff", "mypy", "pre-commit"]
 all = [
   "mf-prior-bench[pd1]>=1.10.0",
+  "neural-pipeline-search>=0.13.0",
   "smac",
   "nevergrad",
   "botorch",
+  "yahpo-gym",
   "significance-analysis",
 ]
 
-# Install the following separately
-# First install neps: Downgrades CS version, then smac: Upgrades CS version
+optimizers = [
+  "neural-pipeline-search>=0.13.0",
+  "smac",
+  "nevergrad",
+]
 
-neps = ["neural-pipeline-search"]
+benchmarks = [
+  "botorch",
+  "mf-prior-bench[pd1]>=1.10.0",
+  "yahpo-gym",
+]
+
+# Benchmarks
+botorch = ["botorch"]
+pd1 = ["mf-prior-bench[pd1]>=1.10.0"]
+yahpo = ["yahpo-gym"]
+
+
+# Optimizers
+neps = ["neural-pipeline-search>=0.13.0"]
 smac = ["smac"]
 nevergrad = ["nevergrad"]
-botorchmomf = ["botorch"]
+
+# Significance Analysis
 siganalysis = ["significance-analysis"]
 
 
