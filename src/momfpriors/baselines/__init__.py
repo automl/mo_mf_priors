@@ -11,6 +11,7 @@ from momfpriors.baselines.neps_optimizers import (
     NepsPiBORW,
     NepsPriMO,
     NepsPriorMOASHA,
+    NepsPriorRSMOASHA,
     NepsRW,
 )
 from momfpriors.baselines.nevergrad import yield_nevergrad_optimizers
@@ -32,6 +33,7 @@ OPTIMIZERS = {
     NepsPiBORW.name: NepsPiBORW,
     NepsPriMO.name: NepsPriMO,
     NepsMOASHA_RS.name: NepsMOASHA_RS,
+    NepsPriorRSMOASHA.name: NepsPriorRSMOASHA,
 }
 
 for opt in yield_nevergrad_optimizers():
