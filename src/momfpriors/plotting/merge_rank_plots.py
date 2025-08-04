@@ -493,6 +493,8 @@ def make_subplots(
     ax.set_xlim(1, total_budget)
     if ax_title is not None:
         ax.set_title(ax_title, fontsize=other_fig_params["title_fontsize"])
+    ax.tick_params(axis="both", which="major", labelsize=12, length=6, width=1)
+    ax.tick_params(axis="both", which="minor", labelsize=10, length=4, width=0.8)
 
 
 

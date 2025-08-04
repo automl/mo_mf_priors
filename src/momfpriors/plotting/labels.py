@@ -6,6 +6,7 @@ INTRO_LABELS = {
     "RandomSearchWithPriors": "RS+Prior",
     "NepsPriMO": "PriMO",
     "NepsMOASHA": "MOASHA",
+    "Nevergrad_EvolutionStrategy": "NSGA-II",
 }
 
 
