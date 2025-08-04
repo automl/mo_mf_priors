@@ -6,7 +6,7 @@ skip_priors:
 save_suffix: exp_naive_good-good
 skip_opt:
   - NepsMOASHABO
-  - NepsMOASHAPiBORW
+  # - NepsMOASHAPiBORW
   - NepsMOPriorband
   - NepsPiBORW
 which_labels: "1"
