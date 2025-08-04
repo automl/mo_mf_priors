@@ -32,7 +32,6 @@ nonprior_opts=(
 
 # Benchmarks with known objective types (used for both prior and non-prior)
 benchmarks=(
-  "MOMFPark"
   "pd1-cifar100-wide_resnet-2048"
   "pd1-imagenet-resnet-512"
   "pd1-lm1b-transformer-2048"
@@ -41,13 +40,15 @@ benchmarks=(
   "yahpo-lcbench-146212"
   "yahpo-lcbench-168330"
   "yahpo-lcbench-168868"
+  "MOMFPark"
 )
 
 # Prior benchmark settings (good-good, bad-good, bad-bad)
 prior_settings=(
-  "good:good"
-  "bad:good"
-  "bad:bad"
+  # "good:good"
+  # "bad:good"
+  # "bad:bad"
+  "good:bad"
 )
 
 # === Compute total jobs
