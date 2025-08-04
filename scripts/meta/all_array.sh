@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-161%20   # (4 prior opts * 3 priors + 6 non-prior opts) * 9 benchmarks = 162 total combinations
+#SBATCH --array=0-89%20   # (4 prior opts * 1 priors + 6 non-prior opts) * 9 benchmarks = 90 total combinations
 #SBATCH --time=2-00:00:00
 
 echo "Workingdir: $PWD"
