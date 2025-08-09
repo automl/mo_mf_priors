@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-127%10   # (3 prior opts * 4 priors * 8 benchmarks) = 96 total combinations
+#SBATCH --array=0-95%10   # (3 prior opts * 4 priors * 8 benchmarks) = 96 total combinations
 
 echo "Workingdir: $PWD";
 echo "Started at $(date)";
