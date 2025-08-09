@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-89%20   # (4 prior opts * 1 priors + 6 non-prior opts) * 9 benchmarks = 90 total combinations
+#SBATCH --array=0-143%10   # (3 prior opts * 4 priors + 6 non-prior opts) * 8 benchmarks = 144 total combinations
 #SBATCH --time=2-00:00:00
 
 echo "Workingdir: $PWD"
@@ -16,7 +16,6 @@ start=$(date +%s)
 
 # Optimizers
 prior_opts=(
-  "RandomSearchWithPriors"
   "NepsPriMO"
   "NepsPiBORW"
   "NepsMOPriorband"
@@ -40,14 +39,14 @@ benchmarks=(
   "yahpo-lcbench-146212"
   "yahpo-lcbench-168330"
   "yahpo-lcbench-168868"
-  "MOMFPark"
+  # "MOMFPark"
 )
 
 # Prior benchmark settings (good-good, bad-good, bad-bad)
 prior_settings=(
-  # "good:good"
-  # "bad:good"
-  # "bad:bad"
+  "good:good"
+  "bad:good"
+  "bad:bad"
   "good:bad"
 )
 

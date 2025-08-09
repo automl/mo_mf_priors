@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-8   # Still only 9 jobs
+#SBATCH --array=0-95%10   # (3 opts * 4 priors * 8 benchmarks) = 96 total combinations
 #SBATCH --time=2-00:00:00
 
 echo "Workingdir: $PWD"
@@ -22,14 +22,12 @@ with_priors=(
 
 without_priors=(
     "NepsMOASHA_RS"
-    # "NepsMOASHABO"
-    # "NepsRW"
-    # "NepsPiBORW"
+    "NepsMOASHABO"
+    "NepsNoInitPriMO"
 )
 
 # === Benchmarks with keys
 benchmarks=(
-    "MOMFPark value1 value2"
     "pd1-cifar100-wide_resnet-2048 valid_error_rate train_cost"
     "pd1-imagenet-resnet-512 valid_error_rate train_cost"
     "pd1-lm1b-transformer-2048 valid_error_rate train_cost"
@@ -38,9 +36,14 @@ benchmarks=(
     "yahpo-lcbench-146212 val_cross_entropy time"
     "yahpo-lcbench-168330 val_cross_entropy time"
     "yahpo-lcbench-168868 val_cross_entropy time"
+    # "MOMFPark value1 value2"
 )
 
-priors=("good:good" "bad:good" "bad:bad")
+priors=(
+    "good:good"
+    "bad:good"
+    "bad:bad"
+    "good:bad")
 
 # === Enumerate all configs
 job_list=()

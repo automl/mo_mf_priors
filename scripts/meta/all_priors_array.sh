@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-26%20   # 27 total combinations
+#SBATCH --array=0-127%10   # (3 prior opts * 4 priors * 8 benchmarks) = 96 total combinations
 
 echo "Workingdir: $PWD";
 echo "Started at $(date)";
@@ -20,15 +20,12 @@ if [[ ! -f "${config_dir}/.generated" ]]; then
     echo "Generating YAML configs in Bash..."
 
     optimizers=(
-        # "RandomSearchWithPriors"
-        # "NepsMOPriorband"
-        # "NepsPriorMOASHA"
-        # "NepsPiBORW"
-        "NepsPriMO"
+        "RandomSearchWithPriors"
+        "NepsPriorMOASHA"
+        "NepsPriorRSMOASHA"
     )
 
     benchmarks=(
-        "MOMFPark value1 value2"
         "pd1-cifar100-wide_resnet-2048 valid_error_rate train_cost"
         "pd1-imagenet-resnet-512 valid_error_rate train_cost"
         "pd1-lm1b-transformer-2048 valid_error_rate train_cost"
@@ -37,9 +34,15 @@ if [[ ! -f "${config_dir}/.generated" ]]; then
         "yahpo-lcbench-146212 val_cross_entropy time"
         "yahpo-lcbench-168330 val_cross_entropy time"
         "yahpo-lcbench-168868 val_cross_entropy time"
+        # "MOMFPark value1 value2"
     )
 
-    priors=("good good" "bad good" "bad bad")
+    priors=(
+        "good good"
+        "bad good"
+        "bad bad"
+        "good bad"
+    )
 
     config_id=0
 
