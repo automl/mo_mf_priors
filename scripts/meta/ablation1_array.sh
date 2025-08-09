@@ -85,14 +85,14 @@ benchmarks:
       $obj1: $val1
       $obj2: $val2
 num_seeds: 25
-num_iterations: 25
+num_iterations: 20
 EOF
 
 echo "Generated config:"
 cat "$yaml_file"
 
 # === Run experiment
-python3 -m momfpriors.run -y "$yaml_file" -e "ablation1_25"
+python3 -m momfpriors.run -y "$yaml_file" -e "ablation1_20"
 
 end=$(date +%s)
 runtime=$((end - start))

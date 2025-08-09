@@ -62,7 +62,7 @@ if [[ ! -f "${config_dir}/.generated" ]]; then
                     echo "      $obj1: $val1"
                     echo "      $obj2: $val2"
                     echo "num_seeds: 25"
-                    echo "num_iterations: 25"
+                    echo "num_iterations: 20"
                 } > "$yaml_file"
 
                 ((config_id++))
@@ -89,7 +89,7 @@ cat "$yaml_file"
 
 start=$(date +%s)
 
-python3 -m momfpriors.run -y "$yaml_file" -e "all_priors_25_2"
+python3 -m momfpriors.run -y "$yaml_file" -e "all_priors_20"
 
 end=$(date +%s)
 runtime=$((end - start))
