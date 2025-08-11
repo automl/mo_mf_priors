@@ -238,6 +238,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
 def agg_data(
     exp_dir: Path,
     skip_opt: list[str] | None = None,
+    skip_bench: list[str] | None = None,
 ) -> tuple[
     Mapping[str, Mapping[tuple[str, str], list[pd.DataFrame]]],
     int,
@@ -250,6 +251,10 @@ def agg_data(
         (f.name.split("benchmark=")[-1].split(".")[0])
         for f in exp_dir.iterdir() if f.is_dir() and "benchmark=" in f.name]
     benchmarks_in_dir = list(set(benchmarks_in_dir))
+    if skip_bench:
+        benchmarks_in_dir = [
+            bench for bench in benchmarks_in_dir if bench not in skip_bench
+        ]
     benchmarks_in_dir.sort()
     logger.info(f"Found benchmarks: {benchmarks_in_dir}")
 
@@ -435,6 +440,7 @@ def make_subplots(
     *,
     cut_off_iteration: int | None = None,
     skip_opt: list[str] | None = None,
+    skip_bench: list[str] | None = None,
     priors_to_avg: list[str] | None = None,
     skip_non_avg: bool = False,
     skip_priors: bool = False,
@@ -443,7 +449,7 @@ def make_subplots(
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     xylabelsize = other_fig_params["stitched_xylabel_fontsize"]
-    benchmarks_dict, total_budget = agg_data(exp_dir, skip_opt=skip_opt)
+    benchmarks_dict, total_budget = agg_data(exp_dir, skip_opt=skip_opt, skip_bench=skip_bench)
     if cut_off_iteration:
         total_budget = cut_off_iteration
 
@@ -611,6 +617,7 @@ if __name__ == "__main__":
             yaml_config = yaml.safe_load(f)
         exp_dir = yaml_config.get("exp_dir")
         skip_opt = yaml_config.get("skip_opt")
+        skip_bench = yaml_config.get("skip_bench")
         priors_to_avg = yaml_config.get("priors_to_avg")
         skip_non_avg = yaml_config.get("skip_non_avg", False)
         skip_priors = yaml_config.get("skip_priors")
@@ -644,6 +651,7 @@ if __name__ == "__main__":
             ax=axs_ov_rank[i],
             cut_off_iteration=args.cut_off_iteration,
             skip_opt=skip_opt,
+            skip_bench=skip_bench,
             priors_to_avg=priors_to_avg,
             skip_non_avg=skip_non_avg,
             skip_priors=skip_priors,

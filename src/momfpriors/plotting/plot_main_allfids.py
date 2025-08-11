@@ -23,6 +23,7 @@ from momfpriors.plotting.plot_styles import (
 from momfpriors.plotting.plot_utils import (
     avg_seed_dfs_for_ranking,
     change_opt_names,
+    edit_bench_labels,
     edit_legend_labels,
     get_style,
     hv_low_cutoffs,
@@ -616,9 +617,11 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 avg_prior_label=avg_prior_label,
             )
 
+            bench_labels = edit_bench_labels(benchmark)
+
             axs_hv[i].set_xticks(XTICKS[(1, total_budget)])
             axs_hv[i].grid(visible=True)
-            axs_hv[i].set_title(benchmark)
+            axs_hv[i].set_title(bench_labels)
             axs_hv[i].set_xlim(1, total_budget)
             if hv_cut_off:
                 axs_hv[i].set_ylim(hv_low_cutoffs[benchmark])
@@ -627,7 +630,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
             axs_pareto[i].set_xlabel(conf_tuple[0][0], fontsize=xylabel_fontsize)
             axs_pareto[i].set_ylabel(conf_tuple[0][1], fontsize=xylabel_fontsize)
             axs_pareto[i].grid(visible=True)
-            axs_pareto[i].set_title(benchmark)
+            axs_pareto[i].set_title(bench_labels)
 
             for _seed, rank_df in seed_dict_per_bench.items():
                 if _seed not in means_dict:
@@ -644,7 +647,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 budget=total_budget,
             )
             axs_rank[i].set_xticks(XTICKS[(1, total_budget)])
-            axs_rank[i].set_title(benchmark)
+            axs_rank[i].set_title(bench_labels)
             axs_rank[i].grid(visible=True)
             axs_rank[i].set_xlim(1, total_budget)
 

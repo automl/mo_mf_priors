@@ -28,6 +28,18 @@ map_labels = {
     "SO": SO_LABELS,
 }
 
+bench_alts = {
+    "pd1-cifar100-wide_resnet-2048": "pd1-cifar100",
+    "pd1-imagenet-resnet-512": "pd1-imagenet",
+    "pd1-lm1b-transformer-2048": "pd1-lm1b",
+    "pd1-translate_wmt-xformer_translate-64": "pd1-translate_wmt",
+    "yahpo-lcbench-126026": "lcbench-126026",
+    "yahpo-lcbench-146212": "lcbench-146212",
+    "yahpo-lcbench-168330": "lcbench-168330",
+    "yahpo-lcbench-168868": "lcbench-168868",
+
+}
+
 
 def dynamic_reference_point(
     loss_vals: pd.Series | list[Mapping[str, float]]
@@ -101,6 +113,13 @@ def change_opt_names(optimizer: str) -> str:
     if optimizer == "NepsMOASHAPiBORW":
         optimizer = "NepsPriMO"
     return optimizer
+
+
+def edit_bench_labels(
+    name: str,
+) -> str:
+    """Function to edit the benchmark names."""
+    return bench_alts.get(name, name)
 
 
 def edit_legend_labels(  # noqa: C901

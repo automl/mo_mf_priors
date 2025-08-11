@@ -25,6 +25,7 @@ from momfpriors.plotting.plot_styles import (
 from momfpriors.plotting.plot_utils import (
     avg_seed_dfs_for_ranking,
     change_opt_names,
+    edit_bench_labels,
     edit_legend_labels,
     fid_perc_momfbo,
     get_style,
@@ -366,9 +367,10 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
     return rank_means_dict
 
 
-def agg_data(
+def agg_data(  # noqa: C901
     exp_dir: Path,
     skip_opt: list[str] | None = None,
+    skip_bench: list[str] | None = None,
     which_benchmarks: list[str] | None = None,
 ) -> tuple[
     Mapping[str, Mapping[tuple[str, str], list[pd.DataFrame]]],
@@ -382,6 +384,10 @@ def agg_data(
         (f.name.split("benchmark=")[-1].split(".")[0])
         for f in exp_dir.iterdir() if f.is_dir() and "benchmark=" in f.name]
     benchmarks_in_dir = list(set(benchmarks_in_dir))
+    if skip_bench:
+        benchmarks_in_dir = [
+            bench for bench in benchmarks_in_dir if bench not in skip_bench
+        ]
     benchmarks_in_dir.sort()
 
     with (exp_dir / "exp.yaml").open("r") as f:
@@ -579,6 +585,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     no_save: bool = False,
     save_suffix: str = "",
     skip_opt: list[str] | None = None,
+    skip_bench: list[str] | None = None,
     which_benchmarks: list[str] | None = None,
     priors_to_avg: list[str] | None = None,
     skip_non_avg: bool = False,
@@ -594,6 +601,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     prior_annotations: str | None = None,
     plot_true_pareto: bool = False,
     fixed_pareto_seed: int | None = None,
+    figsize: tuple[float, float] | None = None,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     if which_benchmarks is not None and not isinstance(which_benchmarks, list):
@@ -602,10 +610,11 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
         which_plots = ["all"]
     if which_plots is None:
         which_plots = ["hv", "pareto", "rank", "ov_rank"]
-    fig_size = other_fig_params["fig_size"]
+    fig_size = figsize or other_fig_params["fig_size"]
     benchmarks_dict, total_budget = agg_data(
         exp_dir,
         skip_opt=skip_opt,
+        skip_bench=skip_bench,
         which_benchmarks=which_benchmarks,
     )
     if cut_off_iteration:
@@ -708,9 +717,11 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 fixed_pareto_seed=fixed_pareto_seed,
             )
 
+            bench_label = edit_bench_labels(benchmark)
+
             axs_hv[i].set_xticks(XTICKS[(1, total_budget)])
             axs_hv[i].grid(visible=True)
-            axs_hv[i].set_title(benchmark)
+            axs_hv[i].set_title(bench_label)
             axs_hv[i].set_xlim(1, total_budget)
             if hv_cut_off:
                 axs_hv[i].set_ylim(hv_low_cutoffs[benchmark])
@@ -719,7 +730,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
             axs_pareto[i].set_xlabel(conf_tuple[0][0], fontsize=xylabel_fontsize)
             axs_pareto[i].set_ylabel(conf_tuple[0][1], fontsize=xylabel_fontsize)
             axs_pareto[i].grid(visible=True)
-            axs_pareto[i].set_title(benchmark)
+            axs_pareto[i].set_title(bench_label)
 
             for _seed, rank_df in seed_dict_per_bench.items():
                 if _seed not in means_dict:
@@ -736,7 +747,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 budget=total_budget,
             )
             axs_rank[i].set_xticks(XTICKS[(1, total_budget)])
-            axs_rank[i].set_title(benchmark)
+            axs_rank[i].set_title(bench_label)
             axs_rank[i].grid(visible=True)
             axs_rank[i].set_xlim(1, total_budget)
 
@@ -987,6 +998,13 @@ if __name__ == "__main__":
         help="Skip the given optimizers."
     )
     parser.add_argument(
+        "--skip_bench", "-skipb",
+        nargs="+",
+        type=str,
+        default=None,
+        help="Skip the given benchmarks."
+    )
+    parser.add_argument(
         "--which_benchmarks", "-bench",
         nargs="+",
         type=str,
@@ -1106,6 +1124,14 @@ if __name__ == "__main__":
         help="fixed seed for the Pareto front. "
             "If not provided, the Pareto front will be aggregated over all seeds."
     )
+    parser.add_argument(
+        "--figsize", "-figsize",
+        nargs=2,
+        type=float,
+        default=None,
+        help="Figure size for the plots. "
+            "If not provided, default figure size will be used."
+    )
     args = parser.parse_args()
 
     if args.from_yaml:
@@ -1117,6 +1143,7 @@ if __name__ == "__main__":
         args.no_save = yaml_config.get("no_save", args.no_save)
         args.save_suffix = yaml_config.get("save_suffix", args.save_suffix)
         args.skip_opt = yaml_config.get("skip_opt", args.skip_opt)
+        args.skip_bench = yaml_config.get("skip_bench", args.skip_bench)
         args.which_benchmarks = yaml_config.get("which_benchmarks", args.which_benchmarks)
         args.priors_to_avg = yaml_config.get("priors_to_avg", args.priors_to_avg)
         args.skip_non_avg = yaml_config.get("skip_non_avg", args.skip_non_avg)
@@ -1133,6 +1160,7 @@ if __name__ == "__main__":
         args.prior_annotations = yaml_config.get("prior_annotations", args.prior_annotations)
         args.plot_true_pareto = yaml_config.get("plot_true_pareto", args.plot_true_pareto)
         args.fixed_pareto_seed = yaml_config.get("fixed_pareto_seed", args.fixed_pareto_seed)
+        args.figsize = yaml_config.get("figsize", args.figsize)
 
     if args.specific_rc_params:
         for param in args.specific_rc_params:
@@ -1167,6 +1195,7 @@ if __name__ == "__main__":
         no_save=args.no_save,
         save_suffix=args.save_suffix,
         skip_opt=args.skip_opt,
+        skip_bench=args.skip_bench,
         which_benchmarks=args.which_benchmarks,
         priors_to_avg=args.priors_to_avg,
         skip_non_avg=args.skip_non_avg,
@@ -1182,4 +1211,5 @@ if __name__ == "__main__":
         prior_annotations=args.prior_annotations,
         plot_true_pareto=args.plot_true_pareto,
         fixed_pareto_seed=args.fixed_pareto_seed,
+        figsize=args.figsize,
     )
