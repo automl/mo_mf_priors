@@ -471,7 +471,7 @@ class NepsMOPriorband(NepsOptimizer):
             prior_centers=prior_centers,
             prior_confidences=prior_confidences,
             incumbent_type=kwargs.get("incumbent_type", "scalarized"),
-            base=kwargs.get("base", "asha"),
+            base="hyperband",
             eta=eta,
         )
 
