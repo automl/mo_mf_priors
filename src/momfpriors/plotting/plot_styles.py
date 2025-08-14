@@ -43,6 +43,10 @@ COLORS_MAIN = {
     "NepsPriorMOASHA": "darkgreen",
     "NepsPriorMOASHA_w_continuations": "darkgreen",
 
+    # NepsPriorRSMOASHA
+    "NepsPriorRSMOASHA": "darkblue",
+    "NepsPriorRSMOASHA_w_continuations": "darkblue",
+
     # NepsMOPriorband
     "NepsMOPriorband": "cornflowerblue",
     "NepsMOPriorband_w_continuations": "cornflowerblue",
@@ -56,6 +60,10 @@ COLORS_MAIN = {
 
     # RandomSearchWithPriors
     "RandomSearchWithPriors": "darkorange",
+
+    # NepsNoInitPriMO
+    "NepsNoInitPriMO": "lightseagreen",
+    "NepsNoInitPriMO_w_continuations": "lightseagreen",
 }
 
 
@@ -148,7 +156,7 @@ other_fig_params = {
         1: (1, 1),
         2: (1, 2),
         3: (1, 3),
-        4: (2, 2),
+        4: (1, 4),
         5: (2, 3),
         6: (2, 3),
         8: (2, 4),
@@ -224,8 +232,8 @@ other_fig_params = {
         3: 3,
         4: 4,
         5: 5,
-        6: 5,
-        7: 5,
+        6: 6,
+        7: 7,
         8: 5,
         9: 5,
         10: 5,

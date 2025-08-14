@@ -122,7 +122,7 @@ def edit_bench_labels(
     return bench_alts.get(name, name)
 
 
-def edit_legend_labels(  # noqa: C901
+def edit_legend_labels(  # noqa: C901, PLR0912
     labels: list[str],
     which_labels: int | str = "1",
     prior_annotations: str | None = "default",
@@ -166,6 +166,8 @@ def edit_legend_labels(  # noqa: C901
             _label = f"{_label} ({hps})"
         elif prior_annot:
             prior_annot = prior_annotations if prior_annotations != "default" else prior_annot
+            if prior_annot == "good-good":
+                prior_annot = "all-good"
             _label = _label if prior_annot is None else f"{_label} ({prior_annot})"
         new_labels.append(_label)
     return new_labels

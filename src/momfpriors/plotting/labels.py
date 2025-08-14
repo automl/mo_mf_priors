@@ -37,20 +37,35 @@ LABELS_1 = {
     "NepsPiBORW": "πBO+RW",
 
     "RandomSearchWithPriors": "RS+Prior",
+
+    "NepsPriorRSMOASHA": "MOASHA+Prior(50%)",
 }
+
+# ABLATION_LABELS = {
+
+#     "NepsRW": "Model",
+
+#     "NepsMOASHA_RS": "MOMF Initial Design + RS",
+
+#     "NepsPriMO": "MOMF initial design + Priors + Model",
+
+#     "NepsMOASHABO": "MOMF initial design + Model",
+
+#     "NepsPiBORW": "Priors + Model",
+# }
 
 
 ABLATION_LABELS = {
 
-    "NepsRW": "Model",
+    "NepsNoInitPriMO": "PriMO w/o initial design",
 
-    "NepsMOASHA_RS": "MOMF Initial Design + RS",
+    "NepsMOASHA_RS": "PriMO w/o Priors and BO",
 
-    "NepsPriMO": "MOMF initial design + Priors + Model",
+    "NepsPriMO": "PriMO",
 
-    "NepsMOASHABO": "MOMF initial design + Model",
+    "NepsMOASHABO": "PriMO w/o Priors",
 
-    "NepsPiBORW": "Priors + Model",
+    "NepsPiBORW": "PriMO without ϵ-BO",
 }
 
 HP_LABELS = {
