@@ -1,0 +1,17 @@
+yaml_files:
+  - configs/paper_configs/exp/ablation_algos_overall.yaml
+  - configs/paper_configs/exp/ablation_algos_all_good.yaml
+  - configs/paper_configs/exp/ablation_algos_mixed.yaml
+  - configs/paper_configs/exp/ablation_algos_all_bad.yaml
+output_dir: /home/soham/Master_Thesis/ICLR/plots/exp/
+save_suffix: ablation_algos_all_ranks
+file_type: pdf
+figsize:
+  - 24
+  - 6
+sub_labels:
+  - overall
+  - all-good
+  - mixed
+  - all-bad
+remove_prior_annots: true
