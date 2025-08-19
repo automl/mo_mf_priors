@@ -997,10 +997,10 @@ class NepsPriorRSMOASHA(NepsOptimizer):
 
 
 # Ablation: PriMO with 1/eta prior sampling in the initial design.
-class NepsEtaPriorsPriMO(NepsOptimizer):
+class NepsEtaPriorPriMO(NepsOptimizer):
     """PriMO with 1/eta prior sampling in the initial design."""
 
-    name = "NepsEtaPriorsPriMO"
+    name = "NepsEtaPriorPriMO"
 
     support = Problem.Support(
         fidelities=("single",),
@@ -1036,10 +1036,10 @@ class NepsEtaPriorsPriMO(NepsOptimizer):
         _fid = None
         match problem.fidelities:
             case None:
-                raise ValueError("NepsEtaPriorsPriMO requires a fidelity.")
+                raise ValueError("NepsEtaPriorPriMO requires a fidelity.")
             case Mapping():
                 raise NotImplementedError(
-                    "Many-fidelity not yet implemented for NepsEtaPriorsPriMO."
+                    "Many-fidelity not yet implemented for NepsEtaPriorPriMO."
                 )
             case (fid_name, fidelity):
                 _fid = (fid_name, fidelity)

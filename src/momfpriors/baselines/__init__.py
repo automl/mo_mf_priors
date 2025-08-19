@@ -5,7 +5,7 @@ from momfpriors.baselines.modehb import MO_DEHB
 from momfpriors.baselines.momfbo import MOMFBO_Optimizer
 from momfpriors.baselines.neps_optimizers import (
     NepsEtaPriorMFPriMO,
-    NepsEtaPriorsPriMO,
+    NepsEtaPriorPriMO,
     NepsHyperbandRW,
     NepsInitPiBORW,
     NepsMFPriMO,
@@ -44,7 +44,7 @@ OPTIMIZERS = {
     MO_DEHB.name: MO_DEHB,
     NepsInitPiBORW.name: NepsInitPiBORW,
     NepsEtaPriorMFPriMO.name: NepsEtaPriorMFPriMO,
-    NepsEtaPriorsPriMO.name: NepsEtaPriorsPriMO,
+    NepsEtaPriorPriMO.name: NepsEtaPriorPriMO,
     NepsMFPriMO.name: NepsMFPriMO,
 }
 
