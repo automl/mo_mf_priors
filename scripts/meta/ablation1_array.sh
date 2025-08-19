@@ -4,8 +4,8 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-47%10   # (1 opts * 4 priors + 2 opts) * 8 benchmarks = 48 total combinations
-#SBATCH --time=2-00:00:00
+#SBATCH --array=0-135%20   # (4 opts * 4 priors + 1 opts) * 8 benchmarks = 136 total combinations
+#SBATCH --time=4-00:00:00
 
 echo "Workingdir: $PWD"
 echo "Started at $(date)"
@@ -18,11 +18,15 @@ start=$(date +%s)
 # === Optimizers
 with_priors=(
     # "NepsPriMO"
-    "NepsNoInitPriMO"
+    # "NepsNoInitPriMO"
+    "NepsInitPiBORW"
+    "NepsEtaPriorPriMO"
+    "NepsMFPriMO"
+    "NepsEtaPriorMFPriMO"
 )
 
 without_priors=(
-    "NepsMOASHA_RS"
+    # "NepsMOASHA_RS"
     "NepsMOASHABO"
 )
 
