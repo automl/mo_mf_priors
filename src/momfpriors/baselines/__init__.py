@@ -15,6 +15,7 @@ from momfpriors.baselines.neps_optimizers import (
     NepsNoInitPriMO,
     NepsPiBORW,
     NepsPriMO,
+    NepsPriMO_Init10,
     NepsPriorMOASHA,
     NepsPriorRSMOASHA,
     NepsRW,
@@ -44,6 +45,7 @@ OPTIMIZERS = {
     NepsEtaPriorMFPriMO.name: NepsEtaPriorMFPriMO,
     NepsEtaPriorPriMO.name: NepsEtaPriorPriMO,
     NepsMFPriMO.name: NepsMFPriMO,
+    NepsPriMO_Init10.name: NepsPriMO_Init10,
 }
 
 for opt in yield_nevergrad_optimizers():
