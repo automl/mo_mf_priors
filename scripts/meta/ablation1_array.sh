@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-39%20   # (1 opts * 4 priors + 1 opts) * 8 benchmarks = 40 total combinations
+#SBATCH --array=0-31%20   # (1 opts * 4 priors + 0 opts) * 8 benchmarks = 32 total combinations
 #SBATCH --time=4-00:00:00
 
 echo "Workingdir: $PWD"
@@ -21,14 +21,14 @@ with_priors=(
     # "NepsNoInitPriMO"
     # "NepsInitPiBORW"
     # "NepsEtaPriorPriMO"
-    # "NepsMFPriMO"
+    "NepsMFPriMO"
     # "NepsEtaPriorMFPriMO"
-    "NepsPriMO_Init10"
+    # "NepsPriMO_Init10"
 )
 
 without_priors=(
     # "NepsMOASHA_RS"
-    "NepsMOASHABO"
+    # "NepsMOASHABO"
 )
 
 # === Benchmarks with keys
