@@ -1121,6 +1121,20 @@ class NepsMFPriMO(NepsOptimizer):
                 raise TypeError("Fidelity must be a tuple or a Mapping.")
         set_seed(seed)
 
+
+        prior_centers = {
+            obj: prior.values
+            for obj, prior in problem.priors[1].items()
+        }
+
+        prior_confidences = {
+            obj: dict.fromkeys(
+                prior.keys(),
+                0.75
+            )
+            for obj, prior in problem.priors[1].items()
+        }
+
         super().__init__(
             problem=problem,
             space=space,
@@ -1130,6 +1144,8 @@ class NepsMFPriMO(NepsOptimizer):
             fidelities=_fid,
             mo_selector=mo_selector,
             primo_initial_design_size=5,
+            primo_prior_centers=prior_centers,
+            primo_prior_confidences=prior_confidences,
         )
 
 
