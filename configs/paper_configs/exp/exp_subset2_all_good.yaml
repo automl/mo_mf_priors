@@ -4,7 +4,7 @@ skip_priors:
   - bad-good
   - bad-bad
   - good-bad
-save_suffix: subset2_all-good
+save_suffix: subset2_all_good
 skip_opt:
   - NepsMOASHA
   - NepsMOASHABO
@@ -14,11 +14,11 @@ skip_bench:
 which_labels: "1"
 which_plots:
   - hv
-  - pareto
 specific_fig_params:
   - xylabel_fontsize=20
   - ovrank_xsize=6
   - ovrank_ysize=4
+  - bbox_to_anchor=(0.5, -0.08)
 figsize:
   - 20
   - 10

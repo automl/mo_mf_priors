@@ -1,16 +1,16 @@
-exp_dir: ablation_algos_20
+exp_dir: ablation_init_20
 output_dir: /home/soham/Master_Thesis/plots/ICLR/exp/
-save_suffix: ablation_algos_all_bad
-skip_priors:
+save_suffix: ablation_init_overall
+avg_prior_label: overall
+priors_to_avg:
   - good-good
   - bad-good
+  - bad-bad
   - good-bad
-skip_opt:
-  - NepsEtaPriorPriMO
-  - NepsEtaPriorMFPriMO
+skip_non_avg: True
 skip_bench:
   - MOMFPark
-which_labels: ablation
+which_labels: ablation_init
 which_plots:
   - hv
 specific_fig_params:

@@ -17,7 +17,6 @@ skip_bench:
 which_labels: "1"
 which_plots:
   - hv
-  - pareto
 specific_fig_params:
   - xylabel_fontsize=20
   - ovrank_xsize=6

@@ -6,6 +6,9 @@ priors_to_avg:
   - bad-good
   - good-bad
 skip_non_avg: True
+skip_opt:
+  - NepsEtaPriorPriMO
+  - NepsEtaPriorMFPriMO
 skip_bench:
   - MOMFPark
 which_labels: ablation

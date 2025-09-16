@@ -4,7 +4,7 @@ skip_priors:
   - bad-good
   - bad-bad
   - good-bad
-save_suffix: subset1_all-good
+save_suffix: subset1_all_good
 skip_opt:
   - RandomSearchWithPriors
 skip_bench:
