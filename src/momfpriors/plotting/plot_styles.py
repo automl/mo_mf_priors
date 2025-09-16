@@ -64,6 +64,26 @@ COLORS_MAIN = {
     # NepsNoInitPriMO
     "NepsNoInitPriMO": "lightseagreen",
     "NepsNoInitPriMO_w_continuations": "lightseagreen",
+
+    # NepsPriMO_Init10
+    "NepsPriMO_Init10": "darkslateblue",
+    "NepsPriMO_Init10_w_continuations": "darkslateblue",
+
+    # NepsInitPiBORW
+    "NepsInitPiBORW": "olive",
+    "NepsInitPiBORW_w_continuations": "olive",
+
+    # NepsEtaPriorPriMO
+    "NepsEtaPriorPriMO": "darkgreen",
+    "NepsEtaPriorPriMO_w_continuations": "darkgreen",
+
+    # NepsMFPriMO
+    "NepsMFPriMO": "darkviolet",
+    "NepsMFPriMO_w_continuations": "darkviolet",
+
+    # NepsEtaPriorMFPriMO
+    "NepsEtaPriorMFPriMO": "violet",
+    "NepsEtaPriorMFPriMO_w_continuations": "violet",
 }
 
 

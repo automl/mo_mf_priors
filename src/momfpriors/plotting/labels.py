@@ -65,7 +65,20 @@ ABLATION_LABELS = {
 
     "NepsMOASHABO": "PriMO w/o Priors",
 
-    "NepsPiBORW": "PriMO without ϵ-BO",
+    "NepsInitPiBORW": "PriMO w/o ϵ-BO",
+
+    "NepsEtaPriorPriMO": "PriMO + 1/η Priors in initial design",
+
+    "NepsMFPriMO": "MO-ASHA + PriMO Sampler",
+
+    "NepsEtaPriorMFPriMO": "MO-ASHA + 1/η Priors + PriMO Sampler",
+}
+
+ABLATION_INIT_LABELS = {
+
+    "NepsPriMO": "init=5",
+    "NepsNoInitPriMO": "init=0",
+    "NepsPriMO_Init10": "init=10",
 }
 
 HP_LABELS = {

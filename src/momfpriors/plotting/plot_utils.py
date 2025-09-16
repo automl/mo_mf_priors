@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from momfpriors.plotting.labels import (
+    ABLATION_INIT_LABELS,
     ABLATION_LABELS,
     HP_LABELS,
     INTRO_LABELS,
@@ -24,6 +25,7 @@ map_labels = {
     "1": LABELS_1,
     "intro": INTRO_LABELS,
     "ablation": ABLATION_LABELS,
+    "ablation_init": ABLATION_INIT_LABELS,
     "sig": SIG_LABELS,
     "SO": SO_LABELS,
 }
@@ -168,6 +170,8 @@ def edit_legend_labels(  # noqa: C901, PLR0912
             prior_annot = prior_annotations if prior_annotations != "default" else prior_annot
             if prior_annot == "good-good":
                 prior_annot = "all-good"
+            elif prior_annot == "bad-bad":
+                prior_annot = "all-bad"
             _label = _label if prior_annot is None else f"{_label} ({prior_annot})"
         new_labels.append(_label)
     return new_labels
