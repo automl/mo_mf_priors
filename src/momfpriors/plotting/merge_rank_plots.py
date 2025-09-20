@@ -434,7 +434,7 @@ def gen_plots_per_bench(  # noqa: C901
 
 
 
-def make_subplots(
+def make_subplots(  # noqa: PLR0913
     exp_dir: Path,
     ax: plt.Axes,
     *,
@@ -446,6 +446,7 @@ def make_subplots(
     skip_priors: bool = False,
     avg_prior_label: str = "all",
     ax_title: str | None = None,
+    hide_ylabel: bool = False,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     xylabelsize = other_fig_params["stitched_xylabel_fontsize"]
@@ -486,6 +487,10 @@ def make_subplots(
 
             bench_dict = {}
 
+    for side in ["left", "bottom"]:
+        ax[i].spines[side].set_linewidth(1.0)
+        ax[i].spines[side].set_color("black")
+
     # Plotting average ranks over all benchmarks and seeds
     plot_average_rank(
         ax=ax,
@@ -494,14 +499,14 @@ def make_subplots(
     )
     ax.set_xlabel("Full Evaluations", fontsize=xylabelsize)
     ax.set_xticks(XTICKS[(1, total_budget)])
-    ax.set_ylabel("Relative Rank", fontsize=xylabelsize)
+    if not hide_ylabel:
+        ax.set_ylabel("Relative Rank", fontsize=xylabelsize)
     ax.grid(visible=True)
     ax.set_xlim(1, total_budget)
     if ax_title is not None:
         ax.set_title(ax_title, fontsize=other_fig_params["title_fontsize"])
     ax.tick_params(axis="both", which="major", labelsize=12, length=6, width=1)
     ax.tick_params(axis="both", which="minor", labelsize=10, length=4, width=0.8)
-
 
 
 if __name__ == "__main__":
@@ -657,6 +662,7 @@ if __name__ == "__main__":
             skip_priors=skip_priors,
             avg_prior_label=avg_prior_label,
             ax_title=args.sub_labels[i] if args.sub_labels else None,
+            hide_ylabel=i!=0,
         )
 
         ov_rank_handles, ov_rank_labels = axs_ov_rank[i].get_legend_handles_labels()
