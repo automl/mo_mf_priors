@@ -118,6 +118,7 @@ SO_LABELS = {
     "NepsHyperband": "HyperBand",
     "NepsBO": "BO",
     "NepsPriorband": "Priorband",
+    "NepsPriorbandBO": "Priorband+BO",
     "NepsMFBO": "PriMO",
     "NepsPiBO": "πBO",
 }
