@@ -62,7 +62,6 @@ def plot_average_rank(
     ranks: dict,
     budget: int,
 ) -> None:
-    # breakpoint()
     """Plots the average rank of optimizers over iterations with standard error."""
     def _mean(_dfs: Iterable[pd.DataFrame]) -> pd.DataFrame:
             return pd.concat(_dfs).reset_index().groupby("index").mean()
@@ -106,7 +105,7 @@ def plot_average_rank(
         )
 
 
-def create_plots(  # noqa: PLR0915
+def create_plots(  # noqa: C901, PLR0912, PLR0915
     *,
     ax: plt.Axes,
     agg_data: Mapping[str, Mapping[str, Any]],
@@ -178,7 +177,10 @@ def create_plots(  # noqa: PLR0915
 
             # For MF Opts that support continuations
             if continuations:
-                seed_cont_dict[seed] = pd.Series(perf_vals, index=budget_list)
+                seed_cont_dict[seed] = normalized_regret(
+                    benchmark,
+                    pd.Series(perf_vals, index=budget_list)
+                )
                 seed_incumbents = seed_cont_dict[seed].cummin()
                 instance_name = (
                     f"{opt}_w_continuations" +
@@ -188,13 +190,19 @@ def create_plots(  # noqa: PLR0915
 
             # For MF Opts that do not support continuations
             elif is_fid_opt:
-                seed_perf_dict[seed] = pd.Series(perf_vals, index=budget_list)
+                seed_perf_dict[seed] = normalized_regret(
+                    benchmark,
+                    pd.Series(perf_vals, index=budget_list)
+                )
                 seed_incumbents = seed_perf_dict[seed].cummin()
                 instance_name = instance
 
             # For Blackbox Optimizers
             else:
-                seed_perf_dict[seed] = pd.Series(perf_vals, index=budget_list)
+                seed_perf_dict[seed] = normalized_regret(
+                    benchmark,
+                    pd.Series(perf_vals, index=budget_list)
+                )
                 seed_incumbents = seed_perf_dict[seed].cummin()
                 instance_name = instance
 
