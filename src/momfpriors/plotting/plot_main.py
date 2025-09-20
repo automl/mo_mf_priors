@@ -25,6 +25,7 @@ from momfpriors.plotting.plot_styles import (
 from momfpriors.plotting.plot_utils import (
     avg_seed_dfs_for_ranking,
     change_opt_names,
+    edit_axis_labels,
     edit_bench_labels,
     edit_legend_labels,
     fid_perc_momfbo,
@@ -726,9 +727,11 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
             if hv_cut_off:
                 axs_hv[i].set_ylim(hv_low_cutoffs[benchmark])
 
+            pareto_xlabel = edit_axis_labels("x")
+            pareto_ylabel = edit_axis_labels("y")
 
-            axs_pareto[i].set_xlabel(conf_tuple[0][0], fontsize=xylabel_fontsize)
-            axs_pareto[i].set_ylabel(conf_tuple[0][1], fontsize=xylabel_fontsize)
+            axs_pareto[i].set_xlabel(pareto_xlabel, fontsize=xylabel_fontsize)
+            axs_pareto[i].set_ylabel(pareto_ylabel, fontsize=xylabel_fontsize)
             axs_pareto[i].grid(visible=True)
             axs_pareto[i].set_title(bench_label)
 
@@ -759,6 +762,16 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 axs_hv[i].set_ylabel("Hypervolume", fontsize=xylabel_fontsize)
                 axs_rank[i].set_ylabel("Relative Rank", fontsize=xylabel_fontsize)
                 ylabel_i_counter += ylabel_i_inc
+
+            for side in ["left", "bottom"]:
+                axs_hv[i].spines[side].set_linewidth(1.0)
+                axs_hv[i].spines[side].set_color("black")
+
+                axs_rank[i].spines[side].set_linewidth(1.0)
+                axs_rank[i].spines[side].set_color("black")
+
+                axs_pareto[i].spines[side].set_linewidth(1.0)
+                axs_pareto[i].spines[side].set_color("black")
 
 
             bench_dict = {}

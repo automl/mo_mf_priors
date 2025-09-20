@@ -124,6 +124,13 @@ def edit_bench_labels(
     return bench_alts.get(name, name)
 
 
+def edit_axis_labels(
+    x_or_y: str,
+) -> str:
+    """Function to edit the axis labels."""
+    return "Training Cost" if x_or_y == "x" else "Validation Error"
+
+
 def edit_legend_labels(  # noqa: C901, PLR0912
     labels: list[str],
     which_labels: int | str = "1",
@@ -208,6 +215,8 @@ def avg_seed_dfs_for_ranking(
 
 
 regret_bounds = {
+    "mfh3_good": (-3.8, 1000.0),
+    "mfh6_good": (-3.3, 1000.0),
     "pd1-cifar100-wide_resnet-2048": (0.0, 1.0),
     "pd1-imagenet-resnet-512": (0.0, 1.0),
     "pd1-lm1b-transformer-2048": (0.0, 1.0),
