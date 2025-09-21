@@ -60,6 +60,7 @@ def create_script(
     script_path: Path,
     root_dir: Path = DEFAULT_ROOT_DIR,
     cpus_total: int = 30,
+    memory: str = "30000M",
     num_workers: int = 1,
     exp_name: str = "neps_parallel",
     job_name: str = "neps_parallel_n=1",
@@ -93,6 +94,10 @@ def create_script(
     script.append(f"#SBATCH --time={time}")
     script.append(f"#SBATCH --output={root_dir}/logs/%x_%A_%a.out")
     script.append(f"#SBATCH --error={root_dir}/logs/%x_%A_%a.err")
+    if num_workers > 1:
+        script.append(f"#SBATCH --mem-per-cpu={memory}")
+    else:
+        script.append(f"#SBATCH --mem={memory}")
     if array:
         num_configs = len(list(generated_configs_dir.glob("*_config.yaml")))
         script.append(f"#SBATCH --array=0-{num_configs - 1}")
@@ -175,6 +180,12 @@ if __name__ == "__main__":
         default=30,
         help="Total number of CPUs available for a run."
         " This will be divided among the num_workers.",
+    )
+    parser.add_argument(
+        "--memory", "-m",
+        type=str,
+        default="30000M",
+        help="Total memory allocated for a single worker task.",
     )
     parser.add_argument(
         "--time", "-t",
@@ -282,6 +293,7 @@ if __name__ == "__main__":
                 script_path=args.script_path,
                 root_dir=args.root_dir,
                 cpus_total=config.get("cpus_total", args.cpus_total),
+                memory=config.get("memory", args.memory),
                 num_workers=num_workers,
                 exp_name=exp_name,
                 job_name=job_name,
