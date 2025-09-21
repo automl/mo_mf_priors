@@ -4,8 +4,8 @@
 #SBATCH --ntasks=8
 #SBATCH --cpus-per-task=3
 #SBATCH --time=3-00:00:00
-#SBATCH --output=/home/soham/Master_Thesis/code/mo_mf_priors/logs/%x_%A_%a.out
-#SBATCH --error=/home/soham/Master_Thesis/code/mo_mf_priors/logs/%x_%A_%a.err
+#SBATCH --output=logs/%x_%A_%a.out
+#SBATCH --error=logs/%x_%A_%a.err
 #SBATCH --mem-per-cpu=30000M
 #SBATCH --array=0-15
 
