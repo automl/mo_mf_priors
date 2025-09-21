@@ -414,7 +414,7 @@ def mfpbench_benchmarks(datadir: Path | None = None) -> Iterator[BenchmarkDescri
     """
     if datadir is None:
         datadir=Path(__file__).parent.parent.parent.parent.absolute() / "data"
-    yield from lcbench_surrogate(datadir)
+    # yield from lcbench_surrogate(datadir)
     yield from mfh()
     yield from jahs(datadir)
     yield from pd1(datadir)
