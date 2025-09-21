@@ -181,7 +181,7 @@ def perturb(  # noqa: C901, PLR0912, PLR0915
     Returns:
         Config: The perturbed configuration.
     """
-    from ConfigSpace import (
+    from ConfigSpace import (  # noqa: PLC0415
         CategoricalHyperparameter,
         Constant,
         NormalFloatHyperparameter,
@@ -338,7 +338,7 @@ def pipeline_space_to_cs(
     pipeline_space: Mapping[str, Any],
 )-> ConfigurationSpace:
     """Convert a Pipeline Space to ConfigSpace."""
-    from ConfigSpace import (
+    from ConfigSpace import (  # noqa: PLC0415
         CategoricalHyperparameter,
         ConfigurationSpace,
         Constant,
@@ -395,7 +395,7 @@ def pipeline_space_to_cs(
 class HiddenPrints:  # noqa: D101
     def __enter__(self):
         self._original_stdout = sys.stdout
-        from pathlib import Path
+        from pathlib import Path  # noqa: PLC0415
         sys.stdout = Path(os.devnull).open("w")
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -466,3 +466,15 @@ def _check_package_version(
             return installed_version > required_version
         case "<":
             return installed_version < required_version
+
+
+def set_seed(seed: int) -> None:
+    """Set the seed for the optimizer."""
+    import random  # noqa: PLC0415
+
+    import numpy as np  # noqa: PLC0415
+    import torch  # noqa: PLC0415
+
+    torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)  # noqa: NPY002

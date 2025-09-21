@@ -14,6 +14,7 @@ from neps.space.parsing import convert_configspace
 
 from momfpriors.constants import DEFAULT_RESULTS_DIR
 from momfpriors.optimizer import Abstract_AskTellOptimizer
+from momfpriors.utils import set_seed
 
 if TYPE_CHECKING:
     from hpoglue.fidelity import Fidelity
@@ -162,17 +163,6 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
             result=costs
         )
 
-
-def set_seed(seed: int) -> None:
-    """Set the seed for the optimizer."""
-    import random
-
-    import numpy as np
-    import torch
-
-    torch.manual_seed(seed)
-    random.seed(seed)
-    np.random.seed(seed)  # noqa: NPY002
 
 class NepsRW(NepsOptimizer):
     """Random Weighted Scalarization of objectives using Bayesian Optimization in Neps."""
