@@ -305,7 +305,7 @@ if __name__ == "__main__":
                 )
 
     args.exp_name = config.get("exp_name", args.exp_name)
-    args.exp_name += f"_n_workers={args.num_workers}"
+    args.exp_name += f"_n_workers_{args.num_workers}"
 
     run_exps(
         optimizer=_optimizers[0][0],
