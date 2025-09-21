@@ -92,8 +92,8 @@ def create_script(
     script.append(f"#SBATCH --ntasks={num_workers}")
     script.append(f"#SBATCH --cpus-per-task={cpus_per_task}")
     script.append(f"#SBATCH --time={time}")
-    script.append(f"#SBATCH --output={root_dir}/logs/%x_%A_%a.out")
-    script.append(f"#SBATCH --error={root_dir}/logs/%x_%A_%a.err")
+    script.append("#SBATCH --output=logs/%x_%A_%a.out")
+    script.append("#SBATCH --error=logs/%x_%A_%a.err")
     if num_workers > 1:
         script.append(f"#SBATCH --mem-per-cpu={memory}")
     else:
