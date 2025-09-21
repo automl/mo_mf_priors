@@ -58,7 +58,6 @@ def create_script(
     *,
     partition: str,
     script_path: Path,
-    root_dir: Path = DEFAULT_ROOT_DIR,
     cpus_total: int = 30,
     memory: str = "30000M",
     num_workers: int = 1,
@@ -108,7 +107,7 @@ def create_script(
     script.append(f"srun --exclusive {cmd}")
     script_content = "\n".join(script)
 
-    script_path = script_path / f"{job_name}.sh"
+    script_path = script_path / f"{job_name.replace('=', '_')}.sh"
     script_path.parent.mkdir(parents=True, exist_ok=True)
 
     with script_path.open("w") as f:
@@ -291,7 +290,6 @@ if __name__ == "__main__":
             create_script(
                 partition=config.get("partition", args.partition),
                 script_path=args.script_path,
-                root_dir=args.root_dir,
                 cpus_total=config.get("cpus_total", args.cpus_total),
                 memory=config.get("memory", args.memory),
                 num_workers=num_workers,
