@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-19%20   # (1 prior opts * 4 priors + 1 non-prior opts) * 4 benchmarks = 20 total combinations
+#SBATCH --array=0-14%20   # (1 prior opts * 4 priors + 1 non-prior opts) * 3 benchmarks = 15 total combinations
 #SBATCH --time=3-00:00:00
 
 echo "Workingdir: $PWD"
@@ -31,7 +31,7 @@ nonprior_opts=(
 
 # Benchmarks with known objective types (used for both prior and non-prior)
 benchmarks=(
-  "pd1-translate_wmt-xformer_translate-64"
+  # "pd1-translate_wmt-xformer_translate-64"
   "yahpo-lcbench-168330"
   "yahpo-lcbench-168868"
   "pd1-imagenet-resnet-512"
