@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --partition bosch_cpu-cascadelake
-#SBATCH --job-name all_array_20
+#SBATCH --job-name all_array_100
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-31%20   # (1 prior opts * 4 priors + 0 non-prior opts) * 8 benchmarks = 32 total combinations
-#SBATCH --time=2-00:00:00
+#SBATCH --array=0-39%20   # (1 prior opts * 4 priors + 1 non-prior opts) * 4 benchmarks = 20 total combinations
+#SBATCH --time=3-00:00:00
 
 echo "Workingdir: $PWD"
 echo "Started at $(date)"
@@ -16,9 +16,9 @@ start=$(date +%s)
 
 # Optimizers
 prior_opts=(
-  # "NepsPriMO"
+  "NepsPriMO"
   # "NepsPiBORW"
-  "NepsMOPriorband"
+  # "NepsMOPriorband"
 )
 nonprior_opts=(
   # "RandomSearch"
@@ -26,19 +26,19 @@ nonprior_opts=(
   # "NepsRW"
   # "NepsHyperbandRW"
   # "Nevergrad_EvolutionStrategy"
-  # "NepsMOASHA"
+  "NepsMOASHA"
 )
 
 # Benchmarks with known objective types (used for both prior and non-prior)
 benchmarks=(
-  "pd1-cifar100-wide_resnet-2048"
-  "pd1-imagenet-resnet-512"
-  "pd1-lm1b-transformer-2048"
   "pd1-translate_wmt-xformer_translate-64"
-  "yahpo-lcbench-126026"
-  "yahpo-lcbench-146212"
   "yahpo-lcbench-168330"
   "yahpo-lcbench-168868"
+  "pd1-imagenet-resnet-512"
+  # "pd1-cifar100-wide_resnet-2048"
+  # "pd1-lm1b-transformer-2048"
+  # "yahpo-lcbench-126026"
+  # "yahpo-lcbench-146212"
   # "MOMFPark"
 )
 
@@ -105,14 +105,14 @@ benchmarks:
       $key1: ${obj1}
       $key2: ${obj2}
 num_seeds: 25
-num_iterations: 20
+num_iterations: 100
 EOF
 
 echo "Generated config:"
 cat "$yaml_file"
 
 # === Run the experiment ===
-python3 -m momfpriors.run -y "$yaml_file" -e "all_20_evals"
+python3 -m momfpriors.run -y "$yaml_file" -e "all_100_evals"
 
 end=$(date +%s)
 runtime=$((end - start))
