@@ -59,7 +59,7 @@ def plot_average_rank(
     ax: plt.Axes,
     ranks: dict,
     budget: int,
-) -> None:
+) -> float:
     """Plots the average rank of optimizers over iterations with standard error."""
     def _mean(_dfs: Iterable[pd.DataFrame]) -> pd.DataFrame:
             return pd.concat(_dfs).reset_index().groupby("index").mean()
@@ -103,6 +103,8 @@ def plot_average_rank(
             color=color,
             edgecolor=None,
         )
+
+    return np.ceil(np.max(mean_ranks))
 
 
 def create_plots(  # noqa: C901, PLR0912, PLR0915
@@ -447,9 +449,11 @@ def make_subplots(  # noqa: PLR0913
     avg_prior_label: str = "all",
     ax_title: str | None = None,
     hide_ylabel: bool = False,
+    ylim: float | None = None,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     xylabelsize = other_fig_params["stitched_xylabel_fontsize"]
+    xytick_labelsize = other_fig_params["xytick_labelsize"]
     benchmarks_dict, total_budget = agg_data(exp_dir, skip_opt=skip_opt, skip_bench=skip_bench)
     if cut_off_iteration:
         total_budget = cut_off_iteration
@@ -488,25 +492,32 @@ def make_subplots(  # noqa: PLR0913
             bench_dict = {}
 
     for side in ["left", "bottom"]:
-        ax[i].spines[side].set_linewidth(1.0)
-        ax[i].spines[side].set_color("black")
+        ax.spines[side].set_linewidth(1.0)
+        ax.spines[side].set_color("black")
 
     # Plotting average ranks over all benchmarks and seeds
-    plot_average_rank(
+    max_avg_rank = plot_average_rank(
         ax=ax,
         ranks=means_dict,
         budget=total_budget,
     )
-    ax.set_xlabel("Full Evaluations", fontsize=xylabelsize)
+    ax.set_xlabel("Evaluations", fontsize=xylabelsize)
     ax.set_xticks(XTICKS[(1, total_budget)])
+    if ylim is not None:
+        ax.set_yticks(np.arange(1, ylim + 1, 1))
+    else:
+        ax.set_yticks(np.arange(1, max_avg_rank + 1, 1))
+    ax.tick_params(
+        axis="both",
+        which="major",
+        labelsize=xytick_labelsize,
+    )
     if not hide_ylabel:
         ax.set_ylabel("Relative Rank", fontsize=xylabelsize)
     ax.grid(visible=True)
     ax.set_xlim(1, total_budget)
     if ax_title is not None:
         ax.set_title(ax_title, fontsize=other_fig_params["title_fontsize"])
-    ax.tick_params(axis="both", which="major", labelsize=12, length=6, width=1)
-    ax.tick_params(axis="both", which="minor", labelsize=10, length=4, width=0.8)
 
 
 if __name__ == "__main__":
@@ -573,6 +584,12 @@ if __name__ == "__main__":
         default=False,
         help="If set, the prior annotations will be removed from the optimizer names in the plots."
     )
+    parser.add_argument(
+        "--ylim",
+        type=float,
+        default=None,
+        help="Y-axis limit for all the ranking plots."
+    )
     args = parser.parse_args()
 
     yaml_paths = []
@@ -592,6 +609,7 @@ if __name__ == "__main__":
         args.remove_prior_annots = yaml_config.get(
             "remove_prior_annots", args.remove_prior_annots
         )
+        args.ylim = yaml_config.get("ylim", args.ylim)
 
     num_plots = len(yaml_paths)
     if args.sub_labels is not None:
@@ -663,6 +681,7 @@ if __name__ == "__main__":
             avg_prior_label=avg_prior_label,
             ax_title=args.sub_labels[i] if args.sub_labels else None,
             hide_ylabel=i!=0,
+            ylim=args.ylim,
         )
 
         ov_rank_handles, ov_rank_labels = axs_ov_rank[i].get_legend_handles_labels()
