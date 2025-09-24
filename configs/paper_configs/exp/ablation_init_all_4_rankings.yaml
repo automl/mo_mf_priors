@@ -7,11 +7,12 @@ output_dir: /home/soham/Master_Thesis/ICLR/plots/exp/
 save_suffix: ablation_init_all_ranks
 file_type: pdf
 figsize:
-  - 24
-  - 6
+  - 16
+  - 4
 sub_labels:
-  - overall
-  - all-good
-  - mixed
-  - all-bad
+  - Overall
+  - All priors good
+  - Mixed priors
+  - All priors bad
 remove_prior_annots: true
+ylim: 3

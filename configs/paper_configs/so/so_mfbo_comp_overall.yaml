@@ -10,6 +10,8 @@ which_labels: SO
 file_type: pdf
 skip_benchmarks:
   - mfh6_good
+skip_opt:
+  - NepsPriorband
 which_plots:
   - perf
   - rank
