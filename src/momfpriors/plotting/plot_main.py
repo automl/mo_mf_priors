@@ -690,6 +690,8 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     axs_ov_rank: list[plt.Axes] = [axs_ov_rank]
 
     xylabel_fontsize = other_fig_params["xylabel_fontsize"]
+    ovrank_xylabelsize = other_fig_params["stitched_xylabel_fontsize"]
+    xytick_labelsize = other_fig_params["xytick_labelsize"]
     xlabel_i = other_fig_params["xlabel_start_i"][num_plots]
     ylabel_i_inc = other_fig_params["ylabel_i_inc"][num_plots]
     ylabel_i_counter = 0
@@ -721,18 +723,24 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
             bench_label = edit_bench_labels(benchmark)
 
             axs_hv[i].set_xticks(XTICKS[(1, total_budget)])
+            axs_hv[i].tick_params(
+                direction="out",
+                axis="both",
+                which="major",
+                labelsize=xytick_labelsize,
+            )
             axs_hv[i].grid(visible=True)
             axs_hv[i].set_title(bench_label)
             axs_hv[i].set_xlim(1, total_budget)
             if hv_cut_off:
                 axs_hv[i].set_ylim(hv_low_cutoffs[benchmark])
 
-            pareto_xlabel = edit_axis_labels("x")
-            pareto_ylabel = edit_axis_labels("y")
-
-            axs_pareto[i].set_xlabel(pareto_xlabel, fontsize=xylabel_fontsize)
-            axs_pareto[i].set_ylabel(pareto_ylabel, fontsize=xylabel_fontsize)
             axs_pareto[i].grid(visible=True)
+            axs_pareto[i].tick_params(
+                axis="both",
+                which="major",
+                labelsize=xytick_labelsize,
+            )
             axs_pareto[i].set_title(bench_label)
 
             for _seed, rank_df in seed_dict_per_bench.items():
@@ -754,23 +762,23 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
             axs_rank[i].grid(visible=True)
             axs_rank[i].set_xlim(1, total_budget)
 
+            pareto_xlabel = edit_axis_labels("x")
+            pareto_ylabel = edit_axis_labels("y")
+
             if i >= xlabel_i:
-                axs_hv[i].set_xlabel("Full Evaluations", fontsize=xylabel_fontsize)
-                axs_rank[i].set_xlabel("Full Evaluations", fontsize=xylabel_fontsize)
+                axs_hv[i].set_xlabel("Evaluations", fontsize=xylabel_fontsize)
+                axs_pareto[i].set_xlabel(pareto_xlabel, fontsize=xylabel_fontsize)
+                axs_rank[i].set_xlabel("Evaluations", fontsize=xylabel_fontsize)
 
             if i == ylabel_i_counter:
                 axs_hv[i].set_ylabel("Hypervolume", fontsize=xylabel_fontsize)
+                axs_pareto[i].set_ylabel(pareto_ylabel, fontsize=xylabel_fontsize)
                 axs_rank[i].set_ylabel("Relative Rank", fontsize=xylabel_fontsize)
                 ylabel_i_counter += ylabel_i_inc
 
             for side in ["left", "bottom"]:
-                axs_hv[i].spines[side].set_linewidth(1.0)
                 axs_hv[i].spines[side].set_color("black")
-
-                axs_rank[i].spines[side].set_linewidth(1.0)
                 axs_rank[i].spines[side].set_color("black")
-
-                axs_pareto[i].spines[side].set_linewidth(1.0)
                 axs_pareto[i].spines[side].set_color("black")
 
 
@@ -782,9 +790,16 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
         ranks=means_dict,
         budget=total_budget,
     )
-    axs_ov_rank[0].set_xlabel("Full Evaluations")
+    axs_ov_rank[0].set_xlabel("Evaluations", fontsize=ovrank_xylabelsize)
+    axs_ov_rank[0].set_ylabel("Relative Rank", fontsize=ovrank_xylabelsize)
+    axs_ov_rank[0].tick_params(
+        axis="both",
+        which="major",
+        labelsize=xytick_labelsize,
+    )
+    axs_ov_rank[0].spines["left"].set_color("black")
+    axs_ov_rank[0].spines["bottom"].set_color("black")
     axs_ov_rank[0].set_xticks(XTICKS[(1, total_budget)])
-    axs_ov_rank[0].set_ylabel("Relative Rank")
     axs_ov_rank[0].grid(visible=True)
     axs_ov_rank[0].set_xlim(1, total_budget)
 
@@ -919,12 +934,14 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
 
     fig_rank.tight_layout(**tight_layout_pads)
 
+    ovrank_leg_fontsize = other_fig_params["stitched_leg_fontsize"]
+
     # Legend for overall rank plot
     if "all" not in turn_off_legends or "ov_rank" not in turn_off_legends:
         ov_rank_leg = fig_ov_rank.legend(
             ov_rank_handles,
             ov_rank_labels,
-            fontsize=10,
+            fontsize=14,
             loc="upper center",
             bbox_to_anchor=(0.5, -0.05),
             ncol=single_cols,
