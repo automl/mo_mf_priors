@@ -128,7 +128,7 @@ def edit_axis_labels(
     x_or_y: str,
 ) -> str:
     """Function to edit the axis labels."""
-    return "Training Cost" if x_or_y == "x" else "Validation Error"
+    return "Training Cost" if x_or_y == "y" else "Validation Error"
 
 
 def edit_legend_labels(  # noqa: C901, PLR0912
@@ -176,9 +176,11 @@ def edit_legend_labels(  # noqa: C901, PLR0912
         elif prior_annot:
             prior_annot = prior_annotations if prior_annotations != "default" else prior_annot
             if prior_annot == "good-good":
-                prior_annot = "all-good"
+                prior_annot = "all priors good"
             elif prior_annot == "bad-bad":
-                prior_annot = "all-bad"
+                prior_annot = "all priors bad"
+            elif prior_annot == "mixed":
+                prior_annot = "mixed priors"
             _label = _label if prior_annot is None else f"{_label} ({prior_annot})"
         new_labels.append(_label)
     return new_labels
