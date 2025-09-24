@@ -580,6 +580,12 @@ def make_subplots(  # noqa: PLR0913
     )
     if ax_title is not None:
         ax.set_title(ax_title, fontsize=other_fig_params["title_fontsize"])
+    xytick_labelsize = other_fig_params["xytick_labelsize"]
+    ax.tick_params(
+        axis="both",
+        which="major",
+        labelsize=xytick_labelsize,
+    )
 
 
 
