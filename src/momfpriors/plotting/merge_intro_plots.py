@@ -127,15 +127,15 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
     rank_means_dict = {}
 
     primo_init = {
-        "iter": 10,
+        "iter": 9,
         "val": None
     }
     comp_speedup = {
-        "iter": 98,
+        "iter": 99,
         "val": None
     }
 
-    speedup_opt = "NepsRW"
+    speedup_opt = "ParEGO"
 
     reference_point = np.array([
         reference_points_dict[benchmark][obj]
@@ -251,6 +251,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
                 means = means.cummax()
                 if speedup_opt in instance:
                     comp_speedup["val"] = means.iloc[comp_speedup["iter"]]
+                    print(means[60:])
                 means = means.drop_duplicates()
                 sem = sem.loc[means.index]
                 means[budget] = means.iloc[-1]
@@ -283,6 +284,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
                 means_cont = means_cont.cummax()
                 if "PriMO" in instance:
                     primo_init["val"] = means_cont.iloc[primo_init["iter"]]
+                    print(means_cont[:20])
                 means_cont = means_cont.drop_duplicates()
                 sem_cont = sem_cont.loc[means_cont.index]
                 means_cont[budget] = means_cont.iloc[-1]
@@ -550,7 +552,7 @@ def gen_plots_per_bench(  # noqa: C901
     )
 
 
-def make_subplots(  # noqa: C901, PLR0913
+def make_subplots(  # noqa: C901, PLR0912, PLR0913
     exp_dir: Path,
     ax: plt.Axes,
     *,
