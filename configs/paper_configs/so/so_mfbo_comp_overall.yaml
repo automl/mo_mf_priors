@@ -8,7 +8,7 @@ avg_prior_label: overall
 skip_non_avg: true
 which_labels: SO
 file_type: pdf
-skip_benchmarks:
+skip_bench:
   - mfh6_good
 skip_opt:
   - NepsPriorband

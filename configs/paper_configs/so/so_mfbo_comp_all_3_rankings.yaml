@@ -10,6 +10,6 @@ figsize:
   - 4
 sub_labels:
   - Overall
-  - Good Prior
-  - Bad Prior
+  - Good prior
+  - Bad prior
 remove_prior_annots: true

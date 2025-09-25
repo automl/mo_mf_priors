@@ -5,7 +5,7 @@ skip_priors:
   - good
 which_labels: SO
 file_type: pdf
-skip_benchmarks:
+skip_bench:
   - mfh6_good
 skip_opt:
   - NepsPriorband
