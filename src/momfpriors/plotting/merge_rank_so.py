@@ -274,11 +274,19 @@ def agg_data(  # noqa: C901
         (f.name.split("benchmark=")[-1].split(".")[0])
         for f in exp_dir.iterdir() if f.is_dir() and "benchmark=" in f.name]
     benchmarks_in_dir = list(set(benchmarks_in_dir))
+    if skip_benchmarks:
+        benchmarks_in_dir = [
+            bench for bench in benchmarks_in_dir if bench not in skip_benchmarks
+        ]
     benchmarks_in_dir.sort()
     logger.info(f"Found benchmarks: {benchmarks_in_dir}")
 
     with (exp_dir / "study_config.yaml").open("r") as f:
         exp_config = yaml.safe_load(f)
+
+    seeds = exp_config["seeds"]
+
+    logger.info(f"Num seeds = {len(seeds)}")
 
     all_benches = [(bench.pop("name"), bench) for bench in exp_config["benchmarks"]]
 
@@ -286,13 +294,16 @@ def agg_data(  # noqa: C901
 
     benchmarks_dict: Mapping[str, Mapping[tuple[str, str], list[pd.DataFrame]]] = {}
 
+    counter = 0
+
     for benchmark in benchmarks_in_dir:
-        if skip_benchmarks and benchmark in skip_benchmarks:
-            continue
         objectives = None
         for file in exp_dir.rglob("*.parquet"):
             if benchmark not in file.name:
                 continue
+            if not any(str(seed) in file.name for seed in seeds):
+                continue
+            counter +=1
             opt_name = file.name.split("optimizer=")[-1].split(".")[0]
             if skip_opt and opt_name in skip_opt:
                 continue
@@ -348,6 +359,8 @@ def agg_data(  # noqa: C901
                 all_plots_dict[conf_tuple] = [_df]
             else:
                 all_plots_dict[conf_tuple].append(_df)
+
+    print(counter)
 
     return benchmarks_dict, total_budget
 
@@ -498,7 +511,7 @@ def make_subplots(  # noqa: PLR0913
         ranks=means_dict,
         budget=total_budget,
     )
-    ax.set_xlabel("Full Evaluations", fontsize=xylabelsize)
+    ax.set_xlabel("Evaluations", fontsize=xylabelsize)
     ax.set_xticks(XTICKS[(1, total_budget)])
     ax.set_yticks(np.arange(1, max_avg_rank + 1, 1))
     ax.tick_params(
