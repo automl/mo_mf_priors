@@ -39,21 +39,9 @@ LABELS_1 = {
     "RandomSearchWithPriors": "RS+Prior",
 
     "NepsPriorRSMOASHA": "MOASHA+Prior(50%)",
+
+    "Optuna": "Optuna"
 }
-
-# ABLATION_LABELS = {
-
-#     "NepsRW": "Model",
-
-#     "NepsMOASHA_RS": "MOMF Initial Design + RS",
-
-#     "NepsPriMO": "MOMF initial design + Priors + Model",
-
-#     "NepsMOASHABO": "MOMF initial design + Model",
-
-#     "NepsPiBORW": "Priors + Model",
-# }
-
 
 ABLATION_LABELS = {
 
@@ -123,6 +111,16 @@ SO_LABELS = {
     "NepsPiBO": "πBO",
 }
 
+
+GENERAL_HPOSUITE = {
+    "NepsBO": "Neps BO",
+    "NepsHyperband": "Neps HyperBand",
+    "NepsPriorband": "Neps Priorband",
+    "SMAC_BO": "SMAC BO",
+    "RandomSearch": "Random Search",
+    "Scikit_Optimize": "Skopt BO",
+    "Optuna": "Optuna TPE",
+}
 
 
 
