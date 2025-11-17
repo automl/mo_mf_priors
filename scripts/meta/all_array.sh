@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-14%20   # (1 prior opts * 4 priors + 1 non-prior opts) * 3 benchmarks = 15 total combinations
+#SBATCH --array=0-7%8   # (0 prior opts * 4 priors + 1 non-prior opts) * 8 benchmarks = 8 total combinations
 #SBATCH --time=3-00:00:00
 
 echo "Workingdir: $PWD"
@@ -16,7 +16,7 @@ start=$(date +%s)
 
 # Optimizers
 prior_opts=(
-  "NepsPriMO"
+  # "NepsPriMO"
   # "NepsPiBORW"
   # "NepsMOPriorband"
 )
@@ -26,19 +26,20 @@ nonprior_opts=(
   # "NepsRW"
   # "NepsHyperbandRW"
   # "Nevergrad_EvolutionStrategy"
-  "NepsMOASHA"
+  # "NepsMOASHA"
+  "Optuna"
 )
 
 # Benchmarks with known objective types (used for both prior and non-prior)
 benchmarks=(
-  # "pd1-translate_wmt-xformer_translate-64"
+  "pd1-translate_wmt-xformer_translate-64"
   "yahpo-lcbench-168330"
   "yahpo-lcbench-168868"
   "pd1-imagenet-resnet-512"
-  # "pd1-cifar100-wide_resnet-2048"
-  # "pd1-lm1b-transformer-2048"
-  # "yahpo-lcbench-126026"
-  # "yahpo-lcbench-146212"
+  "pd1-cifar100-wide_resnet-2048"
+  "pd1-lm1b-transformer-2048"
+  "yahpo-lcbench-126026"
+  "yahpo-lcbench-146212"
   # "MOMFPark"
 )
 
@@ -105,14 +106,14 @@ benchmarks:
       $key1: ${obj1}
       $key2: ${obj2}
 num_seeds: 25
-num_iterations: 100
+num_iterations: 20
 EOF
 
 echo "Generated config:"
 cat "$yaml_file"
 
 # === Run the experiment ===
-python3 -m momfpriors.run -y "$yaml_file" -e "all_100_evals"
+python3 -m momfpriors.run -y "$yaml_file" -e "all_20_evals"
 
 end=$(date +%s)
 runtime=$((end - start))

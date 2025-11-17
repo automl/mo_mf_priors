@@ -21,6 +21,7 @@ from momfpriors.baselines.neps_optimizers import (
     NepsRW,
 )
 from momfpriors.baselines.nevergrad import yield_nevergrad_optimizers
+from momfpriors.baselines.optuna import OptunaOptimizer
 from momfpriors.baselines.random_search import RandomSearch, RandomSearchWithPriors
 from momfpriors.baselines.smac_parego import SMAC_ParEGO
 
@@ -46,6 +47,7 @@ OPTIMIZERS = {
     NepsEtaPriorPriMO.name: NepsEtaPriorPriMO,
     NepsMFPriMO.name: NepsMFPriMO,
     NepsPriMO_Init10.name: NepsPriMO_Init10,
+    OptunaOptimizer.name: OptunaOptimizer,
 }
 
 for opt in yield_nevergrad_optimizers():
