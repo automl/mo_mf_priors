@@ -44,6 +44,7 @@ BENCHMARK_COUNT_FIDS = "benchmark.fidelity.count"
 BENCH_FIDELITY_NAME = "benchmark.fidelity.1.name"
 BENCH_FIDELITY_MIN_COL = "benchmark.fidelity.1.min"
 BENCH_FIDELITY_MAX_COL = "benchmark.fidelity.1.max"
+MINIMIZE_COL = "problem.objective.1.minimize"
 CONTINUATIONS_COL = "result.continuations_cost.1"
 CONTINUATIONS_BUDGET_USED = "result.continuations_budget_used_total"
 
@@ -51,8 +52,12 @@ CONTINUATIONS_BUDGET_USED = "result.continuations_budget_used_total"
 def normalized_regret(
     benchmark: str,
     results: pd.Series,
+    *,
+    normalize: bool = True,
 ) -> pd.Series:
     """Calculate the normalized regret for a given benchmark and set of results."""
+    if not normalize:
+        return results
     bounds = regret_bounds[benchmark]
     return (results - bounds[0]) / (bounds[1] - bounds[0])
 
@@ -113,6 +118,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
     budget: int,
     fidelity: str | None = None,
     is_single_opt: bool = False,
+    norm_regret: bool = True,
 ) -> dict[str, pd.DataFrame]:
     """Function to plot the performance over
     iterations from a pandas Series
@@ -179,7 +185,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
             if continuations:
                 seed_cont_dict[seed] = normalized_regret(
                     benchmark,
-                    pd.Series(perf_vals, index=budget_list)
+                    pd.Series(perf_vals, index=budget_list),
+                    normalize=norm_regret,
                 )
                 seed_incumbents = seed_cont_dict[seed].cummin()
                 instance_name = (
@@ -192,7 +199,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
             elif is_fid_opt:
                 seed_perf_dict[seed] = normalized_regret(
                     benchmark,
-                    pd.Series(perf_vals, index=budget_list)
+                    pd.Series(perf_vals, index=budget_list),
+                    normalize=norm_regret,
                 )
                 seed_incumbents = seed_perf_dict[seed].cummin()
                 instance_name = instance
@@ -201,7 +209,8 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
             else:
                 seed_perf_dict[seed] = normalized_regret(
                     benchmark,
-                    pd.Series(perf_vals, index=budget_list)
+                    pd.Series(perf_vals, index=budget_list),
+                    normalize=norm_regret,
                 )
                 seed_incumbents = seed_perf_dict[seed].cummin()
                 instance_name = instance
@@ -393,6 +402,7 @@ def gen_plots_per_bench(  # noqa: C901
     skip_priors: bool = False,
     skip_opt: list[str] | None = None,
     avg_prior_label: str = "all",
+    norm_regret: bool = True,
 ) -> dict[int, pd.DataFrame]:
     """Function to generate plots for a given benchmark and its config dict."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
@@ -402,6 +412,11 @@ def gen_plots_per_bench(  # noqa: C901
             continue
 
         annotations = None
+
+        # Change objective value if not minimizing
+        _df[OBJECTIVE1_COL] = (
+            _df[OBJECTIVE1_COL] if _df[MINIMIZE_COL][0] else -_df[OBJECTIVE1_COL]
+        )
 
         if _df["prior_annotations"][0] is not None:
             annotations = "-".join(
@@ -466,6 +481,7 @@ def gen_plots_per_bench(  # noqa: C901
         budget=total_budget,
         fidelity=fidelity,
         is_single_opt=is_single_opt,
+        norm_regret=norm_regret,
     )
 
 
@@ -488,6 +504,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     which_plots: list[str] | None = None,
     turn_off_legends: list[str] | None = None,
     plot_title: str | None = None,
+    norm_regret: bool = True,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     if which_plots is None:
@@ -578,14 +595,15 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 skip_priors=skip_priors,
                 skip_opt=skip_opt,
                 avg_prior_label=avg_prior_label,
+                norm_regret=norm_regret,
             )
 
             axs_perf[i].set_xticks(XTICKS[(1, total_budget)])
             axs_perf[i].grid(visible=True, which="both", ls="-")
             axs_perf[i].set_title(benchmark)
             axs_perf[i].set_xlim(1, total_budget)
-            axs_perf[i].set_ylim(top=1)
-            axs_perf[i].set_yscale("log")
+            # axs_perf[i].set_ylim(top=1)
+            # axs_perf[i].set_yscale("log")
 
             for _seed, rank_df in seed_dict_per_bench.items():
                 if _seed not in means_dict:
@@ -895,6 +913,11 @@ if __name__ == "__main__":
         help="Skip the given benchmarks. "
             "Useful for skipping benchmarks that are not relevant for the current analysis."
     )
+    parser.add_argument(
+        "--no_normalized_regret", "-no_norm",
+        action="store_true",
+        help="Whether to not use normalized regret in the plots."
+    )
     args = parser.parse_args()
 
     if args.from_yaml:
@@ -918,6 +941,7 @@ if __name__ == "__main__":
         args.turn_off_legends = yaml_config.get("turn_off_legends", args.turn_off_legends)
         args.plot_title = yaml_config.get("plot_title", args.plot_title)
         args.skip_benchmarks = yaml_config.get("skip_benchmarks", args.skip_benchmarks)
+        args.no_normalized_regret = yaml_config.get("no_normalized_regret", args.no_normalized_regret)
 
     if args.specific_rc_params:
         for param in args.specific_rc_params:
@@ -965,4 +989,5 @@ if __name__ == "__main__":
         turn_off_legends=args.turn_off_legends,
         plot_title=args.plot_title,
         skip_benchmarks=args.skip_benchmarks,
+        norm_regret=not args.no_normalized_regret
     )
