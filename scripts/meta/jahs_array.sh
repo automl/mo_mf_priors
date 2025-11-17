@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a.out
 #SBATCH --error logs/%x-%A_%a.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-65%23   # (4 prior opts * 4 priors + 6 non-prior opts) * 3 benchmarks = 66 total combinations
+#SBATCH --array=0-68%23   # (4 prior opts * 4 priors + 7 non-prior opts) * 3 benchmarks = 69 total combinations
 #SBATCH --time=4-00:00:00
 
 echo "Workingdir: $PWD"
@@ -28,6 +28,7 @@ nonprior_opts=(
   "NepsHyperbandRW"
   "Nevergrad_EvolutionStrategy"
   "NepsMOASHA"
+  "Optuna"
 )
 
 # Benchmarks with known objective types (used for both prior and non-prior)
@@ -96,7 +97,7 @@ echo "Generated config:"
 cat "$yaml_file"
 
 # === Run the experiment ===
-python3 -m momfpriors.run -y "$yaml_file" -e "jahs_20"
+python3 -m momfpriors.run -y "$yaml_file" -e "jahs_20_evals"
 
 end=$(date +%s)
 runtime=$((end - start))
