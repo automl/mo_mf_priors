@@ -8,6 +8,7 @@ import pandas as pd
 from momfpriors.plotting.labels import (
     ABLATION_INIT_LABELS,
     ABLATION_LABELS,
+    GENERAL_HPOSUITE,
     HP_LABELS,
     INTRO_LABELS,
     LABELS_1,
@@ -18,6 +19,7 @@ from momfpriors.plotting.plot_styles import (
     COLORS_HPS,
     COLORS_MAIN,
     COLORS_SO,
+    HPOSUITE_COLORS,
     MARKERS,
 )
 
@@ -28,6 +30,7 @@ map_labels = {
     "ablation_init": ABLATION_INIT_LABELS,
     "sig": SIG_LABELS,
     "SO": SO_LABELS,
+    "hposuite": GENERAL_HPOSUITE,
 }
 
 bench_alts = {
@@ -102,7 +105,10 @@ def get_style(instance: str) -> tuple[str, str, str, str | None]:
                 "Multiple HPs not yet supported"
             )
     opt = opt_splits[0]
-    color = COLORS_HPS.get((opt, hps)) if hps else COLORS_MAIN.get(opt, COLORS_SO.get(opt))
+    color = (
+        COLORS_HPS.get((opt, hps)) if hps 
+        else COLORS_MAIN.get(opt, COLORS_SO.get(opt, HPOSUITE_COLORS.get(opt)))
+    )
     marker = MARKERS.get(prior_annot, "s")
     if color is None:
         print(f"No color found for {opt}")
@@ -227,6 +233,9 @@ regret_bounds = {
     "yahpo-lcbench-167190": (0.0, 2.0),
     "yahpo-lcbench-168330": (0.0, 2.0),
     "yahpo-lcbench-189906": (0.0, 2.0),
+    "jahs-CIFAR10": (-100.0, 0),
+    "jahs-ColorectalHistology": (-100.0, 0.0),
+    "jahs-FashionMNIST": (-100.0, 0.0),
 }
 
 
@@ -470,6 +479,9 @@ hv_low_cutoffs = {
     "yahpo-lcbench-146212": 15,
     "yahpo-lcbench-168330": 150,
     "yahpo-lcbench-168868": 45,
+    "jahs-CIFAR10": 0,
+    "jahs-ColorectalHistology": 0,
+    "jahs-FashionMNIST": 0,
 }
 
 fid_perc_momfbo = {
