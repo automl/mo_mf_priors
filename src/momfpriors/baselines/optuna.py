@@ -62,13 +62,17 @@ class OptunaOptimizer(Optimizer):
             case _:
                 raise TypeError("Config space must be a list or a ConfigurationSpace!")
 
+        assert isinstance(problem.objectives, Mapping)
+        num_objectives = len(problem.objectives)
+
         self.optimizer: optuna.study.Study = optuna.create_study(
             sampler=TPESampler(seed=seed, **kwargs),
             storage=None,
             pruner=None,
             study_name=f"{problem.name}-{seed}",
             load_if_exists=False,
-        ) # No need to pass directions here, as we will handle minimization in tell()
+            directions=["minimize"] * num_objectives,
+        )
 
         self.problem = problem
         self.working_directory = working_directory
