@@ -10,15 +10,13 @@ import yaml
 from hpoglue import FunctionalBenchmark, Result
 
 from momfpriors.benchmarks import BENCHMARKS
-
-# from momfpriors.benchmarks.bbob_mo import bbob_function_definitions, create_bbob_mo_desc
 from momfpriors.constants import DEFAULT_PRIORS_DIR
 from momfpriors.utils import bench_first_fid, cs_random_sampling, get_prior_configs
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-def generate_priors_wrt_obj(  # noqa: C901, PLR0912
+def generate_priors_wrt_obj(  # noqa: C901, PLR0912, PLR0915
     seed: int,
     nsamples: int,
     prior_spec: Iterable[tuple[str, int, float | None, float | None]],
@@ -28,6 +26,7 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
         | list[Mapping[str, str | list[str]]]
     ),
     fidelity: int | float | None = None,
+    data_dir: str | Path | None = None,
     *,
     clean: bool = False,
 ) -> None:
@@ -50,6 +49,9 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
             Defaults to None.
             Only uses the first available fidelity for the benchmark.
 
+        data_dir: The path to the benchmark data directory.
+            Defaults to None.
+
         clean: Whether to clean the priors directory before generating the priors.
             Defaults to False.
     """
@@ -61,14 +63,15 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912
 
     logger.info(f"Priors generation with {seed=}, {nsamples=} and saving to {to.resolve()}")
 
+    _BENCHMARKS = BENCHMARKS(data_dir=data_dir)
+
     for benchmark, objectives in benchmarks.items():
 
         if benchmark.startswith("bbob"):
-            # _benchmark = create_bbob_mo_desc(func=benchmark)
             pass
         else:
-            assert benchmark in BENCHMARKS, f"Unknown benchmark: {benchmark}"
-            _benchmark = BENCHMARKS[benchmark]
+            assert benchmark in _BENCHMARKS, f"Unknown benchmark: {benchmark}"
+            _benchmark = _BENCHMARKS[benchmark]
 
         if isinstance(_benchmark, FunctionalBenchmark):
             _benchmark = _benchmark.desc
@@ -215,6 +218,12 @@ if __name__ == "__main__":
         default=None,
         help="Path to a yaml file containing the prior specification."
     )
+    parser.add_argument(
+        "--data_dir", "-data",
+        type=str,
+        default=None,
+        help="Path to the benchmark data directory."
+    )
     args = parser.parse_args()
 
     if args.yaml:
@@ -290,4 +299,5 @@ if __name__ == "__main__":
         benchmarks=_benchmarks,
         fidelity=_fidelity,
         clean=_clean,
+        data_dir=args.data_dir,
     )

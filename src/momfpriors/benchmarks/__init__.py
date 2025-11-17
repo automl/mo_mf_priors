@@ -1,25 +1,48 @@
 from __future__ import annotations
 
-# from momfpriors.benchmarks.bbob_mo import bbob_mo_benchmarks
+from pathlib import Path
+from typing import TYPE_CHECKING
+
 from momfpriors.benchmarks.botorch_momf import MOMFBC_Bench, MOMFPark_Bench
 from momfpriors.benchmarks.mf_zdt import MFZDT1Bench, MFZDT6Bench
-from momfpriors.benchmarks.mfp_bench import mfpbench_benchmarks
+from momfpriors.benchmarks.mfp_bench import jahs, lcbench_surrogate, pd1
+from momfpriors.constants import DEFAULT_DATA_DIR
 
-# from momfpriors.benchmarks.hpobench import hpobench_benchmarks
+if TYPE_CHECKING:
+    from hpoglue import BenchmarkDescription, FunctionalBenchmark
 
-BENCHMARKS = {
-    MOMFBC_Bench.desc.name: MOMFBC_Bench,
-    MOMFPark_Bench.desc.name: MOMFPark_Bench,
-    MFZDT1Bench.desc.name: MFZDT1Bench,
-    MFZDT6Bench.desc.name: MFZDT6Bench,
-}
+all_benches: dict[str, BenchmarkDescription | FunctionalBenchmark] = {}
 
-for desc in mfpbench_benchmarks():
-    BENCHMARKS[desc.name] = desc
+def gen_benches(
+    datadir: str | Path | None = None,
+) -> dict[str, BenchmarkDescription | FunctionalBenchmark]:
+    """Generate benchmark descriptions."""
+    # Main Repo directory / data
+    if datadir is None:
+        datadir=DEFAULT_DATA_DIR
+    elif isinstance(datadir, str):
+        datadir = Path(datadir)
 
-# for desc in bbob_mo_benchmarks():
-#     BENCHMARKS[desc.name] = desc
-# for desc in hpobench_benchmarks():
-#     BENCHMARKS[desc.name] = desc
+    # LCBench
+    for desc in lcbench_surrogate(datadir / "yahpo"):
+        all_benches[desc.name] = desc
+
+    # PD1
+    for desc in pd1(datadir / "pd1"):
+        all_benches[desc.name] = desc
+
+    # JAHS
+    for desc in jahs(datadir / "jahs"):
+        all_benches[desc.name] = desc
+
+    # Functional Benchmarks
+    all_benches[MOMFBC_Bench.desc.name] = MOMFBC_Bench
+    all_benches[MOMFPark_Bench.desc.name] = MOMFPark_Bench
+    all_benches[MFZDT1Bench.desc.name] = MFZDT1Bench
+    all_benches[MFZDT6Bench.desc.name] = MFZDT6Bench
+
+    return all_benches
+
+BENCHMARKS = gen_benches
 
 __all__ = ["BENCHMARKS"]

@@ -58,9 +58,9 @@ def _get_surrogate_benchmark(
     datadir: Path | str | None = None,
     **kwargs: Any,
 ) -> SurrogateBenchmark:
-    import mfpbench
+    import mfpbench  # noqa: PLC0415
 
-    from momfpriors.utils import HiddenPrints
+    from momfpriors.utils import HiddenPrints  # noqa: PLC0415
 
     with HiddenPrints():        # NOTE: To stop yahpo-lcbench from printing garbage
         if datadir is not None:
@@ -150,9 +150,9 @@ def lcbench_surrogate(datadir: Path | None = None) -> Iterator[BenchmarkDescript
     """
     if datadir is not None and "yahpo" in os.listdir(datadir):
         datadir = datadir / "yahpo"
-    import mfpbench
+    import mfpbench  # noqa: PLC0415
 
-    from momfpriors.utils import HiddenPrints
+    from momfpriors.utils import HiddenPrints  # noqa: PLC0415
 
     env = Env(
         name="py310-mfpbench-1.10-yahpo",
@@ -216,7 +216,7 @@ def mfh() -> Iterator[BenchmarkDescription]:
         Iterator[BenchmarkDescription]: An iterator over BenchmarkDescription objects
         for each combination of correlation and dimensions in the MFH Benchmarks.
     """
-    import mfpbench
+    import mfpbench  # noqa: PLC0415
     env = Env(
         name="py310-mfpbench-1.10-mfh",
         python_version="3.10",
@@ -264,7 +264,7 @@ def jahs(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
     """
     if datadir is not None and "jahs" in os.listdir(datadir):
         datadir = datadir / "jahs"
-    import mfpbench
+    import mfpbench  # noqa: PLC0415
     task_ids = ("CIFAR10", "ColorectalHistology", "FashionMNIST")
     env = Env(
         name="py310-mfpbench-1.10-jahs",
@@ -328,7 +328,7 @@ def pd1(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
     """
     if datadir is not None and "pd1" in os.listdir(datadir):
         datadir = datadir / "pd1"
-    import mfpbench
+    import mfpbench  # noqa: PLC0415
     env = Env(
         name="py310-mfpbench-1.10-pd1",
         python_version="3.10",
