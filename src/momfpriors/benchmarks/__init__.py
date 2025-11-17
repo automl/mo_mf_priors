@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from momfpriors.benchmarks.botorch_momf import MOMFBC_Bench, MOMFPark_Bench
+from momfpriors.benchmarks.hwgptbench import hwgpt_benchmarks
 from momfpriors.benchmarks.mf_zdt import MFZDT1Bench, MFZDT6Bench
 from momfpriors.benchmarks.mfp_bench import jahs, lcbench_surrogate, pd1
 from momfpriors.constants import DEFAULT_DATA_DIR
@@ -33,6 +34,10 @@ def gen_benches(
 
     # JAHS
     for desc in jahs(datadir / "jahs"):
+        all_benches[desc.name] = desc
+
+    # HW-GPT-Bench
+    for desc in hwgpt_benchmarks(datadir / "HW-GPT-Bench" / "data_collection"):
         all_benches[desc.name] = desc
 
     # Functional Benchmarks

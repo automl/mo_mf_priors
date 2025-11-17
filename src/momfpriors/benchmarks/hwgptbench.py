@@ -15,6 +15,8 @@ from hpoglue.fidelity import RangeFidelity
 from hpoglue.measure import Measure
 from hpoglue.result import Result
 
+from momfpriors.constants import DEFAULT_DATA_DIR
+
 if TYPE_CHECKING:
     from hpoglue.query import Query
     from hwgpt.api import HWGPT
@@ -99,6 +101,11 @@ def hwgpt_benchmarks(datadir: Path | None = None) -> Iterator[BenchmarkDescripti
         for each HW-GPT-Bench benchmark.
     """
     from hwgpt.api import HWGPT  # noqa: PLC0415
+
+    if datadir is None:
+        datadir = DEFAULT_DATA_DIR / "HW-GPT-Bench" / "data_collection"
+    elif isinstance(datadir, str):
+        datadir = Path(datadir).absolute().resolve()
 
     hwgptbench = partial(
         HWGPT,
@@ -216,8 +223,8 @@ def hwgptbench(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
         for each benchmark.
     """
     if datadir is None:
-        datadir = (
-            Path(__file__).parent.parent.parent.parent.parent.absolute()
-            / "HW-GPT-Bench" / "data_collection"
-        )
+        datadir = DEFAULT_DATA_DIR / "HW-GPT-Bench" / "data_collection"
+    elif isinstance(datadir, str):
+        datadir = Path(datadir).absolute().resolve()
+
     yield from hwgpt_benchmarks(datadir=datadir)
