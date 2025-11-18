@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np
+from ConfigSpace import ConfigurationSpace
 from hpoglue.benchmark import BenchmarkDescription, SurrogateBenchmark
 from hpoglue.env import Env
 from hpoglue.fidelity import RangeFidelity
@@ -67,7 +68,7 @@ fidelity_maps = {
 def _get_hwgptbench_config_space(
     data_dir: Path,
     space_size: Literal["s", "m", "l"],
-) -> dict[str, list]:
+) -> ConfigurationSpace:
     """Get the configuration space for the HW-GPT-Bench benchmark.
 
     Args:
@@ -75,7 +76,7 @@ def _get_hwgptbench_config_space(
         space_size: The size of the search space. One of "s", "m", or "l".
 
     Returns:
-        The configuration space for the HW-GPT-Bench benchmark.
+        A ConfigurationSpace object for the HW-GPT-Bench benchmark.
     """
     from hwgpt.api import HWGPT  # noqa: PLC0415
     space = HWGPT(
@@ -89,7 +90,7 @@ def _get_hwgptbench_config_space(
     for i in range(max(space["n_layer_choices"])):
         modified_space[f"mlp_ratio_{i}"] = space["mlp_ratio_choices"]
         modified_space[f"num_heads_{i}"] = space["n_head_choices"]
-    return modified_space
+    return ConfigurationSpace(modified_space)
 
 
 def _choices_to_sampled_config(
