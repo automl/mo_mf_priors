@@ -14,9 +14,6 @@ from hpoglue.env import Env
 from hpoglue.fidelity import RangeFidelity
 from hpoglue.measure import Measure
 from hpoglue.result import Result
-from hwgpt.predictors.hwmetric.models.autogluon.autogluon_latencies import (
-    MultilabelPredictor,  # noqa: F401
-)
 
 from momfpriors.constants import DEFAULT_DATA_DIR
 
@@ -76,8 +73,6 @@ def _get_hwgptbench_config_space(
     Returns:
         The configuration space for the HW-GPT-Bench benchmark.
     """
-    import copy  # noqa: PLC0415
-
     from hwgpt.api import HWGPT  # noqa: PLC0415
     space = HWGPT(
         search_space=space_size,
@@ -156,6 +151,9 @@ def _hwgptbench_surrogate_query_function(
         predictor: Literal["mlp", "supernet"] = "mlp",
         device=None,
     ) -> Result:
+    from hwgpt.predictors.hwmetric.models.autogluon.autogluon_latencies import (  # noqa: PLC0415
+        MultilabelPredictor,  # noqa: F401
+    )
     if query.fidelity is not None:
         assert isinstance(query.fidelity, tuple)
         _, fid_value = query.fidelity
