@@ -98,7 +98,7 @@ EOF
 echo "Generated config:"
 cat "$yaml_file"
 
-data_dir="/work/dlclarge2/basus-basus_ws"
+data_dir="/work/dlclarge2/basus-basus_ws/data/"
 
 # === Run the experiment ===
 python3 -m momfpriors.run -y "$yaml_file" -e "hwgptbench_20" --data_dir "$data_dir"

@@ -29,7 +29,7 @@ source ~/repos/hwgptbench_env/bin/activate
 # Running the job
 start=`date +%s`
 
-data_dir="/work/dlclarge2/basus-basus_ws"
+data_dir="/work/dlclarge2/basus-basus_ws/data/"
 
 python3 -m momfpriors.generate_priors -y configs/prior_gen/hwgpt.yaml -n 100000 --data_dir "$data_dir"
 
