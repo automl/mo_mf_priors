@@ -16,6 +16,7 @@ all_benches: dict[str, BenchmarkDescription | FunctionalBenchmark] = {}
 
 def gen_benches(
     datadir: str | Path | None = None,
+    **kwargs,
 ) -> dict[str, BenchmarkDescription | FunctionalBenchmark]:
     """Generate benchmark descriptions."""
     # Main Repo directory / data
@@ -37,7 +38,7 @@ def gen_benches(
         all_benches[desc.name] = desc
 
     # HW-GPT-Bench
-    for desc in hwgpt_benchmarks(datadir / "HW-GPT-Bench" / "data_collection"):
+    for desc in hwgpt_benchmarks(datadir / "HW-GPT-Bench", **kwargs):
         all_benches[desc.name] = desc
 
     # Functional Benchmarks
@@ -46,7 +47,7 @@ def gen_benches(
     all_benches[MFZDT1Bench.desc.name] = MFZDT1Bench
     all_benches[MFZDT6Bench.desc.name] = MFZDT6Bench
 
-    return all_benches
+    return dict(sorted(all_benches.items()))
 
 BENCHMARKS = gen_benches
 

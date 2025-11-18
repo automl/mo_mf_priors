@@ -14,6 +14,9 @@ from hpoglue.env import Env
 from hpoglue.fidelity import RangeFidelity
 from hpoglue.measure import Measure
 from hpoglue.result import Result
+from hwgpt.predictors.hwmetric.models.autogluon.autogluon_latencies import (
+    MultilabelPredictor,  # noqa: F401
+)
 
 from momfpriors.constants import DEFAULT_DATA_DIR
 
@@ -25,19 +28,79 @@ if TYPE_CHECKING:
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
-size_maps = {
-    "s": 192,
-    "m": 256,
-    "l": 320,
+metrics = [
+    "perplexity",
+    "flops",
+    "params",
+    "bfloat16_memory",
+    "float16_memory",
+]
+
+hwmetrics = [
+    "energies",
+    "latencies"
+]
+
+fidelity_maps = {
+    "s": [10, 11, 12],
+    "m": [22, 23, 24],
+    "l": [34, 35, 36],
 }
+
+def _get_hwgptbench_config_space(
+    data_dir: Path,
+    space_size: Literal["s", "m", "l"],
+) -> dict[str, list]:
+    """Get the configuration space for the HW-GPT-Bench benchmark.
+
+    Args:
+        data_dir: The directory where the benchmark data is stored.
+        space_size: The size of the search space. One of "s", "m", or "l".
+
+    Returns:
+        The configuration space for the HW-GPT-Bench benchmark.
+    """
+    import copy  # noqa: PLC0415
+
+    from hwgpt.api import HWGPT  # noqa: PLC0415
+    space = HWGPT(
+        search_space=space_size,
+        use_supernet_surrogate=False,
+        base_path=data_dir,
+    ).search_space
+    modified_space = {}
+    modified_space["embed_dim_choices"] = space["embed_dim_choices"]
+    modified_space["bias_choices"] = space["bias_choices"]
+    for i in range(max(space["n_layer_choices"])):
+        modified_space[f"mlp_ratio_{i}"] = space["mlp_ratio_choices"]
+        modified_space[f"num_heads_{i}"] = space["n_head_choices"]
+    return modified_space
+
+
+def _choices_to_sampled_config(
+    arch_config: dict[str, int],
+    fid_value: int,
+) -> dict[str, list | int]:
+    sampled_config = {}
+    sampled_config["sample_embed_dim"] = arch_config["embed_dim_choices"]
+    sampled_config["sample_n_layer"] = fid_value
+    sampled_config["sample_mlp_ratio"] = []
+    sampled_config["sample_n_head"] = []
+    for i in range(fid_value):
+        sampled_config["sample_mlp_ratio"].append(arch_config[f"mlp_ratio_{i}"])
+        sampled_config["sample_n_head"].append(arch_config[f"num_heads_{i}"])
+    sampled_config["sample_bias"] = str(arch_config["bias_choices"])
+
+    return sampled_config
+
 
 def _get_surrogate_benchmark(
     description: BenchmarkDescription,
     *,
-    predictor: Literal["mlp", "supernet"] = "mlp",
     space_size: Literal["s", "m", "l"] = "s",
     use_supernet_surrogate: bool = False,
     datadir: Path | str | None = None,
+    device=None,
 ) -> SurrogateBenchmark:
     """Creates a SurrogateBenchmark from HW-GPT-Bench."""
     from hwgpt.api import HWGPT  # noqa: PLC0415
@@ -49,15 +112,23 @@ def _get_surrogate_benchmark(
         use_supernet_surrogate=use_supernet_surrogate,
         base_path=datadir,
     )
+    predictor = "supernet" if use_supernet_surrogate else "mlp"
+
+    assert device is None or device in bench.device_list, (
+        f"Device {device} not in {bench.device_list}"
+    )
+
     query_function = partial(
         _hwgptbench_surrogate_query_function,
         benchmark=bench,
         predictor=predictor,
+        device=device,
+        space_size=space_size,
     )
     return SurrogateBenchmark(
         desc=description,
         benchmark=bench,
-        config_space=bench.space,
+        config_space=bench.search_space,
         query=query_function,
     )
 
@@ -67,51 +138,61 @@ def _hwgptbench_surrogate_query_function(
         benchmark: HWGPT,
         space_size: Literal["s", "m", "l"] = "s",
         predictor: Literal["mlp", "supernet"] = "mlp",
+        device=None,
     ) -> Result:
-    benchmark.set_arch(query.config.values)
-    perplexity = benchmark.query(metric="perplexity", predictor=predictor)
-    hwmetrics = benchmark.query(predictor=predictor).as_dict()
-    all_results = {"perplexity": perplexity}
-    all_results.update(hwmetrics)
     if query.fidelity is not None:
         assert isinstance(query.fidelity, tuple)
         _, fid_value = query.fidelity
     else:
         fid_value = 3 # The max in our space is 3
-    fid_value = size_maps[space_size] * 2**(fid_value - 1)
+    fid_value = fidelity_maps[space_size][fid_value - 1]
+    config_vals = query.config.values
+    sampled_config = _choices_to_sampled_config(
+        arch_config=config_vals,
+        fid_value=fid_value,
+    )
+    benchmark.set_arch(sampled_config)
+    all_results = {}
+    for metric in metrics:
+        all_results[metric] = benchmark.query(
+            metric=metric,
+            predictor=predictor,
+            device=device
+        )
+    hw_results = benchmark.query(
+        device=device,
+    )
+    all_results.update(hw_results)
     return Result(
         query=query,
-        values=benchmark.query(
-            query.config.values,
-            at=fid_value,
-        ).as_dict(),
+        values=all_results,
         fidelity=query.fidelity,
     )
 
 
-def hwgpt_benchmarks(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
+def hwgpt_benchmarks(
+    datadir: Path | None = None,
+    **kwargs,
+) -> Iterator[BenchmarkDescription]:
     """Generates benchmark descriptions for the HW-GPT-Bench Benchmarks.
 
     Args:
         datadir (Path | None): The directory where the data is stored.
         If None, the default directory is used.
 
+        kwargs: Additional keyword arguments to pass to the HWGPT constructor.
+
     Yields:
         Iterator[BenchmarkDescription]: An iterator over BenchmarkDescription objects
         for each HW-GPT-Bench benchmark.
     """
-    from hwgpt.api import HWGPT  # noqa: PLC0415
-
     if datadir is None:
-        datadir = DEFAULT_DATA_DIR / "HW-GPT-Bench" / "data_collection"
+        datadir = DEFAULT_DATA_DIR / "HW-GPT-Bench"
     elif isinstance(datadir, str):
         datadir = Path(datadir).absolute().resolve()
 
-    hwgptbench = partial(
-        HWGPT,
-        use_supernet_surrogate=False,
-        base_path=datadir,
-    )
+    use_supernet_surrogate = kwargs.get("use_supernet_surrogate", False)
+    device = kwargs.get("device")
 
     env = Env(
         name="py310-hwgptbench-0.1",
@@ -121,13 +202,16 @@ def hwgpt_benchmarks(datadir: Path | None = None) -> Iterator[BenchmarkDescripti
     )
     yield BenchmarkDescription(
         name="hwgptbench-s",
-        config_space=hwgptbench(search_space="s").space,
+        config_space=_get_hwgptbench_config_space(
+            data_dir=datadir,
+            space_size="s",
+        ),
         load=partial(
             _get_surrogate_benchmark,
-            predictor="mlp",
             space_size="s",
-            use_supernet_surrogate=True,
+            use_supernet_surrogate=use_supernet_surrogate,
             datadir=datadir,
+            device=device,
         ),
         metrics={
             "perplexity": Measure.metric(bounds=(0, 1), minimize=True),
@@ -142,7 +226,7 @@ def hwgpt_benchmarks(datadir: Path | None = None) -> Iterator[BenchmarkDescripti
             "float16_memory": Measure.metric(bounds=(0, np.inf), minimize=True),
         },
         fidelities={
-            "n_head_choices": RangeFidelity.from_tuple((1, 3, 1), supports_continuation=True)
+            "n_layer_choices": RangeFidelity.from_tuple((1, 3, 1), supports_continuation=False)
         },
         is_tabular=False,
         has_conditionals=False,
@@ -151,13 +235,16 @@ def hwgpt_benchmarks(datadir: Path | None = None) -> Iterator[BenchmarkDescripti
     )
     yield BenchmarkDescription(
         name="hwgptbench-m",
-        config_space=hwgptbench(search_space="m").space,
+        config_space=_get_hwgptbench_config_space(
+            data_dir=datadir,
+            space_size="m",
+        ),
         load=partial(
             _get_surrogate_benchmark,
-            predictor="mlp",
             space_size="m",
-            use_supernet_surrogate=True,
+            use_supernet_surrogate=use_supernet_surrogate,
             datadir=datadir,
+            device=device,
         ),
         metrics={
             "perplexity": Measure.metric(bounds=(0, 1), minimize=True),
@@ -172,7 +259,7 @@ def hwgpt_benchmarks(datadir: Path | None = None) -> Iterator[BenchmarkDescripti
             "float16_memory": Measure.metric(bounds=(0, np.inf), minimize=True),
         },
         fidelities={
-            "n_head_choices": RangeFidelity.from_tuple((1, 3, 1), supports_continuation=True)
+            "n_layer_choices": RangeFidelity.from_tuple((1, 3, 1), supports_continuation=False)
         },
         is_tabular=False,
         has_conditionals=False,
@@ -181,13 +268,16 @@ def hwgpt_benchmarks(datadir: Path | None = None) -> Iterator[BenchmarkDescripti
     )
     yield BenchmarkDescription(
         name="hwgptbench-l",
-        config_space=hwgptbench(search_space="l").space,
+        config_space=_get_hwgptbench_config_space(
+            data_dir=datadir,
+            space_size="l",
+        ),
         load=partial(
             _get_surrogate_benchmark,
-            predictor="mlp",
             space_size="l",
-            use_supernet_surrogate=True,
+            use_supernet_surrogate=use_supernet_surrogate,
             datadir=datadir,
+            device=device,
         ),
         metrics={
             "perplexity": Measure.metric(bounds=(0, 1), minimize=True),
@@ -202,29 +292,10 @@ def hwgpt_benchmarks(datadir: Path | None = None) -> Iterator[BenchmarkDescripti
             "float16_memory": Measure.metric(bounds=(0, np.inf), minimize=True),
         },
         fidelities={
-            "n_head_choices": RangeFidelity.from_tuple((1, 3, 1), supports_continuation=True)
+            "n_layer_choices": RangeFidelity.from_tuple((1, 3, 1), supports_continuation=False)
         },
         is_tabular=False,
         has_conditionals=False,
         env=env,
         mem_req_mb=12288,
     )
-
-
-def hwgptbench(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
-    """Generates benchmark descriptions for various HW-GPT-Bench.
-
-    Args:
-        datadir (Path | None): The directory where the data is stored.
-        If None, the default directory is used.
-
-    Yields:
-        Iterator[BenchmarkDescription]: An iterator over BenchmarkDescription objects
-        for each benchmark.
-    """
-    if datadir is None:
-        datadir = DEFAULT_DATA_DIR / "HW-GPT-Bench" / "data_collection"
-    elif isinstance(datadir, str):
-        datadir = Path(datadir).absolute().resolve()
-
-    yield from hwgpt_benchmarks(datadir=datadir)
