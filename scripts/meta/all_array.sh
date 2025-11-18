@@ -19,6 +19,7 @@ prior_opts=(
   # "NepsPriMO"
   # "NepsPiBORW"
   # "NepsMOPriorband"
+  # "RandomSearchWithPriors"
 )
 nonprior_opts=(
   # "RandomSearch"
