@@ -1,0 +1,22 @@
+benchmarks:
+  hwgptbench-s:
+    - perplexity
+    - latency
+    - flops
+    - params
+  hwgptbench-m:
+    - perplexity
+    - latency
+    - flops
+    - params
+  hwgptbench-l:
+    - perplexity
+    - latency
+    - flops
+    - params
+prior_spec:
+  - [good, 0, 0.01, null]
+  - [medium, 0, 0.125, null]
+  - [bad, -1, 0, null]
+kwargs:
+  device: "rtx2080"
