@@ -41,6 +41,22 @@ hwmetrics = [
     "latencies"
 ]
 
+device_list = [
+    "a100",
+    "a40",
+    "h100",
+    "rtx2080",
+    "rtx3080",
+    "a6000",
+    "v100",
+    "P100",
+    "cpu_xeon_silver",
+    "cpu_xeon_gold",
+    "cpu_amd_7502",
+    "cpu_amd_7513",
+    "cpu_amd_7452",
+]
+
 fidelity_maps = {
     "s": [10, 11, 12],
     "m": [22, 23, 24],
@@ -114,8 +130,8 @@ def _get_surrogate_benchmark(
     )
     predictor = "supernet" if use_supernet_surrogate else "mlp"
 
-    assert device is None or device in bench.device_list, (
-        f"Device {device} not in {bench.device_list}"
+    assert device is None or device in device_list, (
+        f"Device {device} not in {device_list}"
     )
 
     query_function = partial(
@@ -162,7 +178,11 @@ def _hwgptbench_surrogate_query_function(
     hw_results = benchmark.query(
         device=device,
     )
-    all_results.update(hw_results)
+    hw_results_flat = {}
+    for obj, device_metric in hw_results.items():
+        for device_name, value in device_metric.items():
+            hw_results_flat[f"{device_name}_{obj}"] = value
+    all_results.update(hw_results_flat)
     return Result(
         query=query,
         values=all_results,
@@ -193,6 +213,21 @@ def hwgpt_benchmarks(
 
     use_supernet_surrogate = kwargs.get("use_supernet_surrogate", False)
     device = kwargs.get("device")
+    all_latencies = {
+        f"{device}_latencies": Measure.metric(bounds=(0, np.inf), minimize=True)
+        for device in device_list
+    }
+
+    all_energies = {
+        f"{device}_energies": Measure.metric(bounds=(0, np.inf), minimize=True)
+        for device in device_list
+    }
+
+    main_metrics = {
+        "perplexity": Measure.metric(bounds=(0, np.inf), minimize=True)
+    }
+    main_metrics.update(all_latencies)
+    main_metrics.update(all_energies)
 
     env = Env(
         name="py310-hwgptbench-0.1",
@@ -213,11 +248,7 @@ def hwgpt_benchmarks(
             datadir=datadir,
             device=device,
         ),
-        metrics={
-            "perplexity": Measure.metric(bounds=(0, 1), minimize=True),
-            "energies": Measure.metric(bounds=(0, np.inf), minimize=True),
-            "latencies": Measure.metric(bounds=(0, np.inf), minimize=True),
-        },
+        metrics=main_metrics,
         test_metrics={},
         costs={
             "flops": Measure.metric(bounds=(0, np.inf), minimize=True),
@@ -246,11 +277,7 @@ def hwgpt_benchmarks(
             datadir=datadir,
             device=device,
         ),
-        metrics={
-            "perplexity": Measure.metric(bounds=(0, 1), minimize=True),
-            "energies": Measure.metric(bounds=(0, np.inf), minimize=True),
-            "latencies": Measure.metric(bounds=(0, np.inf), minimize=True),
-        },
+        metrics=main_metrics,
         test_metrics={},
         costs={
             "flops": Measure.metric(bounds=(0, np.inf), minimize=True),
@@ -279,11 +306,7 @@ def hwgpt_benchmarks(
             datadir=datadir,
             device=device,
         ),
-        metrics={
-            "perplexity": Measure.metric(bounds=(0, 1), minimize=True),
-            "energies": Measure.metric(bounds=(0, np.inf), minimize=True),
-            "latencies": Measure.metric(bounds=(0, np.inf), minimize=True),
-        },
+        metrics=main_metrics,
         test_metrics={},
         costs={
             "flops": Measure.metric(bounds=(0, np.inf), minimize=True),

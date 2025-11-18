@@ -74,7 +74,7 @@ IFS=":" read -r optimizer benchmark obj1 obj2 <<< "$job"
 
 # Map keys
 key1="perplexity"
-key2="latencies"
+key2="rtx2080_latencies"
 
 # === Create YAML ===
 config_dir="generated_configs"
