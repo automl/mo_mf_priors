@@ -157,7 +157,7 @@ def lcbench_surrogate(datadir: Path | None = None) -> Iterator[BenchmarkDescript
     env = Env(
         name="py310-mfpbench-1.10-yahpo",
         requirements=(
-            "mf-prior-bench==1.10.0",
+            "mf_prior_bench==1.10.0",
             "yahpo-gym",
             "xgboost>=1.7"
         ),
@@ -220,7 +220,7 @@ def mfh() -> Iterator[BenchmarkDescription]:
     env = Env(
         name="py310-mfpbench-1.10-mfh",
         python_version="3.10",
-        requirements=("mf-prior-bench==1.10.0",),
+        requirements=("mf_prior_bench==1.10.0",),
         post_install=(),
     )
     for req in env.requirements:
@@ -270,7 +270,7 @@ def jahs(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
         name="py310-mfpbench-1.10-jahs",
         python_version="3.10",
         requirements=(
-            "mf-prior-bench==1.10.0",
+            "mf_prior_bench==1.10.0",
             "jahs-bench==1.2.0",
             # "pandas<1.4",
             # "ConfigSpace<=0.6.1",
@@ -332,7 +332,7 @@ def pd1(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
     env = Env(
         name="py310-mfpbench-1.10-pd1",
         python_version="3.10",
-        requirements=("mf-prior-bench==1.10.0","xgboost>=1.7"),
+        requirements=("mf_prior_bench==1.10.0","xgboost>=1.7"),
         post_install=_download_data_cmd("pd1", datadir=datadir),
     )
     for req in env.requirements:

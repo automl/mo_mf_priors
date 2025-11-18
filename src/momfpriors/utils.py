@@ -414,9 +414,6 @@ def is_package_installed(package_name: str) -> bool:
             version_check = (constraint, version_spec)
             break
 
-    # Normalize package name (replace hyphens with underscores)
-    package_name = package_name.replace("-", "_")
-
     # Get the site-packages directory of the current virtual environment
     venv_site_packages = site.getsitepackages() if hasattr(site, "getsitepackages") else []
     venv_prefix = sys.prefix  # Virtual environment root
