@@ -434,7 +434,7 @@ class Run:
         priors_dir: Path = DEFAULT_PRIORS_DIR,
         prior_distribution: Literal["normal", "uniform", "beta"] = "normal",
         data_dir: str | Path | None = None,
-        **kwargs: Any  # noqa: ARG003
+        **kwargs: Any,
         ) -> Run:
         """Generates a Run instance configured with the specified optimizer, benchmark, and priors.
 
@@ -512,7 +512,7 @@ class Run:
 
 
         optimizer = OPTIMIZERS[optimizer_name]
-        benchmark = BENCHMARKS(data_dir=data_dir)[benchmark_name]
+        benchmark = BENCHMARKS(data_dir=data_dir, **kwargs)[benchmark_name]
         if isinstance(benchmark, FunctionalBenchmark):
             benchmark = benchmark.desc
 

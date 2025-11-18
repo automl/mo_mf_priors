@@ -45,6 +45,7 @@ def exp(  # noqa: C901, PLR0912, PLR0913
     overwrite: bool = False,
     use_continuations_as_budget: bool = False,
     num_runs_only: bool = False,
+    data_dir: str | Path | None = None,
     **kwargs: Any
 ) -> None:
     """Run experiments with specified optimizers and benchmarks.
@@ -78,6 +79,8 @@ def exp(  # noqa: C901, PLR0912, PLR0913
 
         num_runs_only: If set to True, only count the number of runs without
             executing them or writing the YAMLs.
+
+        data_dir: The path to the benchmark data directory.
 
         **kwargs: Additional keyword arguments to pass to the Run.generate_run method.
 
@@ -127,6 +130,7 @@ def exp(  # noqa: C901, PLR0912, PLR0913
                         exp_dir=exp_dir,
                         priors_dir=priors_dir,
                         prior_distribution=prior_distribution,
+                        data_dir=data_dir,
                         **kwargs
                     )
                     if run.name in run_names:
@@ -382,6 +386,12 @@ if __name__ == "__main__":
         action="store_true",
         help="If set, only count the number of runs without executing them or writing the YAMLs."
     )
+    parser.add_argument(
+        "--data_dir", "-data",
+        type=str,
+        default=None,
+        help="Path to the benchmark data directory."
+    )
 
     args = parser.parse_args()
 
@@ -472,5 +482,6 @@ if __name__ == "__main__":
             overwrite=args.overwrite,
             use_continuations_as_budget=True,
             num_runs_only=args.num_runs_only,
+            data_dir=args.data_dir,
             **config.get("kwargs", {})
         )

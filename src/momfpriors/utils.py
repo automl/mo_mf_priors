@@ -9,7 +9,6 @@ from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import neps
 import numpy as np
 from hpoglue import BenchmarkDescription, Config, Query, Result
 from packaging import version
@@ -338,6 +337,7 @@ def pipeline_space_to_cs(
     pipeline_space: Mapping[str, Any],
 )-> ConfigurationSpace:
     """Convert a Pipeline Space to ConfigSpace."""
+    import neps  # noqa: PLC0415
     from ConfigSpace import (  # noqa: PLC0415
         CategoricalHyperparameter,
         ConfigurationSpace,

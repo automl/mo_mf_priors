@@ -29,6 +29,7 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912, PLR0915
     data_dir: str | Path | None = None,
     *,
     clean: bool = False,
+    **kwargs,
 ) -> None:
     """Generate priors for the given benchmarks.
 
@@ -54,6 +55,8 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912, PLR0915
 
         clean: Whether to clean the priors directory before generating the priors.
             Defaults to False.
+
+        kwargs: Additional benchmark-specific keyword arguments.
     """
     if to.exists() and clean:
         for child in filter(lambda path: path.is_file(), to.iterdir()):
@@ -63,7 +66,7 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912, PLR0915
 
     logger.info(f"Priors generation with {seed=}, {nsamples=} and saving to {to.resolve()}")
 
-    _BENCHMARKS = BENCHMARKS(data_dir=data_dir)
+    _BENCHMARKS = BENCHMARKS(data_dir=data_dir, **kwargs)
 
     for benchmark, objectives in benchmarks.items():
 
@@ -236,6 +239,7 @@ if __name__ == "__main__":
         _clean = prior_gen.get("clean", args.clean)
         _seed = prior_gen.get("seed", args.seed)
         _nsamples = prior_gen.get("nsamples", args.nsamples)
+        kwargs = prior_gen.get("kwargs", {})
 
         if not isinstance(_prior_spec, list):
             _prior_spec = [_prior_spec]
@@ -300,4 +304,5 @@ if __name__ == "__main__":
         fidelity=_fidelity,
         clean=_clean,
         data_dir=args.data_dir,
+        **kwargs,
     )
