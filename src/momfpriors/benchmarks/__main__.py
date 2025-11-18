@@ -19,7 +19,7 @@ def main(
     """List available benchmarks."""
     match list:
         case "all":
-            logger.info(BENCHMARKS(data_dir=data_dir).keys())
+            logger.info(BENCHMARKS(datadir=data_dir).keys())
         case _:
             logger.error(f"Invalid list type: {list}")
 

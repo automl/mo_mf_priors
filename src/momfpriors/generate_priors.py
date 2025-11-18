@@ -66,7 +66,7 @@ def generate_priors_wrt_obj(  # noqa: C901, PLR0912, PLR0915
 
     logger.info(f"Priors generation with {seed=}, {nsamples=} and saving to {to.resolve()}")
 
-    _BENCHMARKS = BENCHMARKS(data_dir=data_dir, **kwargs)
+    _BENCHMARKS = BENCHMARKS(datadir=data_dir, **kwargs)
 
     for benchmark, objectives in benchmarks.items():
 

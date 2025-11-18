@@ -512,7 +512,7 @@ class Run:
 
 
         optimizer = OPTIMIZERS[optimizer_name]
-        benchmark = BENCHMARKS(data_dir=data_dir, **kwargs)[benchmark_name]
+        benchmark = BENCHMARKS(datadir=data_dir, **kwargs)[benchmark_name]
         if isinstance(benchmark, FunctionalBenchmark):
             benchmark = benchmark.desc
 
