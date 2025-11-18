@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import warnings
 from collections.abc import Iterator
 from functools import partial
@@ -16,6 +17,9 @@ from hpoglue.measure import Measure
 from hpoglue.result import Result
 
 from momfpriors.constants import DEFAULT_DATA_DIR
+from momfpriors.utils import is_package_installed
+
+hwgpt_logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from hpoglue.query import Query
@@ -230,9 +234,16 @@ def hwgpt_benchmarks(
     env = Env(
         name="py310-hwgptbench-0.1",
         python_version="3.10",
-        requirements=None,
+        requirements=("hwgptbench",),
         post_install=None,
     )
+    for req in env.requirements:
+        if not is_package_installed(req):
+            hwgpt_logger.error(
+                f"Please install the required package for hwgptbench: {req}",
+                stacklevel=2
+            )
+            return
     yield BenchmarkDescription(
         name="hwgptbench-s",
         config_space=_get_hwgptbench_config_space(

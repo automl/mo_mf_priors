@@ -158,7 +158,7 @@ def lcbench_surrogate(datadir: Path | None = None) -> Iterator[BenchmarkDescript
         name="py310-mfpbench-1.10-yahpo",
         requirements=(
             "mf-prior-bench==1.10.0",
-            # "yahpo-gym==1.0.2",   # Use editable install
+            "yahpo-gym",
             "xgboost>=1.7"
         ),
         post_install=_download_data_cmd("yahpo", datadir=datadir),
