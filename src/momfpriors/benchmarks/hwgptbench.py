@@ -98,13 +98,13 @@ def _choices_to_sampled_config(
     fid_value: int,
 ) -> dict[str, list | int]:
     sampled_config = {}
-    sampled_config["sample_embed_dim"] = arch_config["embed_dim_choices"]
-    sampled_config["sample_n_layer"] = fid_value
+    sampled_config["sample_embed_dim"] = int(arch_config["embed_dim_choices"])
+    sampled_config["sample_n_layer"] = int(fid_value)
     sampled_config["sample_mlp_ratio"] = []
     sampled_config["sample_n_head"] = []
     for i in range(fid_value):
-        sampled_config["sample_mlp_ratio"].append(arch_config[f"mlp_ratio_{i}"])
-        sampled_config["sample_n_head"].append(arch_config[f"num_heads_{i}"])
+        sampled_config["sample_mlp_ratio"].append(int(arch_config[f"mlp_ratio_{i}"]))
+        sampled_config["sample_n_head"].append(int(arch_config[f"num_heads_{i}"]))
     sampled_config["sample_bias"] = str(arch_config["bias_choices"])
 
     return sampled_config
@@ -173,17 +173,18 @@ def _hwgptbench_surrogate_query_function(
     benchmark.set_arch(sampled_config)
     all_results = {}
     for metric in metrics:
-        all_results[metric] = benchmark.query(
+        query_res = benchmark.query(
             metric=metric,
             predictor=predictor,
             device=device
         )
+        all_results.update(query_res)
     hw_results = benchmark.query(
         device=device,
     )
     hw_results_flat = {}
-    for obj, device_metric in hw_results.items():
-        for device_name, value in device_metric.items():
+    for obj, device_metric_vals in hw_results.items():
+        for device_name, value in device_metric_vals.items():
             hw_results_flat[f"{device_name}_{obj}"] = value
     all_results.update(hw_results_flat)
     return Result(
