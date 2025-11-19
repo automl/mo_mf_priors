@@ -1,17 +1,17 @@
 benchmarks:
   hwgptbench-s:
     - perplexity
-    - rtx2080_latencies
+    # - rtx2080_latencies
     - flops
     - params
   hwgptbench-m:
     - perplexity
-    - rtx2080_latencies
+    # - rtx2080_latencies
     - flops
     - params
   hwgptbench-l:
     - perplexity
-    - rtx2080_latencies
+    # - rtx2080_latencies
     - flops
     - params
 prior_spec:

@@ -186,14 +186,14 @@ def _hwgptbench_surrogate_query_function(
             device=device
         )
         all_results.update(query_res)
-    hw_results = benchmark.query(
-        device=device,
-    )
-    hw_results_flat = {}
-    for obj, device_metric_vals in hw_results.items():
-        for device_name, value in device_metric_vals.items():
-            hw_results_flat[f"{device_name}_{obj}"] = value
-    all_results.update(hw_results_flat)
+    # hw_results = benchmark.query(
+    #     device=device,
+    # )
+    # hw_results_flat = {}
+    # for obj, device_metric_vals in hw_results.items():
+    #     for device_name, value in device_metric_vals.items():
+    #         hw_results_flat[f"{device_name}_{obj}"] = value
+    # all_results.update(hw_results_flat)
     return Result(
         query=query,
         values=all_results,
