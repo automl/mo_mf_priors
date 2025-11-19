@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import copy
 import logging
+import warnings
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 
@@ -25,6 +26,10 @@ if is_package_installed("hwgptbench"):
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 def generate_priors_wrt_obj(  # noqa: C901, PLR0912, PLR0915
     seed: int,

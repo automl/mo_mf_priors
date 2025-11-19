@@ -22,6 +22,13 @@ from momfpriors.utils import is_package_installed
 
 hwgpt_logger = logging.getLogger(__name__)
 
+autogluon_logger = logging.getLogger("autogluon")
+autogluon_logger.setLevel(logging.ERROR)
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 if TYPE_CHECKING:
     from hpoglue.query import Query
     from hwgpt.api import HWGPT
