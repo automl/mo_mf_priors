@@ -11,7 +11,17 @@ from hpoglue import FunctionalBenchmark, Result
 
 from momfpriors.benchmarks import BENCHMARKS
 from momfpriors.constants import DEFAULT_PRIORS_DIR
-from momfpriors.utils import bench_first_fid, cs_random_sampling, get_prior_configs
+from momfpriors.utils import (
+    bench_first_fid,
+    cs_random_sampling,
+    get_prior_configs,
+    is_package_installed,
+)
+
+if is_package_installed("hwgptbench"):
+    from hwgpt.predictors.hwmetric.models.autogluon.autogluon_latencies import (
+        MultilabelPredictor,  # noqa: F401
+    )
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
