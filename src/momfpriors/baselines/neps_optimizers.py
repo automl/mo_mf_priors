@@ -117,7 +117,7 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
 
     def ask(self) -> Query:
         """Ask the optimizer for a new trial."""
-        import copy
+        import copy  # noqa: PLC0415
         trial = self.optimizer.ask() # TODO: Figure out fidelity
         fidelity = None
         _config = copy.deepcopy(trial.config)
@@ -165,7 +165,9 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
 
 
 class NepsRW(NepsOptimizer):
-    """Random Weighted Scalarization of objectives using Bayesian Optimization in Neps."""
+    """Random Weighted Scalarization of objectives using Bayesian Optimization
+    with EI acquisition function in Neps.
+    """
 
     name = "NepsRW"
 
@@ -217,6 +219,64 @@ class NepsRW(NepsOptimizer):
             working_directory=working_directory,
             random_weighted_opt=True,
             constant_weights=True,
+            scalarization_weights=scalarization_weights,
+            initial_design_size=kwargs.get("initial_design_size", "ndim"),
+        )
+
+
+class NepsMOBO(NepsOptimizer):
+    """Multi-objective Bayesian Optimization using
+    EHVI acquisition function in Neps.
+    """
+
+    name = "NepsMOBO"
+
+    support = Problem.Support(
+        fidelities=(None,),
+        objectives=("many"),
+        cost_awareness=(None,),
+        tabular=False,
+    )
+
+    env = Env(
+        name="Neps-0.12.2",
+        python_version="3.10",
+        requirements=("neural-pipeline-search==0.12.2",)
+    )
+
+    mem_req_mb = 1024
+
+    def __init__(
+        self,
+        problem: Problem,
+        seed: int = 0,
+        working_directory: str | Path = DEFAULT_RESULTS_DIR,
+        scalarization_weights: Literal["equal", "random"] | Mapping[str, float] = "random",
+        searcher: str = "bayesian_optimization",
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the optimizer."""
+        self.searcher = searcher
+        space = convert_configspace(problem.config_space)
+        optimizer = searcher
+
+
+        match problem.fidelities:
+            case None:
+                pass
+            case Mapping() | tuple():
+                raise ValueError("NepsMOBO does not support fidelities.")
+            case _:
+                raise TypeError("Fidelity must be a tuple or a Mapping.")
+
+        set_seed(seed)
+
+        super().__init__(
+            problem=problem,
+            space=space,
+            optimizer=optimizer,
+            seed=seed,
+            working_directory=working_directory,
             scalarization_weights=scalarization_weights,
             initial_design_size=kwargs.get("initial_design_size", "ndim"),
         )

@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --partition bosch_cpu-cascadelake
-#SBATCH --job-name all_array_100
+#SBATCH --job-name all_array_20
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
@@ -24,11 +24,12 @@ prior_opts=(
 nonprior_opts=(
   # "RandomSearch"
   # "SMAC_ParEGO"
+  "NepsMOBO"
   # "NepsRW"
   # "NepsHyperbandRW"
   # "Nevergrad_EvolutionStrategy"
   # "NepsMOASHA"
-  "Optuna"
+  # "Optuna"
 )
 
 # Benchmarks with known objective types (used for both prior and non-prior)
