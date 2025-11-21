@@ -208,7 +208,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
                 num_full_evals += 1
                 acc_costs.append(costs)
                 pareto = pareto_front(acc_costs)
-                pareto = np.array([list(ac.values()) for ac in acc_costs])[pareto]
+                pareto = np.array([[ac[obj] for obj in objectives] for ac in acc_costs])[pareto]
                 pareto = pareto[pareto[:, 0].argsort()]
                 agg_pareto_costs.extend(pareto)
                 hv = Hypervolume(ref_point=reference_point)
@@ -493,10 +493,13 @@ def gen_plots_per_bench(  # noqa: C901, PLR0913
             "Can only plot pareto front for 2D cost space."
         )
 
+
         _results = _df[RESULTS_COL].apply(
-            lambda x, objectives=objectives: {
-                k: x[k] for k in objectives
-            }
+            lambda res, objectives=objectives: {
+                obj: (-cost if not _df[OBJECTIVES_MINIMIZE_COL].iloc[0][obj] else cost)  # noqa: B023
+                for obj, cost in res.items()
+                if obj in objectives
+            } if res is not None else res
         )
 
         _df[RESULTS_COL] = _results
