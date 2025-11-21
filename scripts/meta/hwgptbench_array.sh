@@ -49,7 +49,6 @@ prior_settings=(
 # === Compute total jobs
 total_jobs=()
 
-# 2 priors opts × 27 benchmarks (3 obj settings × 9)
 for opt in "${prior_opts[@]}"; do
   for bench in "${benchmarks[@]}"; do
     for setting in "${prior_settings[@]}"; do
@@ -58,7 +57,6 @@ for opt in "${prior_opts[@]}"; do
   done
 done
 
-# 6 non-prior opts × 9 benchmarks (with nulls)
 for opt in "${nonprior_opts[@]}"; do
   for bench in "${benchmarks[@]}"; do
     total_jobs+=("$opt:$bench:null:null")
@@ -74,7 +72,7 @@ IFS=":" read -r optimizer benchmark obj1 obj2 <<< "$job"
 
 # Map keys
 key1="perplexity"
-key2="rtx2080_latencies"
+key2="flops"
 
 # === Create YAML ===
 config_dir="generated_configs"
@@ -100,8 +98,10 @@ cat "$yaml_file"
 
 data_dir="/work/dlclarge2/basus-basus_ws/data/"
 
+priors_dir="/home/basus/repos/mo_mf_priors/priors/1000/"
+
 # === Run the experiment ===
-python3 -m momfpriors.run -y "$yaml_file" -e "hwgptbench_20" --data_dir "$data_dir"
+python3 -m momfpriors.run -y "$yaml_file" -e "hwgptbench_20" --data_dir "$data_dir" --priors_dir "$priors_dir"
 
 end=$(date +%s)
 runtime=$((end - start))
