@@ -1,0 +1,30 @@
+benchmark: hwgptbench-s
+config:
+  bias_choices: 'True'
+  embed_dim_choices: 768
+  mlp_ratio_0: 2
+  mlp_ratio_1: 4
+  mlp_ratio_10: 4
+  mlp_ratio_11: 2
+  mlp_ratio_2: 3
+  mlp_ratio_3: 3
+  mlp_ratio_4: 4
+  mlp_ratio_5: 2
+  mlp_ratio_6: 4
+  mlp_ratio_7: 3
+  mlp_ratio_8: 4
+  mlp_ratio_9: 4
+  num_heads_0: 12
+  num_heads_1: 12
+  num_heads_10: 8
+  num_heads_11: 12
+  num_heads_2: 8
+  num_heads_3: 8
+  num_heads_4: 12
+  num_heads_5: 12
+  num_heads_6: 8
+  num_heads_7: 8
+  num_heads_8: 8
+  num_heads_9: 12
+objective: perplexity
+prior_name: good
