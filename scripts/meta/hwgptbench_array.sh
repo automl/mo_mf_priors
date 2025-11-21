@@ -98,7 +98,7 @@ cat "$yaml_file"
 
 data_dir="/work/dlclarge2/basus-basus_ws/data/"
 
-priors_dir="/home/basus/repos/mo_mf_priors/priors/1000/"
+priors_dir="/home/basus/repos/mo_mf_priors/src/priors/1000/"
 
 # === Run the experiment ===
 python3 -m momfpriors.run -y "$yaml_file" -e "hwgptbench_20" --data_dir "$data_dir" --priors_dir "$priors_dir"
