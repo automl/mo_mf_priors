@@ -20,9 +20,7 @@ from hpoglue.env import (
     get_current_installed_hpoglue_version,
 )
 
-from momfpriors._core import _core
 from momfpriors.baselines import OPTIMIZERS
-from momfpriors.benchmarks import BENCHMARKS
 from momfpriors.constants import DEFAULT_PRIORS_DIR, DEFAULT_RESULTS_DIR
 from momfpriors.optimizer import Abstract_AskTellOptimizer, Abstract_NonAskTellOptimizer
 
@@ -427,21 +425,19 @@ class Run:
     def generate_run(
         cls,
         optimizer: tuple[str, Mapping[str, Any]],
-        benchmark: tuple[str, Mapping[str, str | None]],
+        benchmark: tuple[BenchmarkDescription | FunctionalBenchmark, Mapping[str, str | None]],
         seed: int = 0,
         num_iterations: int = 1000,
         exp_dir: Path = DEFAULT_RESULTS_DIR,
         priors_dir: Path = DEFAULT_PRIORS_DIR,
         prior_distribution: Literal["normal", "uniform", "beta"] = "normal",
-        data_dir: str | Path | None = None,
-        **kwargs: Any,
         ) -> Run:
         """Generates a Run instance configured with the specified optimizer, benchmark, and priors.
 
         Args:
             optimizer: A tuple containing the optimizer name and its hyperparameters.
 
-            benchmark: A tuple containing the benchmark name and a mapping of
+            benchmark: A tuple containing the benchmark object and a mapping of
                 objectives to prior annotations and optionally, the names of fidelties to use.
 
             seed: The random seed for reproducibility.
@@ -475,7 +471,9 @@ class Run:
                 anything to the disk. That can be done using the `Run.write_yaml()` method.
         """
         optimizer_name, optimizer_kwargs = optimizer
-        benchmark_name, objs_priors_fids = benchmark
+        benchmark_obj, objs_priors_fids = benchmark
+        benchmark = benchmark_obj
+        benchmark_name = benchmark.name
 
         optimizer_kwargs = optimizer_kwargs or {}
 
@@ -512,7 +510,6 @@ class Run:
 
 
         optimizer = OPTIMIZERS[optimizer_name]
-        benchmark = BENCHMARKS(datadir=data_dir, **kwargs)[benchmark_name]
         if isinstance(benchmark, FunctionalBenchmark):
             benchmark = benchmark.desc
 

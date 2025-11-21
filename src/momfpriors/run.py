@@ -13,6 +13,7 @@ import yaml
 from hpoglue.utils import configpriors_to_dict
 
 from momfpriors._run import Run
+from momfpriors.benchmarks import BENCHMARKS
 from momfpriors.constants import DEFAULT_PRIORS_DIR, DEFAULT_RESULTS_DIR, DEFAULT_ROOT_DIR
 
 GLOBAL_SEED = 42
@@ -113,6 +114,7 @@ def exp(  # noqa: C901, PLR0912, PLR0913
 
     runs: list[Run] = []
     run_names: list[str] = []
+    _BENCHMARKS = BENCHMARKS(datadir=data_dir, **kwargs)
     for benchmark in benchmarks:
         for optimizer in optimizers:
             if optimizer[0] == "MOMFBO" and not check_gpu_momfbo():
@@ -122,16 +124,19 @@ def exp(  # noqa: C901, PLR0912, PLR0913
                 continue
             for seed in seeds:
                 try:
+                    assert benchmark[0] in _BENCHMARKS, (
+                        f"Benchmark {benchmark[0]} not found in available benchmarks: "
+                        f"{list(_BENCHMARKS.keys())}"
+                    )
+                    _benchmark = (_BENCHMARKS[benchmark[0]], benchmark[1])
                     run = Run.generate_run(
                         optimizer=optimizer,
-                        benchmark=benchmark,
+                        benchmark=_benchmark,
                         seed=seed,
                         num_iterations=num_iterations,
                         exp_dir=exp_dir,
                         priors_dir=priors_dir,
                         prior_distribution=prior_distribution,
-                        data_dir=data_dir,
-                        **kwargs
                     )
                     if run.name in run_names:
                         continue
