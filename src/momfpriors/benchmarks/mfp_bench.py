@@ -165,7 +165,7 @@ def lcbench_surrogate(datadir: Path | None = None) -> Iterator[BenchmarkDescript
     )
     for req in env.requirements:
         if not is_package_installed(req):
-            mfp_logger.error(
+            mfp_logger.warning(
                 f"Please install the required package for yahpo-lcbench: {req}",
                 stacklevel=2
             )
@@ -225,7 +225,7 @@ def mfh() -> Iterator[BenchmarkDescription]:
     )
     for req in env.requirements:
         if not is_package_installed(req):
-            mfp_logger.error(f"Please install the required package for mfh: {req}", stacklevel=2)
+            mfp_logger.warning(f"Please install the required package for mfh: {req}", stacklevel=2)
             return
     for correlation in ("bad", "good", "moderate", "terrible"):
         for dims in (3, 6):
@@ -271,7 +271,7 @@ def jahs(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
         python_version="3.10",
         requirements=(
             "mf_prior_bench==1.10.0",
-            "jahs-bench==1.2.0",
+            "jahs_bench",
             # "pandas<1.4",
             # "ConfigSpace<=0.6.1",
         ),
@@ -279,7 +279,7 @@ def jahs(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
     )
     for req in env.requirements:
         if not is_package_installed(req):
-            mfp_logger.error(f"Please install the required package for jahs: {req}", stacklevel=2)
+            mfp_logger.warning(f"Please install the required package for jahs: {req}", stacklevel=2)
             return
     for task_id in task_ids:
         name = f"jahs-{task_id}"
@@ -337,7 +337,7 @@ def pd1(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
     )
     for req in env.requirements:
         if not is_package_installed(req):
-            mfp_logger.error(f"Please install the required package for pd1: {req}", stacklevel=2)
+            mfp_logger.warning(f"Please install the required package for pd1: {req}", stacklevel=2)
             return
     yield BenchmarkDescription(
         name="pd1-cifar100-wide_resnet-2048",

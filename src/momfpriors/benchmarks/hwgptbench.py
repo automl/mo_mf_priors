@@ -248,7 +248,7 @@ def hwgpt_benchmarks(
     )
     for req in env.requirements:
         if not is_package_installed(req):
-            hwgpt_logger.error(
+            hwgpt_logger.warning(
                 f"Please install the required package for hwgptbench: {req}",
                 stacklevel=2
             )
