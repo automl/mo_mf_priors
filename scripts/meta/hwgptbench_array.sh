@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a.out
 #SBATCH --error logs/%x-%A_%a.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-2%3   # (0 prior opts * 4 priors + 1 non-prior opts) * 3 benchmarks = 3 total combinations
+#SBATCH --array=0-17%18   # (1 prior opts * 4 priors + 1 non-prior opts) * 3 benchmarks = 18 total combinations
 #SBATCH --time=4-00:00:00
 
 echo "Workingdir: $PWD"
@@ -17,19 +17,19 @@ start=$(date +%s)
 # Optimizers
 prior_opts=(
   # "NepsPriMO"
-  # "NepsPiBORW"
+  "NepsPiBORW"
   # "NepsMOPriorband"
   # "RandomSearchWithPriors"
 )
 nonprior_opts=(
   # "RandomSearch"
   # "SMAC_ParEGO"
-  # "NepsRW"
-  "NepsMOBO"
+  "NepsRW"
+  # "NepsMOBO"
   # "NepsHyperbandRW"
   # "Nevergrad_EvolutionStrategy"
   # "NepsMOASHA"
-  # "Optuna"
+  "Optuna"
 )
 
 # Benchmarks with known objective types (used for both prior and non-prior)
