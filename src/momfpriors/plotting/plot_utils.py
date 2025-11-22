@@ -241,6 +241,11 @@ regret_bounds = {
 
 reference_points_dict = {
 
+    # HW-GPT-Bench
+    "hwgptbench-s": {"perplexity": 100, "params": 130000000, "flops": 9e12},
+    "hwgptbench-m": {"perplexity": 100, "params": 400000000, "flops": 9e12},
+    "hwgptbench-l": {"perplexity": 100, "params": 800000000, "flops": 9e12},
+
     # MOMFPark
     "MOMFPark": {"value1": 1, "value2": 1},
 
@@ -258,9 +263,9 @@ reference_points_dict = {
     "MFZDT6": {"f1": 2, "f2": 2},
 
     # JAHSBench
-    "jahs-CIFAR10": {"valid_acc": 0, "runtime": 200000},
-    "jahs-ColorectalHistology": {"valid_acc": 0, "runtime": 200000},
-    "jahs-FashionMNIST": {"valid_acc": 0, "runtime": 200000},
+    "jahs-CIFAR10": {"runtime": 200000, "valid_acc": 0},
+    "jahs-ColorectalHistology": {"runtime": 200000, "valid_acc": 0},
+    "jahs-FashionMNIST": {"runtime": 200000, "valid_acc": 0},
 
     # YAHPO-LCBench
     "yahpo-lcbench-126026": {
@@ -482,6 +487,9 @@ hv_low_cutoffs = {
     "jahs-CIFAR10": 0,
     "jahs-ColorectalHistology": 0,
     "jahs-FashionMNIST": 0,
+    "hwgptbench-s": 6.4e14,
+    "hwgptbench-m": 6.6e14,
+    "hwgptbench-l": 6.6e14,
 }
 
 fid_perc_momfbo = {
