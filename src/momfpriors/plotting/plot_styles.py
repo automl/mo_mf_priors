@@ -87,6 +87,9 @@ COLORS_MAIN = {
 
     # Optuna
     "Optuna": "darkblue",
+
+    # BO with EHVI
+    "NepsMOBO": "darkgreen",
 }
 
 
