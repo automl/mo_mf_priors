@@ -65,8 +65,14 @@ class OptunaOptimizer(Optimizer):
         assert isinstance(problem.objectives, Mapping)
         num_objectives = len(problem.objectives)
 
+        ndim = len(self._distributions)
+
         self.optimizer: optuna.study.Study = optuna.create_study(
-            sampler=TPESampler(seed=seed, **kwargs),
+            sampler=TPESampler(
+                seed=seed,
+                n_startup_trials=ndim,
+                **kwargs
+            ),
             storage=None,
             pruner=None,
             study_name=f"{problem.name}-{seed}",
