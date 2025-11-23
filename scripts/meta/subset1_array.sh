@@ -92,7 +92,7 @@ fi
 # === Create YAML ===
 config_dir="generated_configs"
 mkdir -p "$config_dir"
-yaml_file="${config_dir}/subset1_${SLURM_ARRAY_TASK_ID}.yaml"
+yaml_file="${config_dir}/${benchmark}_${SLURM_JOB_NAME}_${SLURM_JOB_ID}_${SLURM_ARRAY_TASK_ID}.yaml"
 
 cat > "$yaml_file" <<EOF
 optimizers:

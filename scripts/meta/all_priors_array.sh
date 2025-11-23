@@ -77,7 +77,7 @@ else
 fi
 
 # === Run job for this task ID ===
-yaml_file="${config_dir}/prior_exp_${SLURM_ARRAY_TASK_ID}.yaml"
+yaml_file="${config_dir}/${benchmark}_${SLURM_JOB_NAME}_${SLURM_JOB_ID}_${SLURM_ARRAY_TASK_ID}.yaml"
 
 if [[ ! -f "$yaml_file" ]]; then
     echo "ERROR: Config file $yaml_file does not exist!"

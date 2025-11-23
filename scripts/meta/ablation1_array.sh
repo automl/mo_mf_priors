@@ -79,7 +79,7 @@ IFS=":" read -r optimizer benchmark obj1 val1 obj2 val2 <<< "$job"
 # === Create config
 config_dir="generated_configs"
 mkdir -p "$config_dir"
-yaml_file="${config_dir}/ablation1_${SLURM_ARRAY_TASK_ID}.yaml"
+yaml_file="${config_dir}/${benchmark}_${SLURM_JOB_NAME}_${SLURM_JOB_ID}_${SLURM_ARRAY_TASK_ID}.yaml"
 
 cat > "$yaml_file" <<EOF
 optimizers:
