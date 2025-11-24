@@ -58,8 +58,8 @@ job="${total_jobs[$SLURM_ARRAY_TASK_ID]}"
 IFS=":" read -r optimizer benchmark obj1 obj2 <<< "$job"
 
 # Map keys
-key1="perplexity"
-key2="flops"
+key1="valid_acc"
+key2="runtime"
 
 # === Create YAML ===
 config_dir="generated_configs"
