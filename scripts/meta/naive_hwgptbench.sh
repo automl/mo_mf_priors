@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a.out
 #SBATCH --error logs/%x-%A_%a.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-23%18   # (2 prior opts * 4 priors) * 3 benchmarks = 24 total combinations
+#SBATCH --array=0-11%12   # (1 prior opts * 4 priors) * 3 benchmarks = 12 total combinations
 #SBATCH --time=4-00:00:00
 
 echo "Workingdir: $PWD"
@@ -18,7 +18,7 @@ start=$(date +%s)
 prior_opts=(
     # "RandomSearchWithPriors"
     # "NepsMOPriorband"
-    "NepsPriorMOASHA"
+    # "NepsPriorMOASHA"
     # "NepsPiBORW"
     # "NepsPriMO"
     "NepsPriorRSMOASHA"
