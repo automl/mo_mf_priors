@@ -1039,7 +1039,7 @@ class NepsPriorRSMOASHA(NepsOptimizer):
             mo_selector=mo_selector,
             prior_centers=prior_centers,
             prior_confidences=prior_confidences,
-            mix_random=True,
+            sampler_type="mix_random",
         )
 
 
