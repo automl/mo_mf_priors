@@ -9,3 +9,6 @@ test_priors/
 data/
 logs/
 Optimizers_cache
+*.csv
+test*.py
+test*.ipynb
