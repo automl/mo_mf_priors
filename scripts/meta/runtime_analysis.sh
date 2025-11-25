@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-4%5   # (1 prior opts * 4 priors + 1 non-prior opts) * 1 benchmarks = 5 total combinations
+#SBATCH --array=0-2%3   # (2 prior opts * 1 prior + 1 non-prior opts) * 1 benchmarks = 3 total combinations
 #SBATCH --time=3-00:00:00
 
 echo "Workingdir: $PWD"
@@ -17,6 +17,7 @@ start=$(date +%s)
 # Optimizers
 prior_opts=(
   "NepsPriMO"
+  "NepsPiBORW"
 )
 nonprior_opts=(
   "NepsRW"
@@ -30,9 +31,6 @@ benchmarks=(
 # Prior benchmark settings (good-good, bad-good, bad-bad)
 prior_settings=(
   "good:good"
-  "bad:good"
-  "bad:bad"
-  "good:bad"
 )
 
 # === Compute total jobs
