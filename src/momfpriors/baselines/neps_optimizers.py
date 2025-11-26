@@ -147,7 +147,6 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
             key: obj.as_minimize(result.values[key])
             for key, obj in self.problem.objectives.items()
         }
-        logger.info(f"{costs['train_cost']} seconds")
         if self.random_weighted_opt:
             if not self.constant_weights:
                 weights = self._rng.uniform(size=len(self.objectives))
