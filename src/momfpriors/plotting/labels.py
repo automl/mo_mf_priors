@@ -40,9 +40,9 @@ LABELS_1 = {
 
     "NepsPriorRSMOASHA": "MOASHA+Prior(50%)",
 
-    "Optuna": "Optuna",
+    "Optuna": "MO-TPE",
 
-    "NepsMOBO": "BO-EHVI",
+    "NepsMOBO": "LogNEHVI",
 }
 
 ABLATION_LABELS = {

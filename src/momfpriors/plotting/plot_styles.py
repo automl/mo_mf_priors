@@ -86,7 +86,7 @@ COLORS_MAIN = {
     "NepsEtaPriorMFPriMO_w_continuations": "violet",
 
     # Optuna
-    "Optuna": "darkblue",
+    "Optuna": "royalblue",
 
     # BO with EHVI
     "NepsMOBO": "darkgreen",
@@ -139,8 +139,8 @@ COLORS_HPS = {
 
 HPOSUITE_COLORS = {
     "SMAC_BO": "saddlebrown",
-    "Scikit_Optimize": "hotpink",
-    "Optuna": "darkblue",
+    "Scikit_Optimize": "darkslategray",
+    "Optuna": "royalblue",
 }
 
 RC_PARAMS = {
@@ -201,6 +201,8 @@ other_fig_params = {
         8: (2, 4),
         9: (3, 3),
         12: (3, 4),
+        13: (3, 5),
+        14: (2, 7),
     },
     "tight_layout_pads": {
         "pad": 0,
@@ -220,6 +222,8 @@ other_fig_params = {
         8 : 4,
         9 : 6,
         12: 8,
+        13: 10,
+        14: 7,
     },
     "ylabel_i_inc": {
         1 : 0,
@@ -231,6 +235,8 @@ other_fig_params = {
         8 : 4,
         9 : 3,
         12: 4,
+        13: 5,
+        14: 2,
     },
     "multi_fig_leg_cols": {
         1: 1,
@@ -264,6 +270,7 @@ other_fig_params = {
         11: 3,
         12: 2,
         13: 5,
+        14: 2,
     },
     "stitched_cols": {
         1: 1,
@@ -273,7 +280,7 @@ other_fig_params = {
         5: 5,
         6: 6,
         7: 7,
-        8: 5,
+        8: 4,
         9: 5,
         10: 5,
         11: 5,
