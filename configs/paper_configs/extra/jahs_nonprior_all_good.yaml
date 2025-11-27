@@ -1,0 +1,20 @@
+exp_dir: jahs_20_evals
+output_dir: /home/soham/Master_Thesis/ICLR/plots/extra/
+skip_priors:
+  - bad-good
+  - bad-bad
+  - good-bad
+save_suffix: jahs_nonprior_all_good
+skip_opt:
+  - RandomSearchWithPriors
+  - NepsMOPriorband
+  - NepsPiBORW
+which_labels: "1"
+which_plots:
+  - hv
+  - pareto
+specific_fig_params:
+  - bbox_to_anchor=(0.5, -0.12)
+figsize:
+  - 12
+  - 4

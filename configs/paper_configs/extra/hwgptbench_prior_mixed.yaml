@@ -1,0 +1,26 @@
+exp_dir: hwgptbench_20
+output_dir: /home/soham/Master_Thesis/ICLR/plots/extra/
+skip_non_avg: true
+priors_to_avg:
+  - bad-good
+  - good-bad
+avg_prior_label: mixed
+save_suffix: hwgptbench_prior_mixed
+skip_opt:
+  - RandomSearch
+  - NepsHyperbandRW
+  - NepsRW
+  - Optuna
+  - SMAC_ParEGO
+  - Nevergrad_EvolutionStrategy
+  - NepsMOASHA
+skip_bench:
+  - MOMFPark
+which_labels: "1"
+which_plots:
+  - hv
+specific_fig_params:
+  - bbox_to_anchor=(0.5, -0.12)
+figsize:
+  - 12
+  - 4
