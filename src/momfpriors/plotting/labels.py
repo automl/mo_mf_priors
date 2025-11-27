@@ -101,6 +101,10 @@ SIG_LABELS = {
     "NepsPiBORW": "πBO+RW",
 
     "RandomSearchWithPriors": "RS+Prior",
+
+    "Optuna": "MO-TPE",
+
+    "NepsMOBO": "LogNEHVI",
 }
 
 SO_LABELS = {
