@@ -7,6 +7,12 @@ skip_priors:
   - good-bad
 skip_bench:
   - MOMFPark
+  - hwgptbench-s
+  - hwgptbench-m
+  - hwgptbench-l
+  - jahs-CIFAR10
+  - jahs-ColorectalHistology
+  - jahs-FashionMNIST
 which_labels: ablation_init
 which_plots:
   - hv

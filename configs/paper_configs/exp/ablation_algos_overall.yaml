@@ -11,8 +11,16 @@ skip_non_avg: True
 skip_opt:
   - NepsEtaPriorPriMO
   - NepsEtaPriorMFPriMO
+  - NepsPriMO_Init10
+  - NepsMOASHA_RS
 skip_bench:
   - MOMFPark
+  - hwgptbench-s
+  - hwgptbench-m
+  - hwgptbench-l
+  - jahs-CIFAR10
+  - jahs-ColorectalHistology
+  - jahs-FashionMNIST
 which_labels: ablation
 which_plots:
   - hv

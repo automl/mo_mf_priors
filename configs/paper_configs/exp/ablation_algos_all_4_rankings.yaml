@@ -16,3 +16,4 @@ sub_labels:
   - All priors bad
 remove_prior_annots: true
 ylim: 5
+cut_off_iteration: 20

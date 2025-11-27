@@ -14,6 +14,12 @@ skip_opt:
   - NepsPriorMOASHA
 skip_bench:
   - MOMFPark
+  - hwgptbench-s
+  - hwgptbench-m
+  - hwgptbench-l
+  - jahs-CIFAR10
+  - jahs-ColorectalHistology
+  - jahs-FashionMNIST
 which_labels: "1"
 which_plots:
   - hv

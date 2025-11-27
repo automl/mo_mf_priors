@@ -5,14 +5,23 @@ skip_priors:
   - bad-good
   - good-bad
 save_suffix: subset1_all_bad
+skip_opt:
+  - RandomSearchWithPriors
+  # - NepsMOBO
 skip_bench:
   - MOMFPark
+  - hwgptbench-s
+  - hwgptbench-m
+  - hwgptbench-l
+  - jahs-CIFAR10
+  - jahs-ColorectalHistology
+  - jahs-FashionMNIST
 which_labels: "1"
 which_plots:
   - hv
   - pareto
 specific_fig_params:
-  - bbox_to_anchor=(0.5, -0.08)
+  - bbox_to_anchor=(0.5, -0.12)
 figsize:
   - 16
   - 8
