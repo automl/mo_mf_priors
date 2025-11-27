@@ -1,5 +1,5 @@
 exp_dir: jahs_20_evals
-output_dir: /home/soham/Master_Thesis/ICLR/plots/extra_rebuttal/
+output_dir: /home/soham/Master_Thesis/ICLR/plots/extra/
 skip_non_avg: true
 priors_to_avg:
   - good-good
