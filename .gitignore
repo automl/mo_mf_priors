@@ -12,3 +12,4 @@ Optimizers_cache
 *.csv
 test*.py
 test*.ipynb
+test*.yaml
