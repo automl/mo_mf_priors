@@ -58,6 +58,9 @@ COLORS_MAIN = {
     "NepsPriMO": "crimson",
     "NepsPriMO_w_continuations": "crimson",
 
+    "NepsPriMO_HV": "darkred",
+    "NepsPriMO_HV_w_continuations": "darkred",
+
     # RandomSearchWithPriors
     "RandomSearchWithPriors": "darkorange",
 

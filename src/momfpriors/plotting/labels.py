@@ -15,6 +15,8 @@ LABELS_1 = {
 
     "NepsPriMO": "PriMO",
 
+    "NepsPriMO_HV": "PriMO-HV",
+
     "SMAC_ParEGO": "ParEGO",
     "RandomSearch": "Random Search",
     "NepsRW": "BO+RW",
