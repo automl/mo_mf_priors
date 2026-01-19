@@ -734,7 +734,7 @@ class NepsPriMO(NepsOptimizer):
             prior_centers=prior_centers,
             prior_confidences=prior_confidences,
             epsilon=epsilon,
-            scalarization="random",
+            scalarization="linear",
         )
 
 
@@ -894,7 +894,7 @@ class NepsPriMO_TS(NepsOptimizer):
             prior_centers=prior_centers,
             prior_confidences=prior_confidences,
             epsilon=epsilon,
-            scalarization="random",
+            scalarization="linear",
             acq_fn="ts",
         )
 
