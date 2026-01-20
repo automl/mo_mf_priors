@@ -18,7 +18,8 @@ start=$(date +%s)
 prior_opts=(
   # "NepsPriMO"
   # "NepsPriMO_HV"
-  "NepsPriMO_TS"
+  # "NepsPriMO_TS"
+  NepsPriMO_LCB
   # "NepsPiBORW"
   # "NepsMOPriorband"
   # "RandomSearchWithPriors"

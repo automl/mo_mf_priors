@@ -18,6 +18,7 @@ from momfpriors.baselines.neps_optimizers import (
     NepsPriMO,
     NepsPriMO_HV,
     NepsPriMO_Init10,
+    NepsPriMO_LCB,
     NepsPriMO_TS,
     NepsPriorMOASHA,
     NepsPriorRSMOASHA,
@@ -54,6 +55,7 @@ OPTIMIZERS = {
     OptunaOptimizer.name: OptunaOptimizer,
     NepsPriMO_HV.name: NepsPriMO_HV,
     NepsPriMO_TS.name: NepsPriMO_TS,
+    NepsPriMO_LCB.name: NepsPriMO_LCB,
 }
 
 for opt in yield_nevergrad_optimizers():

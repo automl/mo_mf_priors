@@ -899,6 +899,87 @@ class NepsPriMO_TS(NepsOptimizer):
         )
 
 
+class NepsPriMO_LCB(NepsOptimizer):
+    """The PriMO optimizer from NePS with LCB Acquisition Function."""
+
+    name = "NepsPriMO_LCB"
+
+    support = Problem.Support(
+        fidelities=("single",),
+        objectives=("many"),
+        cost_awareness=(None,),
+        tabular=False,
+        priors=True,
+        continuations=True,
+    )
+
+    env = Env(
+        name="Neps-0.12.2",
+        python_version="3.10",
+        requirements=("neural-pipeline-search==0.12.2",)
+    )
+
+    mem_req_mb = 1024
+
+    def __init__(
+        self,
+        problem: Problem,
+        seed: int = 0,
+        working_directory: str | Path = DEFAULT_RESULTS_DIR,
+        mo_selector: Literal["nsga2", "epsnet"] = "epsnet",
+        eta: int = 3,
+        sampler: Literal["uniform", "mopriorband"] = "uniform",
+        initial_design_size: int = 5,
+        epsilon=0.25,
+        **kwargs: Any,  # noqa: ARG002
+    ) -> None:
+        """Initialize the optimizer."""
+        space = convert_configspace(problem.config_space)
+
+        _fid = None
+        match problem.fidelities:
+            case None:
+                raise ValueError("NepsPriMO_LCB requires a fidelity.")
+            case Mapping():
+                raise NotImplementedError("Many-fidelity not yet implemented for NepsPriMO_LCB.")
+            case (fid_name, fidelity):
+                _fid = (fid_name, fidelity)
+            case _:
+                raise TypeError("Fidelity must be a tuple or a Mapping.")
+        set_seed(seed)
+
+        prior_centers = {
+            obj: prior.values
+            for obj, prior in problem.priors[1].items()
+        }
+
+        prior_confidences = {
+            obj: dict.fromkeys(
+                prior.keys(),
+                0.75
+            )
+            for obj, prior in problem.priors[1].items()
+        }
+
+        super().__init__(
+            problem=problem,
+            space=space,
+            optimizer="primo",
+            seed=seed,
+            working_directory=working_directory,
+            fidelities=_fid,
+            mo_selector=mo_selector,
+            eta=eta,
+            sampler=sampler,
+            initial_design_size= initial_design_size,
+            prior_centers=prior_centers,
+            prior_confidences=prior_confidences,
+            epsilon=epsilon,
+            scalarization="linear",
+            acq_fn="lcb",
+        )
+
+
 # Ablation: PriMO with initial design and PiBO's BO
 class NepsInitPiBORW(NepsOptimizer):
     """PriMO ablation with initial design and PiBO's BO."""
