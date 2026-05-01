@@ -31,6 +31,8 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+os.environ["ORT_LOGGING_LEVEL"] = "FATAL"   # Only show fatal errors
+
 import numpy as np
 from hpoglue.benchmark import BenchmarkDescription, SurrogateBenchmark
 from hpoglue.env import Env
