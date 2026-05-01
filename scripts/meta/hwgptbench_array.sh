@@ -3,7 +3,7 @@
 #SBATCH --job-name primo3o_hwgpt
 #SBATCH --output logs/%x-%A_%a.out
 #SBATCH --error logs/%x-%A_%a.err
-#SBATCH --cpus-per-task 30
+#SBATCH --cpus-per-task 2
 #SBATCH --array=0-11   # (1 prior opts * 4 priors + 7 non-prior opts) * 1 benchmark = 11 total combinations
 #SBATCH --mem-per-cpu 30G
 
