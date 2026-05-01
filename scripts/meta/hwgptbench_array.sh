@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition bosch_cpu-cascadelake
+#SBATCH --partition mldlc2_cpu-epyc9655
 #SBATCH --job-name primo3o_hwgpt
 #SBATCH --output logs/%x-%A_%a.out
 #SBATCH --error logs/%x-%A_%a.err
