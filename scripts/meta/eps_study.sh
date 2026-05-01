@@ -3,9 +3,10 @@
 #SBATCH --job-name primo_eps_study
 #SBATCH --output logs/%x-%A_%a_meta.out
 #SBATCH --error logs/%x-%A_%a_meta.err
-#SBATCH --cpus-per-task 30
-#SBATCH --array=0-19 # (1 prior opts * 4 priors * 5 hp settings) = 20 total combinations
+#SBATCH --cpus-per-task 1
+#SBATCH --array=0-139%20 # (1 prior opts * 4 priors * 5 hp settings) * 7 benchmarks = 140 total combinations
 # #SBATCH --time=3-00:00:00
+#SBATCH --mem-per-cpu 30G
 
 echo "Workingdir: $PWD"
 echo "Started at $(date)"
@@ -19,7 +20,14 @@ prior_opts=(
 )
 
 benchmarks=(
-  "pd1-translate_wmt-xformer_translate-64"
+  "pd1-imagenet-resnet-512"
+  "pd1-cifar100-wide_resnet-2048"
+  "pd1-lm1b-transformer-2048"
+  # "pd1-translate_wmt-xformer_translate-64"
+  "yahpo-lcbench-126026"
+  "yahpo-lcbench-146212"
+  "yahpo-lcbench-168330"
+  "yahpo-lcbench-168868"
 )
 
 prior_settings=(
@@ -62,8 +70,20 @@ job="${total_jobs[$SLURM_ARRAY_TASK_ID]}"
 
 IFS=":" read -r optimizer epsilon obj1 obj2 benchmark <<< "$job"
 
-key1="valid_error_rate"
-key2="train_cost"
+# Map keys
+if [[ "$benchmark" == MOMFPark ]]; then
+  key1="value1"
+  key2="value2"
+elif [[ "$benchmark" == pd1-* ]]; then
+  key1="valid_error_rate"
+  key2="train_cost"
+elif [[ "$benchmark" == yahpo-lcbench-* ]]; then
+  key1="val_cross_entropy"
+  key2="time"
+else
+  echo "Error: Unknown benchmark objective keys for benchmark=$benchmark"
+  exit 1
+fi
 
 echo "Optimizer: $optimizer"
 echo "Benchmark: $benchmark"
