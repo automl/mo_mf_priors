@@ -78,7 +78,7 @@ IFS=":" read -r optimizer benchmark obj1 obj2 obj3 <<< "$job"
 # Map keys
 key1="perplexity"
 key2="flops"
-key3="n_params"
+key3="params"
 
 # === Create YAML ===
 config_dir="generated_configs"
