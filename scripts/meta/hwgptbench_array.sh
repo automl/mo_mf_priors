@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --partition bosch_cpu-cascadelake
-#SBATCH --job-name primo_hwgptbench
+#SBATCH --job-name primo3o_hwgpt
 #SBATCH --output logs/%x-%A_%a.out
 #SBATCH --error logs/%x-%A_%a.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-17%18   # (1 prior opts * 4 priors + 1 non-prior opts) * 3 benchmarks = 18 total combinations
+#SBATCH --array=0-11   # (1 prior opts * 4 priors + 7 non-prior opts) * 1 benchmark = 11 total combinations
 #SBATCH --time=4-00:00:00
 
 echo "Workingdir: $PWD"
@@ -16,35 +16,39 @@ start=$(date +%s)
 
 # Optimizers
 prior_opts=(
-  # "NepsPriMO"
-  "NepsPiBORW"
+  "NepsPriMO"
+  # "NepsPiBORW"
   # "NepsMOPriorband"
   # "RandomSearchWithPriors"
 )
 nonprior_opts=(
-  # "RandomSearch"
-  # "SMAC_ParEGO"
+  "RandomSearch"
+  "SMAC_ParEGO"
   "NepsRW"
   # "NepsMOBO"
-  # "NepsHyperbandRW"
-  # "Nevergrad_EvolutionStrategy"
-  # "NepsMOASHA"
+  "NepsHyperbandRW"
+  "Nevergrad_EvolutionStrategy"
+  "NepsMOASHA"
   "Optuna"
 )
 
 # Benchmarks with known objective types (used for both prior and non-prior)
 benchmarks=(
   "hwgptbench-s"
-  "hwgptbench-m"
-  "hwgptbench-l"
+  # "hwgptbench-m"
+  # "hwgptbench-l"
 )
 
 # Prior benchmark settings (good-good, bad-good, bad-bad)
 prior_settings=(
-  "good:good"
-  "bad:good"
-  "bad:bad"
-  "good:bad"
+  good:good:good
+  good:good:bad
+  good:bad:good
+  good:bad:bad
+  bad:good:good
+  bad:good:bad
+  bad:bad:good
+  bad:bad:bad
 )
 
 # === Compute total jobs
@@ -60,7 +64,7 @@ done
 
 for opt in "${nonprior_opts[@]}"; do
   for bench in "${benchmarks[@]}"; do
-    total_jobs+=("$opt:$bench:null:null")
+    total_jobs+=("$opt:$bench:null:null:null")
   done
 done
 
@@ -69,11 +73,12 @@ echo "Total jobs: ${#total_jobs[@]}"
 
 # === Pick current job
 job="${total_jobs[$SLURM_ARRAY_TASK_ID]}"
-IFS=":" read -r optimizer benchmark obj1 obj2 <<< "$job"
+IFS=":" read -r optimizer benchmark obj1 obj2 obj3 <<< "$job"
 
 # Map keys
 key1="perplexity"
 key2="flops"
+key3="n_params"
 
 # === Create YAML ===
 config_dir="generated_configs"
@@ -88,6 +93,7 @@ benchmarks:
     objectives:
       $key1: ${obj1}
       $key2: ${obj2}
+      $key3: ${obj3}
 num_seeds: 25
 num_iterations: 20
 kwargs:
@@ -102,7 +108,7 @@ data_dir="/work/dlclarge2/basus-basus_ws/data/"
 priors_dir="/home/basus/repos/mo_mf_priors/src/priors/1000/"
 
 # === Run the experiment ===
-python3 -m momfpriors.run -y "$yaml_file" -e "hwgptbench_20" --data_dir "$data_dir" --priors_dir "$priors_dir"
+python3 -m momfpriors.run -y "$yaml_file" -e "hwgptbench_3o_20" --data_dir "$data_dir" --priors_dir "$priors_dir"
 
 end=$(date +%s)
 runtime=$((end - start))
