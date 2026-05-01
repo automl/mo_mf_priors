@@ -1,0 +1,26 @@
+optimizers:
+  - name: NepsPriMO
+    hyperparameters:
+      epsilon: 0.1
+  - name: NepsPriMO
+    hyperparameters:
+      epsilon: 0.2
+  - name: NepsPriMO
+    hyperparameters:
+      epsilon: 0.3
+  - name: NepsPriMO
+    hyperparameters:
+      epsilon: 0.5
+  - name: NepsPriMO
+    hyperparameters:
+      epsilon: 0.7
+  - name: NepsPriMO
+    hyperparameters:
+      epsilon: 0.9
+benchmarks:
+  - name: pd1-translate_wmt-xformer_translate-64
+    objectives:
+      valid_error_rate: good
+      train_cost: good
+num_seeds: 25
+num_iterations: 20
