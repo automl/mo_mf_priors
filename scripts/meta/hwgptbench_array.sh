@@ -4,7 +4,7 @@
 #SBATCH --output logs/%x-%A_%a.out
 #SBATCH --error logs/%x-%A_%a.err
 #SBATCH --cpus-per-task 2
-#SBATCH --array=0-11   # (1 prior opts * 4 priors + 7 non-prior opts) * 1 benchmark = 11 total combinations
+#SBATCH --array=0-14   # (1 prior opts * 8 priors + 7 non-prior opts) * 1 benchmark = 15 total combinations
 #SBATCH --mem-per-cpu 30G
 
 echo "Workingdir: $PWD"
