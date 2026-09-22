@@ -2,7 +2,8 @@
 
 # Define the partition on which the job shall run.
 #SBATCH --partition dev_cpu    # short: -p single
-#SBATCH --job-name debug_primo            #  short: -J ST_baselines1
+#SBATCH --job-name debug_primo            #  short: -J debug_primo
+#SBATCH --time 0:30:00                      #  short: -t 0:30:00
 #SBATCH --output logs/%x-%A_bwuni3.out   # STDOUT  %x and %A will be replaced by the job name and job id, respectively. short: -o logs/%x-%A-job_name.out
 #SBATCH --error logs/%x-%A_bwuni3.err    # STDERR  short: -e logs/%x-%A-job_name.out
 # #SBATCH --mem 4GB
