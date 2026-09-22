@@ -150,8 +150,14 @@ def lcbench_surrogate(datadir: Path | None = None) -> Iterator[BenchmarkDescript
         Iterator[BenchmarkDescription]: An iterator over BenchmarkDescription objects
         for each task in the LCBench surrogate Benchmark.
     """
-    if datadir is not None and "yahpo" in os.listdir(datadir):
-        datadir = datadir / "yahpo"
+    try:
+        if datadir is not None and "yahpo" in os.listdir(datadir):
+            datadir = datadir / "yahpo"
+    except FileNotFoundError:
+            mfp_logger.warning(
+                f"Data directory {datadir} does not exist. "
+                "Please ensure the data for yahpo-lcbench is downloaded.", stacklevel=2
+            )
     import mfpbench  # noqa: PLC0415
 
     from momfpriors.utils import HiddenPrints  # noqa: PLC0415
@@ -264,8 +270,14 @@ def jahs(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
         Iterator[BenchmarkDescription]: An iterator over BenchmarkDescription objects
         for each task in JAHSBench.
     """
-    if datadir is not None and "jahs" in os.listdir(datadir):
-        datadir = datadir / "jahs"
+    try:
+        if datadir is not None and "jahs" in os.listdir(datadir):
+            datadir = datadir / "jahs"
+    except FileNotFoundError:
+        mfp_logger.warning(
+            f"Data directory {datadir} does not exist. "
+            "Please ensure the data for jahs_bench is downloaded.", stacklevel=2
+        )
     import mfpbench  # noqa: PLC0415
     task_ids = ("CIFAR10", "ColorectalHistology", "FashionMNIST")
     env = Env(
@@ -328,8 +340,14 @@ def pd1(datadir: Path | None = None) -> Iterator[BenchmarkDescription]:
         Iterator[BenchmarkDescription]: An iterator over BenchmarkDescription objects
         for each PD1 benchmark.
     """
-    if datadir is not None and "pd1" in os.listdir(datadir):
-        datadir = datadir / "pd1"
+    try:
+        if datadir is not None and "pd1" in os.listdir(datadir):
+            datadir = datadir / "pd1"
+    except FileNotFoundError:
+        mfp_logger.warning(
+            f"Data directory {datadir} does not exist."
+            "Please ensure the data for pd1 is downloaded.", stacklevel=2
+        )
     import mfpbench  # noqa: PLC0415
     env = Env(
         name="py310-mfpbench-1.10-pd1",
