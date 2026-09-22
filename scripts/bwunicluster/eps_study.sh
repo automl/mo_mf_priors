@@ -116,9 +116,9 @@ data_dir="/pfs/work9/workspace/scratch/tu_iiocv01-primo_ws"
 
 # === Run the experiment ===
 python -m momfpriors.run \
-  -y "$yaml_file" \
-  -e "eps_study" \
-  --data_dir "$data_dir"
+-y "$yaml_file" \
+-e "eps_study" \
+--data_dir "$data_dir"
 
 end=$(date +%s)
 runtime=$((end - start))
