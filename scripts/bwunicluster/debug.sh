@@ -3,9 +3,9 @@
 # Define the partition on which the job shall run.
 #SBATCH --partition dev_cpu    # short: -p single
 #SBATCH --job-name debug_primo            #  short: -J debug_primo
-#SBATCH --time 0:30:00                      #  short: -t 0:30:00
 #SBATCH --output logs/%x-%A_bwuni3.out   # STDOUT  %x and %A will be replaced by the job name and job id, respectively. short: -o logs/%x-%A-job_name.out
 #SBATCH --error logs/%x-%A_bwuni3.err    # STDERR  short: -e logs/%x-%A-job_name.out
+#SBATCH --time 0:30:00                      #  short: -t 0:30:00
 # #SBATCH --mem 4GB
 
 echo "Workingdir: $PWD";
@@ -40,7 +40,7 @@ echo "Total jobs: ${#total_jobs[@]}"
 
 job="${total_jobs[$SLURM_ARRAY_TASK_ID]}"
 
-IFS=":" read -r optimizer epsilon obj1 obj2 benchmark <<< "$job"
+IFS=":" read -r optimizer benchmark obj1 obj2 <<< "$job"
 
 # Map keys
 if [[ "$benchmark" == MOMFPark ]]; then
@@ -88,7 +88,7 @@ start=`date +%s`
 
 data_dir="/pfs/work9/workspace/scratch/tu_iiocv01-primo_ws"
 
-python -m momfpriors.run \
+python3 -m momfpriors.run \
 -y $yaml_file \
 -e "debug" \
 --data_dir "$data_dir"

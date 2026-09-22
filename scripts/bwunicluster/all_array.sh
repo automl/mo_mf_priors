@@ -119,7 +119,7 @@ cat "$yaml_file"
 data_dir="/pfs/work9/workspace/scratch/tu_iiocv01-primo_ws"
 
 # === Run the experiment ===
-python -m momfpriors.run \
+python3 -m momfpriors.run \
 -y "$yaml_file" \
 -e "all_20_evals" \
 --data_dir "$data_dir"
