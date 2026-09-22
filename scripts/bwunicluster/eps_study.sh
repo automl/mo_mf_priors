@@ -11,7 +11,7 @@
 echo "Workingdir: $PWD"
 echo "Started at $(date)"
 
-source ~/repos/momfp_env/bin/activate
+source ~/repos/envs/momfp_env/bin/activate
 
 start=$(date +%s)
 

@@ -12,7 +12,7 @@ echo "Workingdir: $PWD"
 echo "Started at $(date)"
 echo "Running job $SLURM_JOB_NAME, task $SLURM_ARRAY_TASK_ID"
 
-source ~/repos/momfp_env/bin/activate
+source ~/repos/envs/momfp_env/bin/activate
 
 start=$(date +%s)
 
