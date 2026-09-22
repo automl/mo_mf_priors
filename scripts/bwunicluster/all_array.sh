@@ -116,10 +116,13 @@ echo "Generated config:"
 cat "$yaml_file"
 
 
-data_dir="/work/dlclarge2/basus-basus_ws/data/"
+data_dir="/pfs/work9/workspace/scratch/tu_iiocv01-primo_ws"
 
 # === Run the experiment ===
-python3 -m momfpriors.run -y "$yaml_file" -e "all_20_evals" --data_dir "$data_dir"
+python -m momfpriors.run \
+-y "$yaml_file" \
+-e "all_20_evals" \
+--data_dir "$data_dir"
 
 end=$(date +%s)
 runtime=$((end - start))

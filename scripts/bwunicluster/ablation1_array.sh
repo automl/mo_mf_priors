@@ -100,8 +100,13 @@ EOF
 echo "Generated config:"
 cat "$yaml_file"
 
-# === Run experiment
-python3 -m momfpriors.run -y "$yaml_file" -e "ablation1_20"
+data_dir="/pfs/work9/workspace/scratch/tu_iiocv01-primo_ws"
+
+# === Run the experiment ===
+python -m momfpriors.run \
+-y "$yaml_file" \
+-e "ablation1_20" \
+--data_dir "$data_dir"
 
 end=$(date +%s)
 runtime=$((end - start))
