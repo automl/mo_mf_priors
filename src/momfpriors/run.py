@@ -23,6 +23,8 @@ root_logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=UserWarning, module="torch.jit.*")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="torch.jit.*")
 
 
 def exp(  # noqa: C901, PLR0912, PLR0913
