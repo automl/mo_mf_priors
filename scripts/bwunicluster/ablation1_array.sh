@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH --partition cpu
 #SBATCH --job-name ablation1
-#SBATCH --output logs/%x-%A_%a_meta.out
-#SBATCH --error logs/%x-%A_%a_meta.err
+#SBATCH --output logs/%x-%A_%a_bwuni3.out
+#SBATCH --error logs/%x-%A_%a_bwuni3.err
 #SBATCH --cpus-per-task 30
 #SBATCH --array=0-199%20   # (6 prior opts * 4 priors + 1 non-prior opts) * 8 benchmarks = 200 total combinations
 #SBATCH --time=4-00:00:00
-#SBATCH --mem 30G
+# #SBATCH --mem 30G
 
 echo "Workingdir: $PWD"
 echo "Started at $(date)"

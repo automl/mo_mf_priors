@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH --partition cpu
 #SBATCH --job-name primo_eps_study
-#SBATCH --output logs/%x-%A_%a_meta.out
-#SBATCH --error logs/%x-%A_%a_meta.err
+#SBATCH --output logs/%x-%A_%a_bwuni3.out
+#SBATCH --error logs/%x-%A_%a_bwuni3.err
 #SBATCH --cpus-per-task 30
 #SBATCH --array=0-159%20 # (1 prior opts * 4 priors * 5 hp settings) * 8 benchmarks = 160 total combinations
 #SBATCH --time=3-00:00:00
-#SBATCH --mem 30G
+# #SBATCH --mem 30G
 
 echo "Workingdir: $PWD"
 echo "Started at $(date)"
