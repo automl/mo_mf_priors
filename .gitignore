@@ -13,3 +13,4 @@ Optimizers_cache
 test*.py
 test*.ipynb
 test*.yaml
+.codex

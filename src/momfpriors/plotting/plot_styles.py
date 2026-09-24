@@ -58,8 +58,14 @@ COLORS_MAIN = {
     "NepsPriMO": "crimson",
     "NepsPriMO_w_continuations": "crimson",
 
-    "NepsPriMO_HV": "darkred",
-    "NepsPriMO_HV_w_continuations": "darkred",
+    "NepsPriMO_HV": "darkgreen",
+    "NepsPriMO_HV_w_continuations": "darkgreen",
+
+    "NepsPriMO_TS": "darkviolet",
+    "NepsPriMO_TS_w_continuations": "darkviolet",
+
+    "NepsPriMO_LCB": "darkorange",
+    "NepsPriMO_LCB_w_continuations": "darkorange",
 
     # RandomSearchWithPriors
     "RandomSearchWithPriors": "darkorange",
@@ -137,6 +143,24 @@ COLORS_HPS = {
 
     ("NepsPriMO", "sampler=etaprior"): "green",
     ("NepsPriMO_w_continuations", "sampler=etaprior"): "green",
+
+    ("NepsPriMO", "epsilon=0.1"): "darkcyan",
+    ("NepsPriMO_w_continuations", "epsilon=0.1"): "darkcyan",
+
+    ("NepsPriMO", "epsilon=0.3"): "darkcyan",
+    ("NepsPriMO_w_continuations", "epsilon=0.3"): "green",
+
+
+    ("NepsPriMO", "epsilon=0.5"): "darkcyan",
+    ("NepsPriMO_w_continuations", "epsilon=0.5"): "magenta",
+
+
+    ("NepsPriMO", "epsilon=0.7"): "darkcyan",
+    ("NepsPriMO_w_continuations", "epsilon=0.7"): "darkorange",
+
+
+    ("NepsPriMO", "epsilon=0.9"): "darkcyan",
+    ("NepsPriMO_w_continuations", "epsilon=0.9"): "goldenrod",
 }
 
 
@@ -241,6 +265,16 @@ other_fig_params = {
         13: 5,
         14: 2,
     },
+    "hp_fig_cols": {
+        1: 1,
+        2: 2,
+        3: 3,
+        4: 3,
+        5: 3,
+        6: 3,
+        7: 4,
+        8: 4,
+    },
     "multi_fig_leg_cols": {
         1: 1,
         2: 2,
@@ -283,8 +317,8 @@ other_fig_params = {
         5: 5,
         6: 6,
         7: 7,
-        8: 4,
-        9: 5,
+        8: 8,
+        9: 9,
         10: 5,
         11: 5,
         12: 5,

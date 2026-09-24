@@ -487,11 +487,11 @@ def gen_plots_per_bench(  # noqa: C901, PLR0913
         assert objectives is not None
 
 
-        assert len(objectives) == 2, ( # noqa: PLR2004
-            "More than 2 objectives found in results file: "
-            f"{objectives}. "
-            "Can only plot pareto front for 2D cost space."
-        )
+        # assert len(objectives) == 2, ( # noqa: PLR2004
+        #     "More than 2 objectives found in results file: "
+        #     f"{objectives}. "
+        #     "Can only plot pareto front for 2D cost space."
+        # )
 
 
         _results = _df[RESULTS_COL].apply(
@@ -606,6 +606,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     plot_true_pareto: bool = False,
     fixed_pareto_seed: int | None = None,
     figsize: tuple[float, float] | None = None,
+    multi_fig_cols: str | None = None,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     if which_benchmarks is not None and not isinstance(which_benchmarks, list):
@@ -871,7 +872,10 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     tight_layout_pads = other_fig_params["tight_layout_pads"]
     legend_fontsize = other_fig_params["legend_fontsize"]
 
-    multi_cols = other_fig_params["multi_fig_leg_cols"][num_opts]
+    # multi_cols = other_fig_params["multi_fig_leg_cols"][num_opts]
+    multi_cols = other_fig_params.get(
+        multi_fig_cols, other_fig_params["multi_fig_leg_cols"][num_opts]
+    )
     single_cols = other_fig_params["single_fig_leg_cols"][num_opts]
 
     # Remove empty subplots for hypervolume plot
@@ -1194,6 +1198,7 @@ if __name__ == "__main__":
         args.plot_true_pareto = yaml_config.get("plot_true_pareto", args.plot_true_pareto)
         args.fixed_pareto_seed = yaml_config.get("fixed_pareto_seed", args.fixed_pareto_seed)
         args.figsize = yaml_config.get("figsize", args.figsize)
+        args.multi_fig_cols = yaml_config.get("multi_fig_cols")
 
     if args.specific_rc_params:
         for param in args.specific_rc_params:
@@ -1245,4 +1250,5 @@ if __name__ == "__main__":
         plot_true_pareto=args.plot_true_pareto,
         fixed_pareto_seed=args.fixed_pareto_seed,
         figsize=args.figsize,
+        multi_fig_cols=args.multi_fig_cols,
     )

@@ -55,66 +55,15 @@ CONTINUATIONS_COL = "continuations_cost"
 CONTINUATIONS_BUDGET_USED = "continuations_budget_used_total"
 
 
-def plot_average_rank(
-    ax: plt.Axes,
-    ranks: dict,
-    budget: int,
-) -> float:
-    """Plots the average rank of optimizers over iterations with standard error."""
-    def _mean(_dfs: Iterable[pd.DataFrame]) -> pd.DataFrame:
-            return pd.concat(_dfs).reset_index().groupby("index").mean()
-
-    def _sem(_dfs: Iterable[pd.DataFrame]) -> pd.DataFrame:
-        return pd.concat(_dfs).reset_index().groupby("index").sem()
-
-    # Get mean across all benchmarks, for each seed
-    ranks_per_seed_averaged_over_benchmarks = {
-        seed: _mean(ranks[seed].values()) for seed in ranks
-    }
-
-    # Average over all seeds
-    mean_ranks = _mean(ranks_per_seed_averaged_over_benchmarks.values())
-    sem_ranks = _sem(ranks_per_seed_averaged_over_benchmarks.values())
-
-    # Sort by the last iteration
-    mean_ranks = mean_ranks.sort_values(by=budget, axis=1, ascending=False)
-    sem_ranks = sem_ranks[mean_ranks.columns]
-
-    # Plot settings
-    plt.figure(figsize=(12, 6))
-
-    # Plotting
-    for instance in mean_ranks.columns:
-        means = mean_ranks[instance]
-        sems = sem_ranks[instance]
-
-        marker, color, _, _, _ = get_style(instance)
-        ax.plot(
-            means,
-            linestyle="-",
-            label=instance,
-            color=color,
-        )
-        ax.fill_between(
-            means.index,
-            means - sems,
-            means + sems,
-            alpha=0.1,
-            color=color,
-            edgecolor=None,
-        )
-
-    return np.ceil(np.max(mean_ranks))
-
-
 def create_plots(  # noqa: C901, PLR0912, PLR0915
     *,
     agg_data: Mapping[str, Mapping[str, Any]],
     benchmark: str,
     objectives: list[str],
     budget: int,
+    ax: plt.Axes,
     fidelity: str | None = None,
-) -> dict[str, pd.DataFrame]:
+) -> None:
     """Function to plot the dominated hypervolume over
     iterations and pareto fronts from a pandas Series
     of Results, i.e., Mapping[str, float] objects.
@@ -226,16 +175,64 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
                 seed_means_dict[seed] = {}
             seed_means_dict[seed][instance_name] = seed_incumbents
 
-    seed_means_dict = avg_seed_dfs_for_ranking(seed_means_dict)
-    # Ranking every optimizer instance per seed per benchmark
-    for seed, instances in seed_means_dict.items():
-        _rankdf = pd.DataFrame(instances)
-        _rankdf = _rankdf.ffill(axis=0)
-        _rankdf = _rankdf.rank(axis=1, method="average", ascending=False)
-        rank_means_dict[seed] = _rankdf
-    instances = list(agg_data.keys())
-    return rank_means_dict
+            # Aggregating Hypervolumes - calculating means, cumulative max and std_error
 
+        _color = None
+
+        if not continuations:
+            seed_hv_df = pd.DataFrame(seed_hv_dict)
+            seed_hv_df = seed_hv_df.ffill(axis=0)
+            means = pd.Series(seed_hv_df.mean(axis=1), name=f"means_{instance}")
+            sem = pd.Series(seed_hv_df.sem(axis=1), name=f"ste_{instance}")
+            means = means.cummax()
+            means = means.drop_duplicates()
+            sem = sem.loc[means.index]
+            means[budget] = means.iloc[-1]
+            sem[budget] = sem.iloc[-1]
+
+            # Plotting Hypervolumes
+
+            ax.plot(
+                means,
+                label=instance,
+                color=color,
+            )
+            ax.fill_between(
+                means.index,
+                means - sem,
+                means + sem,
+                alpha=0.1,
+                color=color,
+                edgecolor=None,
+            )
+
+        # For plotting continuations
+        else:
+
+            _, _color, _, _, _ = get_style(instance_name)
+            seed_cont_df = pd.DataFrame(seed_cont_dict)
+            seed_cont_df = seed_cont_df.ffill(axis=0)
+            means_cont = pd.Series(seed_cont_df.mean(axis=1), name=f"means_{instance}")
+            sem_cont = pd.Series(seed_cont_df.sem(axis=1), name=f"sem_{instance}")
+            means_cont = means_cont.cummax()
+            means_cont = means_cont.drop_duplicates()
+            sem_cont = sem_cont.loc[means_cont.index]
+            means_cont[budget] = means_cont.iloc[-1]
+            sem_cont[budget] = sem_cont.iloc[-1]
+
+            ax.plot(
+                means_cont,
+                label=f"{instance}_w_continuations",
+                color=_color,
+            )
+            ax.fill_between(
+                means_cont.index,
+                means_cont - sem_cont,
+                means_cont + sem_cont,
+                alpha=0.1,
+                color=_color,
+                edgecolor=None,
+            )
 
 def agg_data(
     exp_dir: Path,
@@ -322,6 +319,7 @@ def agg_data(
 
 
 def gen_plots_per_bench(  # noqa: C901
+    ax: plt.Axes,
     total_budget: int,
     *,
     benchmark: str,
@@ -332,7 +330,7 @@ def gen_plots_per_bench(  # noqa: C901
     skip_priors: bool = False,
     skip_opt: list[str] | None = None,
     avg_prior_label: str = "all",
-) -> dict[int, pd.DataFrame]:
+) -> None:
     """Function to generate plots for a given benchmark and its config dict."""
     agg_dict: Mapping[str, Mapping[str, Any]] = {}
     df_agg = {}
@@ -429,6 +427,7 @@ def gen_plots_per_bench(  # noqa: C901
 
 
     return create_plots(
+        ax=ax,
         agg_data=agg_dict,
         benchmark=benchmark,
         budget=total_budget,
@@ -462,15 +461,14 @@ def make_subplots(  # noqa: C901, PLR0913
 
     plt.rcParams.update(RC_PARAMS)
 
-    means_dict = {}
-    bench_dict = {}
     for _, (benchmark, conf_dict) in enumerate(benchmarks_dict.items()):
         assert len(conf_dict) == 1, (
             "Plotting more than 1 config for a benchmark not yet implemented."
             f" Found {len(conf_dict)} configs for benchmark {benchmark}."
         )
         for conf_tuple, _all_dfs in conf_dict.items():
-            seed_dict_per_bench = gen_plots_per_bench(
+            gen_plots_per_bench(
+                ax=ax,
                 benchmark=benchmark,
                 conf_tuple=conf_tuple,
                 _all_dfs=_all_dfs,
@@ -482,40 +480,19 @@ def make_subplots(  # noqa: C901, PLR0913
                 avg_prior_label=avg_prior_label,
             )
 
-            for _seed, rank_df in seed_dict_per_bench.items():
-                if _seed not in means_dict:
-                    means_dict[_seed] = {}
-                means_dict[_seed][benchmark] = rank_df
-                if _seed not in bench_dict:
-                    bench_dict[_seed] = {}
-                bench_dict[_seed][benchmark] = rank_df
-
-
-            bench_dict = {}
-
     for side in ["left", "bottom"]:
         ax.spines[side].set_linewidth(1.0)
         ax.spines[side].set_color("black")
 
-    # Plotting average ranks over all benchmarks and seeds
-    max_avg_rank = plot_average_rank(
-        ax=ax,
-        ranks=means_dict,
-        budget=total_budget,
-    )
     ax.set_xlabel("Evaluations", fontsize=xylabelsize)
     ax.set_xticks(XTICKS[(1, total_budget)])
-    if ylim is not None:
-        ax.set_yticks(np.arange(1, ylim + 1, 1))
-    else:
-        ax.set_yticks(np.arange(1, max_avg_rank + 1, 1))
     ax.tick_params(
         axis="both",
         which="major",
         labelsize=xytick_labelsize,
     )
     if not hide_ylabel:
-        ax.set_ylabel("Relative Rank", fontsize=xylabelsize)
+        ax.set_ylabel("Hypervolume", fontsize=xylabelsize)
     ax.grid(visible=True)
     ax.set_xlim(1, total_budget)
     if ax_title is not None:
@@ -763,7 +740,7 @@ if __name__ == "__main__":
         save_suffix = f"_{args.save_suffix}"
     if not args.no_save:
         fig_ov_rank.savefig(
-            save_dir / f"rank_overall_subplots{save_suffix}.{args.file_type}",
+            save_dir / f"merged_hv_plots_{save_suffix}.{args.file_type}",
             dpi=300, bbox_inches="tight"
         )
-        logger.info("Saved overall rank plot")
+        logger.info("Saved merged hv plot")

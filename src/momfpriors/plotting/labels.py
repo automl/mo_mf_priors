@@ -15,8 +15,6 @@ LABELS_1 = {
 
     "NepsPriMO": "PriMO",
 
-    "NepsPriMO_HV": "PriMO-HV",
-
     "SMAC_ParEGO": "ParEGO",
     "RandomSearch": "Random Search",
     "NepsRW": "BO+RW",
@@ -44,10 +42,16 @@ LABELS_1 = {
 
     "Optuna": "MO-TPE",
 
-    "NepsMOBO": "LogNEHVI",
+    "NepsMOBO": "qLogNEHVI",
 }
 
 ABLATION_LABELS = {
+
+    "NepsPriMO_HV": "PriMO+HV",
+
+    "NepsPriMO_TS": "PriMO+TS",
+
+    "NepsPriMO_LCB": "PriMO+LCB",
 
     "NepsNoInitPriMO": "PriMO w/o initial design",
 
@@ -106,7 +110,7 @@ SIG_LABELS = {
 
     "Optuna": "MO-TPE",
 
-    "NepsMOBO": "LogNEHVI",
+    "NepsMOBO": "qLogNEHVI",
 }
 
 SO_LABELS = {

@@ -106,7 +106,7 @@ def get_style(instance: str) -> tuple[str, str, str, str | None]:
             )
     opt = opt_splits[0]
     color = (
-        COLORS_HPS.get((opt, hps)) if hps 
+        COLORS_HPS.get((opt, hps)) if hps
         else COLORS_MAIN.get(opt, COLORS_SO.get(opt, HPOSUITE_COLORS.get(opt)))
     )
     marker = MARKERS.get(prior_annot, "s")
@@ -178,7 +178,7 @@ def edit_legend_labels(  # noqa: C901, PLR0912
             hps = HP_LABELS.get(
                 hps, hps)
             hps = f"{hps}={value}"
-            _label = f"{_label} ({hps})"
+            _label = f"{_label} [{hps}]"
         elif prior_annot:
             prior_annot = prior_annotations if prior_annotations != "default" else prior_annot
             if prior_annot == "good-good":
