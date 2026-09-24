@@ -5,7 +5,7 @@
 #SBATCH --error logs/%x-%A_%a_bwuni3.err
 #SBATCH --cpus-per-task 30
 #SBATCH --array=0-199%20   # (6 prior opts * 4 priors + 1 non-prior opts) * 8 benchmarks = 200 total combinations
-#SBATCH --time=4-00:00:00
+#SBATCH --time=3-00:00:00
 # #SBATCH --mem 30G
 
 echo "Workingdir: $PWD"
