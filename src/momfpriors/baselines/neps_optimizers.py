@@ -83,7 +83,7 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
 
         self.optimizer = AskAndTell(
             algorithms.PredefinedOptimizers[optimizer](
-                pipeline_space = space,
+                space = space,
                 **kwargs,
             )
         )
