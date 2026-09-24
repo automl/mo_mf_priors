@@ -1,0 +1,113 @@
+#!/bin/bash
+#SBATCH --partition cpu
+#SBATCH --job-name ablation1
+#SBATCH --output logs/%x-%A_%a_bwuni3.out
+#SBATCH --error logs/%x-%A_%a_bwuni3.err
+#SBATCH --cpus-per-task 30
+#SBATCH --array=0-199%20   # (6 prior opts * 4 priors + 1 non-prior opts) * 8 benchmarks = 200 total combinations
+#SBATCH --time=3-00:00:00
+# #SBATCH --mem 30G
+
+echo "Workingdir: $PWD"
+echo "Started at $(date)"
+echo "Running job $SLURM_JOB_NAME, task $SLURM_ARRAY_TASK_ID"
+
+source ~/repos/envs/momfp_env/bin/activate
+
+start=$(date +%s)
+
+# === Optimizers
+with_priors=(
+    # "NepsPriMO"
+    "NepsNoInitPriMO"
+    "NepsInitPiBORW"
+    # "NepsEtaPriorPriMO"
+    # "NepsMFPriMO"
+    # "NepsEtaPriorMFPriMO"
+    "NepsPriMO_Init10"
+    "NepsPriMO_HV"
+    "NepsPriMO_TS"
+    "NepsPriMO_LCB"
+)
+
+without_priors=(
+    # "NepsMOASHA_RS"
+    "NepsMOASHABO"
+)
+
+# === Benchmarks with keys
+benchmarks=(
+    "pd1-cifar100-wide_resnet-2048 valid_error_rate train_cost"
+    "pd1-imagenet-resnet-512 valid_error_rate train_cost"
+    "pd1-lm1b-transformer-2048 valid_error_rate train_cost"
+    "pd1-translate_wmt-xformer_translate-64 valid_error_rate train_cost"
+    "yahpo-lcbench-126026 val_cross_entropy time"
+    "yahpo-lcbench-146212 val_cross_entropy time"
+    "yahpo-lcbench-168330 val_cross_entropy time"
+    "yahpo-lcbench-168868 val_cross_entropy time"
+    # "MOMFPark value1 value2"
+)
+
+priors=(
+    "good:good"
+    "bad:good"
+    "bad:bad"
+    "good:bad")
+
+# === Enumerate all configs
+job_list=()
+
+# With priors: 2 opts × 9 benches × 3 priors = 54
+for opt in "${with_priors[@]}"; do
+    for bench_line in "${benchmarks[@]}"; do
+        read -r bench key1 key2 <<< "$bench_line"
+        for prior in "${priors[@]}"; do
+            IFS=":" read -r val1 val2 <<< "$prior"
+            job_list+=("$opt:$bench:$key1:$val1:$key2:$val2")
+        done
+    done
+done
+
+# Without priors: 4 opts × 9 benches = 36
+for opt in "${without_priors[@]}"; do
+    for bench_line in "${benchmarks[@]}"; do
+        read -r bench key1 key2 <<< "$bench_line"
+        job_list+=("$opt:$bench:$key1:null:$key2:null")
+    done
+done
+
+# === Get current job
+job="${job_list[$SLURM_ARRAY_TASK_ID]}"
+IFS=":" read -r optimizer benchmark obj1 val1 obj2 val2 <<< "$job"
+
+# === Create config
+config_dir="generated_configs"
+mkdir -p "$config_dir"
+yaml_file="${config_dir}/${benchmark}_${SLURM_JOB_NAME}_${SLURM_JOB_ID}_${SLURM_ARRAY_TASK_ID}.yaml"
+
+cat > "$yaml_file" <<EOF
+optimizers:
+  - name: $optimizer
+benchmarks:
+  - name: $benchmark
+    objectives:
+      $obj1: $val1
+      $obj2: $val2
+num_seeds: 25
+num_iterations: 20
+EOF
+
+echo "Generated config:"
+cat "$yaml_file"
+
+data_dir="/pfs/work9/workspace/scratch/tu_iiocv01-primo_ws"
+
+# === Run the experiment ===
+python3 -m momfpriors.run \
+-y "$yaml_file" \
+-e "ablation1_20" \
+--data_dir "$data_dir"
+
+end=$(date +%s)
+runtime=$((end - start))
+echo "Job complete. Runtime: $runtime seconds."
