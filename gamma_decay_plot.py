@@ -26,12 +26,25 @@ gamma = np.exp(-(n_bo**2) / n_d)
 gamma_n = beta / n_bo
 
 # Create the plot
-plt.figure(figsize=(12, 6))
+plt.figure(figsize=(8, 5))
 plt.rcParams.update(RC_PARAMS)
 
 # Plot both equations
-plt.plot(n_bo, gamma, "b-", linewidth=2, label=r"$\gamma_{PriMO} = \exp(-n_{BO}^2/n_d)$")
-plt.plot(n_bo, gamma_n, "r-", linewidth=2, label=r"$\gamma_{\pi{}BO} = \beta/n_{BO}$")
+plt.plot(
+    n_bo,
+    gamma,
+    "b-",
+    linewidth=2,
+    label=r"$\gamma_{PriMO} = \exp(-n_{BO}^2/n_d)$",
+    # fontsize=14
+)
+plt.plot(
+    n_bo,
+    gamma_n,
+    "r-",
+    linewidth=2,
+    label=r"$\gamma_{\pi{}BO} = \beta/n_{BO}$",
+)
 
 # Customize the plot
 xylabel_fontsize = other_fig_params["xylabel_fontsize"]
@@ -39,7 +52,7 @@ legend_fontsize = other_fig_params["legend_fontsize"]
 
 plt.xlabel(r"$n_{BO}$", fontsize=xylabel_fontsize)
 plt.ylabel(r"$\gamma_{PriMO}$, $\gamma_{\pi{}BO}$ (log-scaled)", fontsize=xylabel_fontsize)
-plt.title("Decay of $\gamma$ for PriMO and $\pi{}BO$ with growing number of BO samples")
+plt.title("Decay of $\gamma$ for PriMO and $\pi{}BO$ \nwith growing number of BO samples")
 plt.legend(fontsize=legend_fontsize)
 plt.grid(visible=True, alpha=0.3)
 plt.yscale("log")
