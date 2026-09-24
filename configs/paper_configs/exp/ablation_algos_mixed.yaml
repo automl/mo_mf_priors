@@ -11,6 +11,7 @@ skip_opt:
   - NepsEtaPriorMFPriMO
   - NepsPriMO_Init10
   - NepsMOASHA_RS
+  - NepsMFPriMO
 skip_bench:
   - MOMFPark
   - hwgptbench-s

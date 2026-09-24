@@ -1,5 +1,5 @@
 exp_dir: subset1
-output_dir: /home/soham/Master_Thesis/ICLR/plots/exp/
+output_dir: /home/soham/Master_Thesis/ICML/plots/exp/
 skip_priors:
   - bad-good
   - bad-bad
@@ -7,7 +7,7 @@ skip_priors:
 save_suffix: subset1_all_good
 skip_opt:
   - RandomSearchWithPriors
-  # - NepsMOBO
+  - NepsPriMO;epsilon=0.3
 skip_bench:
   - MOMFPark
   - hwgptbench-s

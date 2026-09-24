@@ -1,0 +1,23 @@
+exp_dir: hwgptbench_3o_20
+output_dir: /home/soham/Master_Thesis/NeurIPS/plots/extra/
+skip_non_avg: true
+priors_to_avg:
+  - bad-good-good
+  - bad-good-bad
+  - bad-bad-bad
+  - good-bad-bad
+  - good-good-bad
+  - bad-bad-good
+  - good-bad-good
+  - good-good-good
+avg_prior_label: overall
+save_suffix: hwgpt3o_all_overall
+which_labels: "1"
+which_plots:
+  - hv
+  - pareto
+specific_fig_params:
+  - bbox_to_anchor=(0.5, -0.12)
+figsize:
+  - 12
+  - 4

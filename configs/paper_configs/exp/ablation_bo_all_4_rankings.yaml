@@ -1,10 +1,10 @@
 yaml_files:
-  - configs/paper_configs/exp/exp_subset2_overall.yaml
-  - configs/paper_configs/exp/exp_subset2_all_good.yaml
-  - configs/paper_configs/exp/exp_subset2_mixed.yaml
-  - configs/paper_configs/exp/exp_subset2_all_bad.yaml
+  - configs/paper_configs/exp/ablation_bo_overall.yaml
+  - configs/paper_configs/exp/ablation_bo_all_good.yaml
+  - configs/paper_configs/exp/ablation_bo_mixed.yaml
+  - configs/paper_configs/exp/ablation_bo_all_bad.yaml
 output_dir: /home/soham/Master_Thesis/ICML/plots/exp/
-save_suffix: exp_subset2_all_rankings
+save_suffix: ablation_bo_all_ranks
 file_type: pdf
 figsize:
   - 28

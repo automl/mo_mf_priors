@@ -1,0 +1,20 @@
+yaml_files:
+  - configs/paper_configs/extra/eps_study_overall.yaml
+  - configs/paper_configs/extra/eps_study_all_good.yaml
+  - configs/paper_configs/extra/eps_study_mixed.yaml
+  - configs/paper_configs/extra/eps_study_all_bad.yaml
+output_dir: /home/soham/Master_Thesis/NeurIPS/plots/extra/
+save_suffix: eps_study_merged_hv
+file_type: pdf
+figsize:
+  - 28
+  - 4
+sub_labels:
+  - Overall
+  - All priors good
+  - Mixed priors
+  - All priors bad
+remove_prior_annots: true
+cut_off_iteration: 20
+tight_layout: false
+wspace: 0.5

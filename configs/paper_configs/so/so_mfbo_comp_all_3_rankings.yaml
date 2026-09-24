@@ -2,7 +2,7 @@ yaml_files:
   - configs/paper_configs/so/so_mfbo_comp_overall.yaml
   - configs/paper_configs/so/so_mfbo_comp_good.yaml
   - configs/paper_configs/so/so_mfbo_comp_bad.yaml
-output_dir: /home/soham/Master_Thesis/ICLR/plots/SO/
+output_dir: /home/soham/Master_Thesis/ICML/plots/SO/
 save_suffix: so_mfbo_comp_all_rankings
 file_type: pdf
 figsize:

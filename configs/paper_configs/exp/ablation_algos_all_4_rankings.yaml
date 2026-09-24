@@ -3,11 +3,11 @@ yaml_files:
   - configs/paper_configs/exp/ablation_algos_all_good.yaml
   - configs/paper_configs/exp/ablation_algos_mixed.yaml
   - configs/paper_configs/exp/ablation_algos_all_bad.yaml
-output_dir: /home/soham/Master_Thesis/ICLR/plots/exp/
+output_dir: /home/soham/Master_Thesis/ICML/plots/exp/
 save_suffix: ablation_algos_all_ranks
 file_type: pdf
 figsize:
-  - 16
+  - 28
   - 4
 sub_labels:
   - Overall
@@ -15,5 +15,7 @@ sub_labels:
   - Mixed priors
   - All priors bad
 remove_prior_annots: true
-ylim: 5
+ylim: 4
 cut_off_iteration: 20
+tight_layout: false
+wspace: 0.5

@@ -1,0 +1,14 @@
+exp_dir: hwgptbench_test1
+output_dir: /home/soham/Master_Thesis/plots/hwgptbench_test1
+save_suffix: hwgptbench_test1
+which_labels: "1"
+file_type: pdf
+which_plots:
+  - hv
+  - rank
+  - pareto
+specific_fig_params:
+  - xylabel_fontsize=20
+  - ovrank_xsize=6
+  - ovrank_ysize=4
+  - fig_size=(20,10)

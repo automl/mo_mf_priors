@@ -1,0 +1,16 @@
+exp_dir: eps_study
+output_dir: /home/soham/Master_Thesis/NeurIPS/plots/extra/
+skip_non_avg: true
+priors_to_avg:
+  - bad-good
+  - good-bad
+avg_prior_label: mixed
+save_suffix: eps_study_mixed
+# which_labels: "1"
+which_plots:
+  - hv
+specific_fig_params:
+  - bbox_to_anchor=(0.5, -0.12)
+figsize:
+  - 12
+  - 4
