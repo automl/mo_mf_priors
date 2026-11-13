@@ -94,6 +94,41 @@ def _mfpbench_surrogate_query_function(query: Query, benchmark: mfpbench.Benchma
     )
 
 
+def _mfh_mo_query(query: Query, benchmark: mfpbench.Benchmark) -> Result:
+    if query.fidelity is not None:
+        assert isinstance(query.fidelity, tuple)
+        _, fidelity = query.fidelity
+    else:
+        fidelity = None
+
+    values = benchmark.query(query.config.values, at=fidelity).as_dict()
+    return Result(
+        query=query,
+        fidelity=query.fidelity,
+        values={
+            "value1": values["value"],
+            "value2": -values["value"],
+            "fid_cost": values["fid_cost"],
+        },
+    )
+
+
+def _get_mfh_mo_benchmark(
+    description: BenchmarkDescription,
+    *,
+    benchmark_name: str,
+) -> SurrogateBenchmark:
+    import mfpbench  # noqa: PLC0415
+
+    benchmark = mfpbench.get(benchmark_name)
+    return SurrogateBenchmark(
+        desc=description,
+        benchmark=benchmark,
+        config_space=benchmark.space,
+        query=partial(_mfh_mo_query, benchmark=benchmark),
+    )
+
+
 def _download_data_cmd(key: str, datadir: Path | None = None) -> tuple[str, ...]:
     install_cmd = f"python -m mfpbench download --benchmark {key}"
     if datadir is not None:
@@ -256,6 +291,45 @@ def mfh() -> Iterator[BenchmarkDescription]:
                 is_tabular=False,
                 env=env,
                 mem_req_mb = 1024,
+            )
+
+
+def mfh_mo() -> Iterator[BenchmarkDescription]:
+    """Yield MF-Hartmann benchmarks minimizing the original value and its negative.
+
+    Covers the same dimensions and fidelity correlations as the single-objective
+    MF-Hartmann benchmarks. Each query evaluates MF-Hartmann once, so the two
+    objectives are exact negatives even when the underlying benchmark is noisy.
+    """
+    import mfpbench  # noqa: PLC0415
+
+    env = Env(
+        name="py310-mfpbench-1.10-mfh-mo",
+        python_version="3.10",
+        requirements=("mf_prior_bench==1.10.0",),
+        post_install=(),
+    )
+    for correlation in ("bad", "good", "moderate", "terrible"):
+        for dims in (3, 6):
+            benchmark_name = f"mfh{dims}_{correlation}"
+            yield BenchmarkDescription(
+                name=f"{benchmark_name}_mo",
+                config_space=mfpbench.get(benchmark_name).space,
+                load=partial(_get_mfh_mo_benchmark, benchmark_name=benchmark_name),
+                metrics={
+                    "value1": Measure.metric((-np.inf, np.inf), minimize=True),
+                    "value2": Measure.metric((-np.inf, np.inf), minimize=True),
+                },
+                costs={
+                    "fid_cost": Measure.cost((0.05, 1), minimize=True),
+                },
+                fidelities={
+                    "z": RangeFidelity.from_tuple((1, 100, 1), supports_continuation=True),
+                },
+                has_conditionals=False,
+                is_tabular=False,
+                env=env,
+                mem_req_mb=1024,
             )
 
 
@@ -436,5 +510,6 @@ def mfpbench_benchmarks(datadir: Path | None = None) -> Iterator[BenchmarkDescri
         datadir=Path(__file__).parent.parent.parent.parent.absolute() / "data"
     yield from lcbench_surrogate(datadir)
     yield from mfh()
+    yield from mfh_mo()
     yield from jahs(datadir)
     yield from pd1(datadir)
