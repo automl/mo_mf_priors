@@ -1,0 +1,12 @@
+benchmarks:
+  mfh3_bad_mo: [value1, value2]
+  mfh6_bad_mo: [value1, value2]
+  mfh3_good_mo: [value1, value2]
+  mfh6_good_mo: [value1, value2]
+  mfh3_moderate_mo: [value1, value2]
+  mfh6_moderate_mo: [value1, value2]
+  mfh3_terrible_mo: [value1, value2]
+  mfh6_terrible_mo: [value1, value2]
+prior_spec:
+  - [good, 0, 0.01, null]
+  - [bad, -1, 0, null]
