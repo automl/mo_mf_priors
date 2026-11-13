@@ -1,0 +1,8 @@
+# Source: https://github.com/automl/mf-prior-bench/blob/7ae8f942306965e4bc3e859445eb88cfedaa3c29/src/priors/mfh3_good-good.yaml
+benchmark: mfh3_good_mo
+config:
+  X_0: 0.114614
+  X_1: 0.555649
+  X_2: 0.852547
+objective: value1
+prior_name: good
