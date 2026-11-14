@@ -1,0 +1,9 @@
+# Source: https://github.com/automl/mf-prior-bench/blob/7ae8f942306965e4bc3e859445eb88cfedaa3c29/src/priors/mfh3_moderate-good.yaml
+# An upstream good Hartmann prior is bad for minimizing negative Hartmann.
+benchmark: mfh3_moderate_mo
+config:
+  X_0: 0.11805023155589271
+  X_1: 0.5590852315558926
+  X_2: 0.8559832315558927
+objective: value2
+prior_name: bad
