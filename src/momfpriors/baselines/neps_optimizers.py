@@ -240,9 +240,15 @@ class NepsRW(NepsOptimizer):
         working_directory: str | Path = DEFAULT_RESULTS_DIR,
         scalarization_weights: Literal["equal", "random"] | Mapping[str, float] = "random",
         searcher: str = "bayesian_optimization",
+        *,
+        consistent_initial_design: bool = True,
         **kwargs: Any,
     ) -> None:
-        """Initialize the optimizer."""
+        """Initialize BO+RW, optionally using NEPS's original startup sampler.
+
+        Set consistent_initial_design=False to restore NEPS initialization with
+        initial_design_size (default "ndim"), without the repo's shared samples.
+        """
         self.searcher = searcher
         space = convert_configspace(problem.config_space)
         optimizer = searcher
@@ -258,12 +264,17 @@ class NepsRW(NepsOptimizer):
 
         set_seed(seed)
 
-        initial_design = RandomInitialDesign(
-            problem.config_space,
-            seed=seed,
-            size=kwargs.get("initial_design_size", "ndim"),
-            budget=problem.budget.total,
-        )
+        initial_design_size = kwargs.get("initial_design_size", "ndim")
+        initial_configs = None
+        if consistent_initial_design:
+            initial_design = RandomInitialDesign(
+                problem.config_space,
+                seed=seed,
+                size=initial_design_size,
+                budget=problem.budget.total,
+            )
+            initial_design_size = len(initial_design.configurations)
+            initial_configs = initial_design.configurations
 
         super().__init__(
             problem=problem,
@@ -274,8 +285,8 @@ class NepsRW(NepsOptimizer):
             random_weighted_opt=True,
             constant_weights=True,
             scalarization_weights=scalarization_weights,
-            initial_design_size=len(initial_design.configurations),
-            initial_configs=initial_design.configurations,
+            initial_design_size=initial_design_size,
+            initial_configs=initial_configs,
         )
 
 
@@ -308,9 +319,15 @@ class NepsMOBO(NepsOptimizer):
         working_directory: str | Path = DEFAULT_RESULTS_DIR,
         scalarization_weights: Literal["equal", "random"] | Mapping[str, float] = "random",
         searcher: str = "bayesian_optimization",
+        *,
+        consistent_initial_design: bool = True,
         **kwargs: Any,
     ) -> None:
-        """Initialize the optimizer."""
+        """Initialize MOBO, optionally using NEPS's original startup sampler.
+
+        Set consistent_initial_design=False to restore NEPS initialization with
+        initial_design_size (default "ndim"), without the repo's shared samples.
+        """
         self.searcher = searcher
         space = convert_configspace(problem.config_space)
         optimizer = searcher
@@ -326,12 +343,17 @@ class NepsMOBO(NepsOptimizer):
 
         set_seed(seed)
 
-        initial_design = RandomInitialDesign(
-            problem.config_space,
-            seed=seed,
-            size=kwargs.get("initial_design_size", "ndim"),
-            budget=problem.budget.total,
-        )
+        initial_design_size = kwargs.get("initial_design_size", "ndim")
+        initial_configs = None
+        if consistent_initial_design:
+            initial_design = RandomInitialDesign(
+                problem.config_space,
+                seed=seed,
+                size=initial_design_size,
+                budget=problem.budget.total,
+            )
+            initial_design_size = len(initial_design.configurations)
+            initial_configs = initial_design.configurations
 
         super().__init__(
             problem=problem,
@@ -340,8 +362,8 @@ class NepsMOBO(NepsOptimizer):
             seed=seed,
             working_directory=working_directory,
             scalarization_weights=scalarization_weights,
-            initial_design_size=len(initial_design.configurations),
-            initial_configs=initial_design.configurations,
+            initial_design_size=initial_design_size,
+            initial_configs=initial_configs,
         )
 
 

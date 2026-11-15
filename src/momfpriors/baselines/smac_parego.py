@@ -47,6 +47,7 @@ class SMAC_ParEGO(Abstract_AskTellOptimizer):
         seed: int,
         working_directory: Path,
         initial_design_size: int | Literal["ndim"] = "ndim",
+        consistent_initial_design: bool = True,
         **kwargs: Any # noqa: ARG002
     ):
         """Create a SMAC Optimizer instance for a given problem statement.
@@ -56,21 +57,30 @@ class SMAC_ParEGO(Abstract_AskTellOptimizer):
             seed: Random seed for the optimizer.
             working_directory: Working directory to store SMAC run.
             initial_design_size: Number of shared random startup configurations.
-                If "ndim", use the number of searchable hyperparameters.
+                If "ndim", use the number of searchable hyperparameters. Used
+                only when consistent_initial_design is True.
+            consistent_initial_design: Use the shared Random Search prefix.
+                If False, use the original SMAC facade's default Sobol design.
         """
-        initial_design = RandomInitialDesign(
-            problem.config_space,
-            seed=seed,
-            size=initial_design_size,
-            budget=problem.budget.total,
+        initial_design = (
+            RandomInitialDesign(
+                problem.config_space,
+                seed=seed,
+                size=initial_design_size,
+                budget=problem.budget.total,
+            )
+            if consistent_initial_design else None
         )
 
         working_directory.mkdir(parents=True, exist_ok=True)
 
         self.problem = problem
         self.working_directory = working_directory
-        self.config_space = initial_design.config_space
-        self._initial_configs = initial_design.configurations
+        self.config_space = (
+            initial_design.config_space if initial_design is not None else problem.config_space
+        )
+        self._consistent_initial_design = consistent_initial_design
+        self._initial_configs = initial_design.configurations if initial_design is not None else []
         self._initial_index = 0
         self._initial_pending: set[int] = set()
         self._fallback_space = deepcopy(self.config_space)
@@ -92,25 +102,30 @@ class SMAC_ParEGO(Abstract_AskTellOptimizer):
             seed=seed,
             output_directory=self.working_directory / "smac-output",
         )
+        facade_options: dict[str, Any] = {}
+        if initial_design is not None:
+            facade_options["initial_design"] = HPOFacade.get_initial_design(
+                scenario,
+                n_configs=0,
+                additional_configs=initial_design.configurations,
+            )
         self.optimizer = HPOFacade(
             scenario=scenario,
             logging_level=False,
             target_function=_dummy_target_function,
             multi_objective_algorithm=ParEGO(scenario=scenario),
-            initial_design=HPOFacade.get_initial_design(
-                scenario,
-                n_configs=0,
-                additional_configs=initial_design.configurations,
-            ),
             intensifier=HPOFacade.get_intensifier(scenario),
             overwrite=True,
+            **facade_options,
         )
 
     def ask(self) -> Query:
         """Ask SMAC for a new config to evaluate."""
         from smac.runhistory import TrialInfo  # noqa: PLC0415
 
-        if self._initial_index < len(self._initial_configs):
+        if not self._consistent_initial_design:
+            smac_info = self.optimizer.ask()
+        elif self._initial_index < len(self._initial_configs):
             # Emit the full random sequence here: SMAC's initial-design selector
             # deduplicates configurations, whereas Random Search samples with replacement.
             smac_info = TrialInfo(

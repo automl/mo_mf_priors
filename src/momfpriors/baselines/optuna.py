@@ -49,9 +49,15 @@ class OptunaOptimizer(Optimizer):
         seed: int,
         working_directory: Path,
         initial_design_size: int | Literal["ndim"] = "ndim",
+        consistent_initial_design: bool = True,
         **kwargs: Any,
     ) -> None:
-        """Create an Optuna Optimizer instance for a given problem."""
+        """Create an Optuna Optimizer instance for a given problem.
+
+        Set consistent_initial_design=False to restore the original Optuna
+        random startup with len(distributions) trials, including constants.
+        initial_design_size applies only to the consistent design.
+        """
         import optuna  # noqa: PLC0415
         from optuna.samplers import TPESampler  # noqa: PLC0415
 
@@ -68,17 +74,22 @@ class OptunaOptimizer(Optimizer):
         assert isinstance(problem.objectives, Mapping)
         num_objectives = len(problem.objectives)
 
-        design = RandomInitialDesign(
-            config_space,
-            seed=seed,
-            size=initial_design_size,
-            budget=problem.budget.total,
-        )
+        initial_configs = []
+        n_startup_trials = len(self._distributions)
+        if consistent_initial_design:
+            design = RandomInitialDesign(
+                config_space,
+                seed=seed,
+                size=initial_design_size,
+                budget=problem.budget.total,
+            )
+            initial_configs = design.configurations
+            n_startup_trials = len(initial_configs)
 
         self.optimizer: optuna.study.Study = optuna.create_study(
             sampler=TPESampler(
                 seed=seed,
-                n_startup_trials=len(design.configurations),
+                n_startup_trials=n_startup_trials,
                 **kwargs
             ),
             storage=None,
@@ -87,7 +98,7 @@ class OptunaOptimizer(Optimizer):
             load_if_exists=False,
             directions=["minimize"] * num_objectives,
         )
-        for config in design.configurations:
+        for config in initial_configs:
             self.optimizer.enqueue_trial(dict(config))
 
         self.problem = problem
