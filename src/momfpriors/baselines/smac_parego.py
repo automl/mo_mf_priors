@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 from collections.abc import Hashable, Mapping
+from copy import deepcopy
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, Any, Literal, NoReturn
 
-from ConfigSpace import ConfigurationSpace
 from hpoglue import Config, Problem, Query
-from hpoglue.budget import CostBudget, TrialBudget
 from hpoglue.env import Env
 
+from momfpriors.baselines.initial_design import RandomInitialDesign
 from momfpriors.optimizer import Abstract_AskTellOptimizer
-from momfpriors.utils import objective_fn_wrapper
 
 if TYPE_CHECKING:
     from hpoglue import Result
@@ -22,6 +21,7 @@ def _dummy_target_function(*args: Any, budget: int | float, seed: int) -> NoRetu
 
 
 class SMAC_ParEGO(Abstract_AskTellOptimizer):
+    """SMAC optimizer using the ParEGO multi-objective algorithm."""
 
     name = "SMAC_ParEGO"
 
@@ -46,7 +46,8 @@ class SMAC_ParEGO(Abstract_AskTellOptimizer):
         problem: Problem,
         seed: int,
         working_directory: Path,
-        **kwargs: Any
+        initial_design_size: int | Literal["ndim"] = "ndim",
+        **kwargs: Any # noqa: ARG002
     ):
         """Create a SMAC Optimizer instance for a given problem statement.
 
@@ -54,30 +55,40 @@ class SMAC_ParEGO(Abstract_AskTellOptimizer):
             problem: Problem statement.
             seed: Random seed for the optimizer.
             working_directory: Working directory to store SMAC run.
-            config_space: Configuration space to optimize over.
-            optimizer: SMAC optimizer instance.
+            initial_design_size: Number of shared random startup configurations.
+                If "ndim", use the number of searchable hyperparameters.
         """
-        config_space = problem.config_space
+        initial_design = RandomInitialDesign(
+            problem.config_space,
+            seed=seed,
+            size=initial_design_size,
+            budget=problem.budget.total,
+        )
 
         working_directory.mkdir(parents=True, exist_ok=True)
 
         self.problem = problem
         self.working_directory = working_directory
-        self.config_space = config_space
+        self.config_space = initial_design.config_space
+        self._initial_configs = initial_design.configurations
+        self._initial_index = 0
+        self._initial_pending: set[int] = set()
+        self._fallback_space = deepcopy(self.config_space)
         self._trial_lookup: dict[Hashable, TrialInfo] = {}
         self._seed = seed
 
-        from smac import (
+        from smac import (  # noqa: PLC0415
             HyperparameterOptimizationFacade as HPOFacade,
             Scenario,
         )
-        from smac.multi_objective.parego import ParEGO
+        from smac.multi_objective.parego import ParEGO  # noqa: PLC0415
 
         scenario = Scenario(
             configspace=self.config_space,
             deterministic=True,
             objectives=problem.get_objectives(),
             n_trials=problem.budget.total,
+            use_default_config=False,
             seed=seed,
             output_directory=self.working_directory / "smac-output",
         )
@@ -86,13 +97,44 @@ class SMAC_ParEGO(Abstract_AskTellOptimizer):
             logging_level=False,
             target_function=_dummy_target_function,
             multi_objective_algorithm=ParEGO(scenario=scenario),
+            initial_design=HPOFacade.get_initial_design(
+                scenario,
+                n_configs=0,
+                additional_configs=initial_design.configurations,
+            ),
             intensifier=HPOFacade.get_intensifier(scenario),
             overwrite=True,
         )
 
     def ask(self) -> Query:
         """Ask SMAC for a new config to evaluate."""
-        smac_info = self.optimizer.ask()
+        from smac.runhistory import TrialInfo  # noqa: PLC0415
+
+        if self._initial_index < len(self._initial_configs):
+            # Emit the full random sequence here: SMAC's initial-design selector
+            # deduplicates configurations, whereas Random Search samples with replacement.
+            smac_info = TrialInfo(
+                config=self._initial_configs[self._initial_index], seed=self._seed,
+            )
+            self._initial_index += 1
+            self._initial_pending.add(id(smac_info))
+            self.optimizer.runhistory.add_running_trial(smac_info)
+        else:
+            if self._initial_pending:
+                raise ValueError(
+                    "Report all shared initial configurations before requesting a BO trial."
+                )
+            if len(self.optimizer.runhistory.get_configs()) >= self.config_space.estimate_size():
+                # Native SMAC stops after exhausting a finite space. Keep the
+                # outer evaluation budget usable by sampling with replacement.
+                smac_info = TrialInfo(
+                    config=self._fallback_space.sample_configuration(), seed=self._seed,
+                )
+                self.optimizer.runhistory.add_running_trial(smac_info)
+            else:
+                # ConfigSelector reads the runhistory on its first iteration and
+                # skips the supplied initial configurations already evaluated above.
+                smac_info = self.optimizer.ask()
         assert smac_info.instance is None, "We don't do instance benchmarks!"
 
         config = smac_info.config
@@ -130,3 +172,4 @@ class SMAC_ParEGO(Abstract_AskTellOptimizer):
             ),
             save=True,
         )
+        self._initial_pending.discard(id(result.query.optimizer_info))

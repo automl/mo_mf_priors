@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -10,17 +10,60 @@ import numpy as np
 from hpoglue import Config, Problem, Query, Result
 from hpoglue.env import Env
 from neps import AskAndTell, algorithms
+from neps.optimizers.optimizer import SampledConfig
 from neps.space.parsing import convert_configspace
 
+from momfpriors.baselines.initial_design import RandomInitialDesign
 from momfpriors.constants import DEFAULT_RESULTS_DIR
 from momfpriors.optimizer import Abstract_AskTellOptimizer
 from momfpriors.utils import set_seed
 
 if TYPE_CHECKING:
     from hpoglue.fidelity import Fidelity
+    from neps.optimizers.optimizer import AskFunction
+    from neps.state import BudgetInfo, Trial
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+class _WithInitialConfigurations:
+    """Register a shared initial design through NEPS's normal ask/tell interface."""
+
+    def __init__(
+        self,
+        optimizer: AskFunction,
+        configurations: Sequence[Mapping[str, Any]],
+    ) -> None:
+        self.optimizer = optimizer
+        self.configurations = [dict(config) for config in configurations]
+        self._initial_trial_ids: list[str] = []
+
+    def __call__(
+        self,
+        trials: Mapping[str, Trial],
+        budget_info: BudgetInfo | None = None,
+        n: int | None = None,
+    ) -> SampledConfig | list[SampledConfig]:
+        index = len(self._initial_trial_ids)
+        if index < len(self.configurations):
+            if n is not None:
+                raise ValueError(
+                    "Batch sampling is not supported during the shared initial design."
+                )
+            trial_id = str(len(trials) + 1)
+            self._initial_trial_ids.append(trial_id)
+            return SampledConfig(id=trial_id, config=dict(self.configurations[index]))
+
+        if any(
+            trials[trial_id].report is None
+            or trials[trial_id].report.objective_to_minimize is None
+            for trial_id in self._initial_trial_ids
+        ):
+            raise ValueError(
+                "Report all shared initial configurations before requesting a BO trial."
+            )
+        return self.optimizer(trials, budget_info, n)
 
 
 class NepsOptimizer(Abstract_AskTellOptimizer):
@@ -41,6 +84,7 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
         random_weighted_opt: bool = False,
         constant_weights: bool = True,
         scalarization_weights: Literal["equal", "random"] | Mapping[str, float] = "random",
+        initial_configs: Sequence[Mapping[str, Any]] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the optimizer."""
@@ -81,11 +125,14 @@ class NepsOptimizer(Abstract_AskTellOptimizer):
         self.seed = seed
         self.working_dir = working_directory
 
+        opt = algorithms.PredefinedOptimizers[optimizer](
+            space=space,
+            **kwargs,
+        )
         self.optimizer = AskAndTell(
-            algorithms.PredefinedOptimizers[optimizer](
-                space = space,
-                **kwargs,
-            )
+            opt
+            if initial_configs is None
+            else _WithInitialConfigurations(opt, initial_configs)
         )
         self.trial_counter = 0
 
@@ -211,6 +258,13 @@ class NepsRW(NepsOptimizer):
 
         set_seed(seed)
 
+        initial_design = RandomInitialDesign(
+            problem.config_space,
+            seed=seed,
+            size=kwargs.get("initial_design_size", "ndim"),
+            budget=problem.budget.total,
+        )
+
         super().__init__(
             problem=problem,
             space=space,
@@ -220,7 +274,8 @@ class NepsRW(NepsOptimizer):
             random_weighted_opt=True,
             constant_weights=True,
             scalarization_weights=scalarization_weights,
-            initial_design_size=kwargs.get("initial_design_size", "ndim"),
+            initial_design_size=len(initial_design.configurations),
+            initial_configs=initial_design.configurations,
         )
 
 
@@ -271,6 +326,13 @@ class NepsMOBO(NepsOptimizer):
 
         set_seed(seed)
 
+        initial_design = RandomInitialDesign(
+            problem.config_space,
+            seed=seed,
+            size=kwargs.get("initial_design_size", "ndim"),
+            budget=problem.budget.total,
+        )
+
         super().__init__(
             problem=problem,
             space=space,
@@ -278,7 +340,8 @@ class NepsMOBO(NepsOptimizer):
             seed=seed,
             working_directory=working_directory,
             scalarization_weights=scalarization_weights,
-            initial_design_size=kwargs.get("initial_design_size", "ndim"),
+            initial_design_size=len(initial_design.configurations),
+            initial_configs=initial_design.configurations,
         )
 
 

@@ -3,13 +3,15 @@ from __future__ import annotations
 import logging
 from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from typing_extensions import Any
 
 import ConfigSpace as CS  # noqa: N817
 import optuna
 from hpoglue import Config, Optimizer, Problem, Query
 from hpoglue.env import Env
+
+from momfpriors.baselines.initial_design import RandomInitialDesign
 
 if TYPE_CHECKING:
     from hpoglue import Result
@@ -46,6 +48,7 @@ class OptunaOptimizer(Optimizer):
         problem: Problem,
         seed: int,
         working_directory: Path,
+        initial_design_size: int | Literal["ndim"] = "ndim",
         **kwargs: Any,
     ) -> None:
         """Create an Optuna Optimizer instance for a given problem."""
@@ -65,12 +68,17 @@ class OptunaOptimizer(Optimizer):
         assert isinstance(problem.objectives, Mapping)
         num_objectives = len(problem.objectives)
 
-        ndim = len(self._distributions)
+        design = RandomInitialDesign(
+            config_space,
+            seed=seed,
+            size=initial_design_size,
+            budget=problem.budget.total,
+        )
 
         self.optimizer: optuna.study.Study = optuna.create_study(
             sampler=TPESampler(
                 seed=seed,
-                n_startup_trials=ndim,
+                n_startup_trials=len(design.configurations),
                 **kwargs
             ),
             storage=None,
@@ -79,6 +87,8 @@ class OptunaOptimizer(Optimizer):
             load_if_exists=False,
             directions=["minimize"] * num_objectives,
         )
+        for config in design.configurations:
+            self.optimizer.enqueue_trial(dict(config))
 
         self.problem = problem
         self.working_directory = working_directory
