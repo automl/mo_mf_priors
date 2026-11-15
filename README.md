@@ -150,6 +150,43 @@ specific_fig_params:
 
 To ensure reproducible results across experiments, our code uses a deterministic seed generation function. All experiments use a global seed value of `GLOBAL_SEED = 42` to generate the required number of seeds to actually run the experiments.
 
+Random Search samples once from its seeded ConfigSpace on every
+`ask()`, with no initial-design phase. BO+RW (`NepsRW`), `NepsMOBO`, SMAC ParEGO,
+and Optuna MO-TPE start with exactly the same configurations as Random Search for a given
+space and seed, preserving order and repeated configurations in discrete spaces.
+Those four optimizers default to `initial_design_size: ndim`: the number of
+nonconstant hyperparameters (four on PD1 CIFAR100), capped by the trial budget.
+Set `initial_design_size` to the same positive integer for those four optimizers
+to use a different common startup length; Random Search needs no such setting.
+
+All four use `consistent_initial_design: true` by default. To restore an
+optimizer's previous startup behavior, set it to `false` in its hyperparameters:
+
+```yaml
+optimizers:
+  - name: NepsRW  # Also supported by NepsMOBO, SMAC_ParEGO, and Optuna
+    hyperparameters:
+      consistent_initial_design: false
+```
+
+With this option disabled, `NepsRW` and `NepsMOBO` use NEPS's native startup
+sampler with `initial_design_size` defaulting to `"ndim"`. Optuna uses its own
+random sampler with `n_startup_trials` equal to the number of distributions,
+including constants. SMAC uses its default Sobol design (10 configurations per
+hyperparameter, capped at 25% of the trial budget) and native ask/tell behavior.
+`initial_design_size` is ignored by Optuna and SMAC in this mode. These native
+startup sizes are not capped by the shared-design helper. Random Search always
+uses its original per-call sampling and needs no switch.
+
+Each library receives the startup evaluations before resuming its own search.
+With the consistent design enabled, NEPS's native initialization is bypassed
+for `NepsRW` and `NepsMOBO`; no changes to NEPS,
+Optuna, or SMAC are required. SMAC keeps one runhistory entry per deterministic
+configuration/seed, while the experiment history records every evaluation,
+including repeats. Existing result files retain their old
+initial configurations. Rerun in a new experiment directory to update the plots
+without reusing completed runs.
+
 ### Generated Seeds (n=25)
 
 The following 25 seeds are automatically generated for the experiments in the thesis:
