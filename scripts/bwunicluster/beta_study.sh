@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --partition cpu_il
-#SBATCH --job-name primo_beta_study
+#SBATCH --job-name pibo_beta_study
 #SBATCH --output logs/%x-%A_%a_bwuni3.out
 #SBATCH --error logs/%x-%A_%a_bwuni3.err
 #SBATCH --cpus-per-task 30
