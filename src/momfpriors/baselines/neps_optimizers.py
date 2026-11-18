@@ -283,7 +283,7 @@ class NepsRW(NepsOptimizer):
             seed=seed,
             working_directory=working_directory,
             random_weighted_opt=True,
-            constant_weights=True,
+            constant_weights=False,
             scalarization_weights=scalarization_weights,
             initial_design_size=initial_design_size,
             initial_configs=initial_configs,
@@ -420,7 +420,7 @@ class NepsHyperbandRW(NepsOptimizer):
             working_directory=working_directory,
             fidelities=_fid,
             random_weighted_opt=True,
-            constant_weights=True,
+            constant_weights=False,
             scalarization_weights=scalarization_weights,
             eta=eta,
         )
