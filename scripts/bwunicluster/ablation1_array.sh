@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --partition cpu
+#SBATCH --partition cpu_il
 #SBATCH --job-name ablation1
 #SBATCH --output logs/%x-%A_%a_bwuni3.out
 #SBATCH --error logs/%x-%A_%a_bwuni3.err
 #SBATCH --cpus-per-task 30
-#SBATCH --array=0-199%20   # (6 prior opts * 4 priors + 1 non-prior opts) * 8 benchmarks = 200 total combinations
+#SBATCH --array=0-231%20   # (7 prior opts * 4 priors + 1 non-prior opts) * 8 benchmarks = 232 total combinations
 #SBATCH --time=3-00:00:00
 # #SBATCH --mem 30G
 
@@ -24,10 +24,12 @@ with_priors=(
     # "NepsEtaPriorPriMO"
     # "NepsMFPriMO"
     # "NepsEtaPriorMFPriMO"
-    "NepsPriMO_Init10"
+    # "NepsPriMO_Init10"
     "NepsPriMO_HV"
     "NepsPriMO_TS"
     "NepsPriMO_LCB"
+    "NepsPriMO_noEPS"
+    "NepsPiBORW_eps"
 )
 
 without_priors=(
