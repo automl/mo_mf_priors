@@ -14,3 +14,6 @@ test*.py
 test*.ipynb
 test*.yaml
 .codex
+output/
+outputs/
+analysis/
