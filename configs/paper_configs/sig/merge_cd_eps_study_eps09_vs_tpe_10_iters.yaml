@@ -1,0 +1,22 @@
+yaml_files:
+- configs/paper_configs/sig/cd_eps_study_eps09_vs_tpe_overall.yaml
+- configs/paper_configs/sig/cd_eps_study_eps09_vs_tpe_all_good.yaml
+- configs/paper_configs/sig/cd_eps_study_eps09_vs_tpe_mixed.yaml
+- configs/paper_configs/sig/cd_eps_study_eps09_vs_tpe_all_bad.yaml
+output_dir: /home/soham/Master_Thesis/ICLR_27/plots/sig_analysis/
+save_suffix: eps_study_eps09_vs_tpe_10_iters
+file_type: pdf
+figsize:
+- 32
+- 5
+diagram_fontsize: 12
+title_fontsize: 24
+sub_labels:
+- Overall
+- All priors good
+- Mixed priors
+- All priors bad
+remove_prior_annots: true
+# The unchanged CD loader uses zero-based row positions; row 9 is evaluation 10.
+at_iteration: 9
+normalize_hv: true

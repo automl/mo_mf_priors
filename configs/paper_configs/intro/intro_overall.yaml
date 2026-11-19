@@ -1,4 +1,4 @@
-exp_dir: subset1
+exp_dir: subset1_1
 output_dir: /home/soham/Master_Thesis/ICLR/plots/intro/
 skip_non_avg: true
 priors_to_avg:

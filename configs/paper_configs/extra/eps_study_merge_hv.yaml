@@ -3,7 +3,7 @@ yaml_files:
   - configs/paper_configs/extra/eps_study_all_good.yaml
   - configs/paper_configs/extra/eps_study_mixed.yaml
   - configs/paper_configs/extra/eps_study_all_bad.yaml
-output_dir: /home/soham/Master_Thesis/NeurIPS/plots/extra/
+output_dir: /home/soham/Master_Thesis/ICLR_27/plots/extra/
 save_suffix: eps_study_merged_hv
 file_type: pdf
 figsize:

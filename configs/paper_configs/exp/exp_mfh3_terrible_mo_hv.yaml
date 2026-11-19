@@ -1,0 +1,20 @@
+exp_dir: mfh_mo_20_evals
+# Keep good-good priors and optimizers that do not use priors.
+skip_priors:
+  - bad-good
+  - bad-bad
+  - good-bad
+skip_opt:
+  - NepsPiBORW
+  - NepsRW
+  - NepsMOASHA
+  - Optuna
+skip_bench:
+  - mfh3_good_mo
+  - mfh3_bad_mo
+  - mfh3_moderate_mo
+  - mfh6_good_mo
+  - mfh6_bad_mo
+  - mfh6_moderate_mo
+  - mfh6_terrible_mo
+which_labels: "1"

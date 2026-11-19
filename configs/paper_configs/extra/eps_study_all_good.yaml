@@ -1,16 +1,17 @@
-exp_dir: eps_study
-output_dir: /home/soham/Master_Thesis/NeurIPS/plots/extra/
+exp_dir: eps_study_1
+output_dir: /home/soham/Master_Thesis/ICLR_27/plots/extra/
 skip_priors:
   - bad-bad
   - bad-good
   - good-bad
 save_suffix: eps_study_all_good
-# which_labels: "1"
+which_labels: eps_study
 which_plots:
   - hv
 specific_fig_params:
   - bbox_to_anchor=(0.5, -0.12)
+  - "multi_fig_leg_cols={6: 3}"
+  - "stitched_cols={6: 3}"
 figsize:
   - 16
   - 8
-multi_fig_cols: hp_fig_cols

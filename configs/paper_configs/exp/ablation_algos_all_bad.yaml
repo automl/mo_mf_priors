@@ -1,5 +1,5 @@
-exp_dir: ablation_algos_20
-output_dir: /home/soham/Master_Thesis/plots/ICLR/exp/
+exp_dir: ablation_algos_1_20
+output_dir: /home/soham/Master_Thesis/plots/ICLR_27/exp/
 save_suffix: ablation_algos_all_bad
 skip_priors:
   - good-good

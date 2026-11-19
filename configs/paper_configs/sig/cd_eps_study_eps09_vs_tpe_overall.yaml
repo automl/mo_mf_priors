@@ -1,0 +1,17 @@
+# Compare epsilon=0.9 PriMO with MO-TPE directly from eps_study_1.
+exp_dir: eps_study_1
+output_dir: /home/soham/Master_Thesis/ICLR_27/plots/sig_analysis/
+which_labels: eps_study
+skip_non_avg: true
+priors_to_avg:
+- good-good
+- bad-good
+- good-bad
+- bad-bad
+avg_prior_label: overall
+skip_opt:
+- NepsPriMO;default
+- NepsPriMO;epsilon=0.1
+- NepsPriMO;epsilon=0.3
+- NepsPriMO;epsilon=0.5
+- NepsPriMO;epsilon=0.7

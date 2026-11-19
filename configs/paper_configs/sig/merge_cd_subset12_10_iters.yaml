@@ -3,12 +3,14 @@ yaml_files:
   - configs/paper_configs/sig/cd_subset12_all_good.yaml
   - configs/paper_configs/sig/cd_subset12_mixed.yaml
   - configs/paper_configs/sig/cd_subset12_all_bad.yaml
-output_dir: /home/soham/Master_Thesis/ICLR/plots/sig_analysis/
+output_dir: /home/soham/Master_Thesis/ICLR_27/plots/sig_analysis/
 save_suffix: all_cd_plots_10
 file_type: pdf
 figsize:
-  - 16
-  - 4
+  - 18
+  - 5
+diagram_fontsize: 14
+title_fontsize: 24
 sub_labels:
   - Overall
   - All priors good

@@ -1,0 +1,32 @@
+exp_dir: pibo_comp
+output_dir: /home/soham/Master_Thesis/ICLR_27/plots/exp/
+skip_non_avg: true
+priors_to_avg:
+  - bad-good
+  - good-bad
+avg_prior_label: mixed
+save_suffix: pibo_comp_mixed
+skip_opt:
+  - NepsMOASHA
+  - NepsMOASHABO
+  - NepsPriorMOASHA
+skip_bench:
+  - MOMFPark
+  - hwgptbench-s
+  - hwgptbench-m
+  - hwgptbench-l
+  - jahs-CIFAR10
+  - jahs-ColorectalHistology
+  - jahs-FashionMNIST
+# Preserve distinct NepsPiBORW and NepsPiBORW_legacy legend names.
+which_labels: "1"
+which_plots:
+  - rank
+  - ov_rank
+specific_fig_params:
+  - xylabel_fontsize=20
+  - ovrank_xsize=6
+  - ovrank_ysize=4
+figsize:
+  - 20
+  - 10

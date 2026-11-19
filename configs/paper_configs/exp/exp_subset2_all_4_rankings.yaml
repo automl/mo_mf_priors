@@ -3,12 +3,12 @@ yaml_files:
   - configs/paper_configs/exp/exp_subset2_all_good.yaml
   - configs/paper_configs/exp/exp_subset2_mixed.yaml
   - configs/paper_configs/exp/exp_subset2_all_bad.yaml
-output_dir: /home/soham/Master_Thesis/ICML/plots/exp/
+output_dir: /home/soham/Master_Thesis/ICLR_27/plots/exp/
 save_suffix: exp_subset2_all_rankings
 file_type: pdf
 figsize:
-  - 28
-  - 4
+  - 40
+  - 7
 sub_labels:
   - Overall
   - All priors good
@@ -18,4 +18,4 @@ remove_prior_annots: true
 ylim: 4
 cut_off_iteration: 20
 tight_layout: false
-wspace: 0.5
+wspace: 0.2
