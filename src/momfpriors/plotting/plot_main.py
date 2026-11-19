@@ -18,8 +18,10 @@ from momfpriors.benchmarks.botorch_momf import run_rs
 from momfpriors.benchmarks.mf_zdt import _calc_pareto_front_zdt1, _calc_pareto_front_zdt6
 from momfpriors.constants import DEFAULT_RESULTS_DIR
 from momfpriors.plotting.plot_styles import (
+    LINESTYLES_HPS,
     RC_PARAMS,
     XTICKS,
+    hv_fig_params,
     other_fig_params,
 )
 from momfpriors.plotting.plot_utils import (
@@ -93,10 +95,10 @@ def plot_average_rank(
         means = mean_ranks[instance]
         sems = sem_ranks[instance]
 
-        marker, color, _, _, _ = get_style(instance)
+        marker, color, opt, hps, _ = get_style(instance)
         ax.plot(
             means,
-            linestyle="-",
+            linestyle=LINESTYLES_HPS.get((opt, hps), "-"),
             label=instance,
             color=color,
         )
@@ -259,6 +261,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
 
             ax_hv.plot(
                 means,
+                linestyle=LINESTYLES_HPS.get((opt, hps), "-"),
                 label=instance,
                 color=color if not is_single_opt else None,
             )
@@ -287,6 +290,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
 
             ax_hv.plot(
                 means_cont,
+                linestyle=LINESTYLES_HPS.get((opt, hps), "-"),
                 label=f"{instance}_w_continuations",
                 color=_color if not is_single_opt else None,
             )
@@ -669,12 +673,12 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
             plot_title,
             x=suptitle_x,
             y=suptitle_y,
-            fontsize=other_fig_params["title_fontsize"])
+            fontsize=hv_fig_params["title_fontsize"])
         fig_pareto.suptitle(
             plot_title,
             x=suptitle_x,
             y=suptitle_y,
-            fontsize=other_fig_params["title_fontsize"])
+            fontsize=hv_fig_params["title_fontsize"])
         fig_rank.suptitle(
             plot_title,
             x=suptitle_x,
@@ -694,6 +698,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
     axs_ov_rank: list[plt.Axes] = [axs_ov_rank]
 
     xylabel_fontsize = other_fig_params["xylabel_fontsize"]
+    hv_xylabel_fontsize = hv_fig_params["xylabel_fontsize"]
     ovrank_xylabelsize = other_fig_params["stitched_xylabel_fontsize"]
     xytick_labelsize = other_fig_params["xytick_labelsize"]
     xlabel_i = other_fig_params["xlabel_start_i"][num_plots]
@@ -731,10 +736,10 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 direction="out",
                 axis="both",
                 which="major",
-                labelsize=xytick_labelsize,
+                labelsize=hv_fig_params["xytick_labelsize"],
             )
             axs_hv[i].grid(visible=True)
-            axs_hv[i].set_title(bench_label)
+            axs_hv[i].set_title(bench_label, fontsize=hv_fig_params["title_fontsize"])
             axs_hv[i].set_xlim(1, total_budget)
             if hv_cut_off:
                 axs_hv[i].set_ylim(hv_low_cutoffs[benchmark])
@@ -743,9 +748,9 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
             axs_pareto[i].tick_params(
                 axis="both",
                 which="major",
-                labelsize=xytick_labelsize,
+                labelsize=hv_fig_params["xytick_labelsize"],
             )
-            axs_pareto[i].set_title(bench_label)
+            axs_pareto[i].set_title(bench_label, fontsize=hv_fig_params["title_fontsize"])
 
             for _seed, rank_df in seed_dict_per_bench.items():
                 if _seed not in means_dict:
@@ -770,13 +775,13 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
             pareto_ylabel = edit_axis_labels("y")
 
             if i >= xlabel_i:
-                axs_hv[i].set_xlabel("Evaluations", fontsize=xylabel_fontsize)
-                axs_pareto[i].set_xlabel(pareto_xlabel, fontsize=xylabel_fontsize)
+                axs_hv[i].set_xlabel("Evaluations", fontsize=hv_xylabel_fontsize)
+                axs_pareto[i].set_xlabel(pareto_xlabel, fontsize=hv_xylabel_fontsize)
                 axs_rank[i].set_xlabel("Evaluations", fontsize=xylabel_fontsize)
 
             if i == ylabel_i_counter:
-                axs_hv[i].set_ylabel("Hypervolume", fontsize=xylabel_fontsize)
-                axs_pareto[i].set_ylabel(pareto_ylabel, fontsize=xylabel_fontsize)
+                axs_hv[i].set_ylabel("Hypervolume", fontsize=hv_xylabel_fontsize)
+                axs_pareto[i].set_ylabel(pareto_ylabel, fontsize=hv_xylabel_fontsize)
                 axs_rank[i].set_ylabel("Relative Rank", fontsize=xylabel_fontsize)
                 ylabel_i_counter += ylabel_i_inc
 
@@ -887,7 +892,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
         hv_leg = fig_hv.legend(
             hv_handles,
             hv_labels,
-            fontsize=legend_fontsize,
+            fontsize=hv_fig_params["legend_fontsize"],
             loc="lower center",
             bbox_to_anchor=bbox_to_anchor,
             ncol=multi_cols,
@@ -908,7 +913,7 @@ def make_subplots(  # noqa: C901, PLR0912, PLR0913, PLR0915
         pareto_leg = fig_pareto.legend(
             pareto_handles,
             pareto_labels,
-            fontsize=legend_fontsize,
+            fontsize=hv_fig_params["legend_fontsize"],
             loc="lower center",
             bbox_to_anchor=bbox_to_anchor,
             ncol=multi_cols,
@@ -1211,6 +1216,7 @@ if __name__ == "__main__":
             key, value = param.split("=")
             if key in other_fig_params:
                 other_fig_params[key] = ast.literal_eval(value)
+                hv_fig_params[key] = ast.literal_eval(value)
             else:
                 logger.warning(f"Unknown figure parameter: {key}. Skipping.")
 

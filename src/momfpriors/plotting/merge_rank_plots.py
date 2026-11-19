@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import logging
 from collections.abc import Iterable, Mapping
 from pathlib import Path
@@ -16,6 +17,7 @@ from pymoo.indicators.hv import Hypervolume
 from momfpriors.baselines import OPTIMIZERS
 from momfpriors.constants import DEFAULT_RESULTS_DIR
 from momfpriors.plotting.plot_styles import (
+    LINESTYLES_HPS,
     RC_PARAMS,
     XTICKS,
     other_fig_params,
@@ -88,10 +90,10 @@ def plot_average_rank(
         means = mean_ranks[instance]
         sems = sem_ranks[instance]
 
-        marker, color, _, _, _ = get_style(instance)
+        marker, color, opt, hps, _ = get_style(instance)
         ax.plot(
             means,
-            linestyle="-",
+            linestyle=LINESTYLES_HPS.get((opt, hps), "-"),
             label=instance,
             color=color,
         )
@@ -522,6 +524,15 @@ def make_subplots(  # noqa: C901, PLR0913
         ax.set_title(ax_title, fontsize=other_fig_params["title_fontsize"])
 
 
+def _apply_specific_fig_params(params: list[str] | None) -> None:
+    for param in params or []:
+        key, value = param.split("=", 1)
+        if key in other_fig_params:
+            other_fig_params[key] = ast.literal_eval(value)
+        else:
+            logger.warning(f"Unknown figure parameter: {key}. Skipping.")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -595,6 +606,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     yaml_paths = []
+    combined_fig_params = None
 
     if args.from_yaml:
         with Path(args.from_yaml).open("r") as f:
@@ -614,6 +626,9 @@ if __name__ == "__main__":
         args.ylim = yaml_config.get("ylim", args.ylim)
         args.tight_layout = yaml_config.get("tight_layout", True)
         args.wspace = yaml_config.get("wspace", 0.5)
+        combined_fig_params = yaml_config.get("specific_fig_params")
+
+    _apply_specific_fig_params(combined_fig_params)
 
     num_plots = len(yaml_paths)
     if args.sub_labels is not None:
@@ -662,14 +677,9 @@ if __name__ == "__main__":
                 key, value = param.split("=")
                 RC_PARAMS[key] = value
 
-        if specific_fig_params:
-            import ast
-            for param in specific_fig_params:
-                key, value = param.split("=")
-                if key in other_fig_params:
-                    other_fig_params[key] = ast.literal_eval(value)
-                else:
-                    logger.warning(f"Unknown figure parameter: {key}. Skipping.")
+        _apply_specific_fig_params(specific_fig_params)
+        # Combined figure settings take precedence over each child's settings.
+        _apply_specific_fig_params(combined_fig_params)
 
         logger.info(f"Picking plots from: {exp_dir}")
 
@@ -745,7 +755,7 @@ if __name__ == "__main__":
         markerscale=2,
     )
     for item in ov_rank_leg.legend_handles:
-        item.set_linewidth(2)
+        item.set_linewidth(4)
 
     logger.info(f"Final Optimizer labels: {', '.join(all_labels)}")
 

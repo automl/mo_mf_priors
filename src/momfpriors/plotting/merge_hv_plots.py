@@ -16,9 +16,10 @@ from pymoo.indicators.hv import Hypervolume
 from momfpriors.baselines import OPTIMIZERS
 from momfpriors.constants import DEFAULT_RESULTS_DIR
 from momfpriors.plotting.plot_styles import (
+    LINESTYLES_HPS,
     RC_PARAMS,
     XTICKS,
-    other_fig_params,
+    hv_fig_params as other_fig_params,
 )
 from momfpriors.plotting.plot_utils import (
     avg_seed_dfs_for_ranking,
@@ -194,6 +195,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
 
             ax.plot(
                 means,
+                linestyle=LINESTYLES_HPS.get((opt, hps), "-"),
                 label=instance,
                 color=color,
             )
@@ -222,6 +224,7 @@ def create_plots(  # noqa: C901, PLR0912, PLR0915
 
             ax.plot(
                 means_cont,
+                linestyle=LINESTYLES_HPS.get((opt, hps), "-"),
                 label=f"{instance}_w_continuations",
                 color=_color,
             )
@@ -287,10 +290,15 @@ def agg_data(
             # Add default benchmark fidelity to a blackbox Optimizer to compare it
             # alongside MF optimizers if the latter exist in the study
             if fidelities is None:
+                # Array jobs may leave exp.yaml describing only the last benchmark.
+                # Use the run's default fidelity when its benchmark is absent there.
                 fid = next(
-                    bench[1]["fidelities"]
-                    for bench in all_benches
-                    if bench[0] == benchmark
+                    (
+                        bench[1]["fidelities"]
+                        for bench in all_benches
+                        if bench[0] == benchmark
+                    ),
+                    _df[BENCH_FIDELITY_NAME].iloc[0],
                 )
                 if fid == _df[BENCH_FIDELITY_NAME].iloc[0]:
                 # Study config is saved in such a way that if Blackbox Optimizers

@@ -52,7 +52,10 @@ COLORS_MAIN = {
     "NepsMOPriorband_w_continuations": "cornflowerblue",
 
     # NepsPiBORW
-    "NepsPiBORW": "olive",
+    "NepsPiBORW": "cornflowerblue",
+
+    # NepsPiBORW_legacy
+    "NepsPiBORW_legacy": "olive",
 
     # NepsPriMO
     "NepsPriMO": "crimson",
@@ -66,6 +69,15 @@ COLORS_MAIN = {
 
     "NepsPriMO_LCB": "darkorange",
     "NepsPriMO_LCB_w_continuations": "darkorange",
+
+    "NepsPriMO_EHVI": "darkblue",
+    "NepsPriMO_EHVI_w_continuations": "darkblue",
+
+    "NepsPriMO_noEPS": "green",
+    "NepsPriMO_noEPS_w_continuations": "green",
+
+    "NepsPiBORW_eps": "magenta",
+    "NepsPiBORW_eps_w_continuations": "magenta",
 
     # RandomSearchWithPriors
     "RandomSearchWithPriors": "darkorange",
@@ -147,20 +159,34 @@ COLORS_HPS = {
     ("NepsPriMO", "epsilon=0.1"): "darkcyan",
     ("NepsPriMO_w_continuations", "epsilon=0.1"): "darkcyan",
 
-    ("NepsPriMO", "epsilon=0.3"): "darkcyan",
+    ("NepsPriMO", "epsilon=0.3"): "green",
     ("NepsPriMO_w_continuations", "epsilon=0.3"): "green",
 
 
-    ("NepsPriMO", "epsilon=0.5"): "darkcyan",
+    ("NepsPriMO", "epsilon=0.5"): "magenta",
     ("NepsPriMO_w_continuations", "epsilon=0.5"): "magenta",
 
 
-    ("NepsPriMO", "epsilon=0.7"): "darkcyan",
+    ("NepsPriMO", "epsilon=0.7"): "darkorange",
     ("NepsPriMO_w_continuations", "epsilon=0.7"): "darkorange",
 
 
-    ("NepsPriMO", "epsilon=0.9"): "darkcyan",
+    ("NepsPriMO", "epsilon=0.9"): "goldenrod",
     ("NepsPriMO_w_continuations", "epsilon=0.9"): "goldenrod",
+
+    ("NepsPiBORW_legacy", "beta=1"): "darkviolet",
+    ("NepsPiBORW_legacy", "beta=5"): "darkorange",
+    ("NepsPiBORW_legacy", "beta=50"): "green",
+    ("NepsPiBORW_legacy", "beta=100"): "darkcyan",
+
+}
+
+
+LINESTYLES_HPS = {
+    ("NepsPriMO", "epsilon=0.1"): ":",
+    ("NepsPriMO_w_continuations", "epsilon=0.1"): ":",
+    ("NepsPriMO", "epsilon=0.9"): ":",
+    ("NepsPriMO_w_continuations", "epsilon=0.9"): ":",
 }
 
 
@@ -214,7 +240,7 @@ XTICKS = {
 
 other_fig_params = {
     "suptitle_bbox": (0.5, 1.02),
-    "xytick_labelsize": 15,
+    "xytick_labelsize": 28,
     "fig_size": (20, 15),
     "ovrank_xsize": 7,
     "ovrank_ysize": 7,
@@ -236,9 +262,9 @@ other_fig_params = {
         "h_pad": 2.5,
     },
     "bbox_to_anchor": (0.5, -0.05),
-    "legend_fontsize": 16,
-    "title_fontsize": 20,
-    "xylabel_fontsize": 22,
+    "legend_fontsize": 36,
+    "title_fontsize": 36,
+    "xylabel_fontsize": 36,
     "xlabel_start_i": {
         1 : 0,
         2 : 0,
@@ -323,6 +349,17 @@ other_fig_params = {
         11: 5,
         12: 5,
     },
+    "stitched_xylabel_fontsize": 36,
+    "stitched_leg_fontsize": 36,
+}
+
+# Keep hypervolume and Pareto figures independent of the larger ranking fonts.
+hv_fig_params = {
+    **other_fig_params,
+    "xytick_labelsize": 15,
+    "legend_fontsize": 16,
+    "title_fontsize": 20,
+    "xylabel_fontsize": 22,
     "stitched_xylabel_fontsize": 22,
     "stitched_leg_fontsize": 18,
 }

@@ -349,6 +349,10 @@ def agg_data(
             if skip_opt and opt_name in skip_opt:
                 continue
             _df = pd.read_parquet(file)
+            # Also support entries such as "NepsPriMO;epsilon=0.3" and "NepsPriMO;default".
+            opt_instance = f"{opt_name};{_df[HP_COL].iloc[0]}"
+            if skip_opt and opt_instance in skip_opt:
+                continue
 
 
             with (file.parent / "run_config.yaml").open("r") as f:
@@ -521,6 +525,8 @@ def make_subplots(  # noqa: PLR0913
     normalize_hv: bool = False,
     remove_prior_annots: bool = False,
     which_labels: str = "sig",
+    diagram_fontsize: float = 14,
+    title_fontsize: float = 24,
 ) -> None:
     """Function to make subplots for all plots in the same experiment directory."""
     benchmarks_dict, total_budget = agg_data(exp_dir, skip_opt=skip_opt)
@@ -578,8 +584,11 @@ def make_subplots(  # noqa: PLR0913
         data=agg_df,
         ax=ax
     )
+    # The CD library draws its labels as text artists, not axis tick labels.
+    for text in ax.texts:
+        text.set_fontsize(diagram_fontsize)
     if ax_title is not None:
-        ax.set_title(ax_title, fontsize=other_fig_params["title_fontsize"])
+        ax.set_title(ax_title, fontsize=title_fontsize)
     xytick_labelsize = other_fig_params["xytick_labelsize"]
     ax.tick_params(
         axis="both",
@@ -647,6 +656,18 @@ if __name__ == "__main__":
         help="Labels for the subplots. "
     )
     parser.add_argument(
+        "--diagram_fontsize",
+        type=float,
+        default=14,
+        help="Font size for CD diagram labels and scale values."
+    )
+    parser.add_argument(
+        "--title_fontsize",
+        type=float,
+        default=24,
+        help="Font size for CD subplot titles and the overall title."
+    )
+    parser.add_argument(
         "--remove_prior_annots", "-rm_annot",
         action="store_true",
         default=False,
@@ -680,6 +701,8 @@ if __name__ == "__main__":
         args.file_type = yaml_config.get("file_type", args.file_type)
         args.figsize = yaml_config.get("figsize", args.figsize)
         args.sub_labels = yaml_config.get("sub_labels", args.sub_labels)
+        args.diagram_fontsize = yaml_config.get("diagram_fontsize", args.diagram_fontsize)
+        args.title_fontsize = yaml_config.get("title_fontsize", args.title_fontsize)
         args.remove_prior_annots = yaml_config.get(
             "remove_prior_annots", args.remove_prior_annots
         )
@@ -716,7 +739,7 @@ if __name__ == "__main__":
             args.plot_title,
             x=suptitle_x,
             y=suptitle_y,
-            fontsize=other_fig_params["title_fontsize"])
+            fontsize=args.title_fontsize)
 
     axs_cd: list[plt.Axes] = axs_cd.flatten() if num_plots > 1 else [axs_cd]
 
@@ -766,6 +789,8 @@ if __name__ == "__main__":
             normalize_hv=args.normalize_hv,
             remove_prior_annots=args.remove_prior_annots,
             which_labels=which_labels,
+            diagram_fontsize=args.diagram_fontsize,
+            title_fontsize=args.title_fontsize,
         )
 
 

@@ -8,6 +8,7 @@ import pandas as pd
 from momfpriors.plotting.labels import (
     ABLATION_INIT_LABELS,
     ABLATION_LABELS,
+    EPS_STUDY_LABELS,
     GENERAL_HPOSUITE,
     HP_LABELS,
     INTRO_LABELS,
@@ -25,6 +26,7 @@ from momfpriors.plotting.plot_styles import (
 
 map_labels = {
     "1": LABELS_1,
+    "eps_study": EPS_STUDY_LABELS,
     "intro": INTRO_LABELS,
     "ablation": ABLATION_LABELS,
     "ablation_init": ABLATION_INIT_LABELS,
@@ -171,8 +173,12 @@ def edit_legend_labels(  # noqa: C901, PLR0912
                     "Multiple HPs not yet supported"
                 )
         _label = opt_splits[0]
+        # Default PiBO runs omit beta because 10 is the optimizer default.
+        if _label == "NepsPiBORW_legacy" and hps is None:
+            hps = "beta=10"
         _label = map_labels[which_labels].get(
-            _label, _label)
+            _label, map_labels["1"].get(_label, _label)
+        )
         if hps is not None:
             hps, value = hps.split("=")
             hps = HP_LABELS.get(
@@ -240,6 +246,13 @@ regret_bounds = {
 
 
 reference_points_dict = {
+
+    # MF-Hartmann3 MO at maximum fidelity: value1 is in [-3.86278, 0]
+    # and value2 = -value1. Use the same reference point for every correlation.
+    "mfh3_good_mo": {"value1": 0, "value2": 4},
+    "mfh3_bad_mo": {"value1": 0, "value2": 4},
+    "mfh3_moderate_mo": {"value1": 0, "value2": 4},
+    "mfh3_terrible_mo": {"value1": 0, "value2": 4},
 
     # HW-GPT-Bench
     "hwgptbench-s": {"perplexity": 100, "params": 130000000, "flops": 9e12},
@@ -476,14 +489,14 @@ reference_points_dict = {
 
 hv_low_cutoffs = {
     "MOMFPark": 1.2,
-    "pd1-cifar100-wide_resnet-2048": 10,
-    "pd1-imagenet-resnet-512": 2600,
-    "pd1-lm1b-transformer-2048": 275,
-    "pd1-translate_wmt-xformer_translate-64": 7200,
-    "yahpo-lcbench-126026": 45,
-    "yahpo-lcbench-146212": 15,
-    "yahpo-lcbench-168330": 150,
-    "yahpo-lcbench-168868": 45,
+    "pd1-cifar100-wide_resnet-2048": 13,
+    "pd1-imagenet-resnet-512": 3200,
+    "pd1-lm1b-transformer-2048": 320,
+    "pd1-translate_wmt-xformer_translate-64": 10000,
+    "yahpo-lcbench-126026": 100,
+    "yahpo-lcbench-146212": 85,
+    "yahpo-lcbench-168330": 2200,
+    "yahpo-lcbench-168868": 180,
     "jahs-CIFAR10": 0,
     "jahs-ColorectalHistology": 0,
     "jahs-FashionMNIST": 0,
@@ -494,14 +507,14 @@ hv_low_cutoffs = {
 
 fid_perc_momfbo = {
     "MOMFPark": 0.10,
-    "pd1-cifar100-wide_resnet-2048": 0.10,
-    "pd1-imagenet-resnet-512": 0.10,
-    "pd1-lm1b-transformer-2048": 0.10,
-    "pd1-translate_wmt-xformer_translate-64": 0.10,
-    "yahpo-lcbench-126026": 0.10,
-    "yahpo-lcbench-146212": 0.10,
-    "yahpo-lcbench-168330": 0.10,
-    "yahpo-lcbench-168868": 0.10,
+    "pd1-cifar100-wide_resnet-2048": 0.70,
+    "pd1-imagenet-resnet-512": 0.70,
+    "pd1-lm1b-transformer-2048": 0.70,
+    "pd1-translate_wmt-xformer_translate-64": 0.70,
+    "yahpo-lcbench-126026": 0.70,
+    "yahpo-lcbench-146212": 0.70,
+    "yahpo-lcbench-168330": 0.70,
+    "yahpo-lcbench-168868": 0.70,
     "jahs-CIFAR10": 0.9,
     "jahs-ColorectalHistology": 0.9,
     "jahs-FashionMNIST": 0.9,

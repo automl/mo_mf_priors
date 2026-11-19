@@ -26,7 +26,7 @@ LABELS_1 = {
 
     "NepsMOASHA_RS": "MOASHA+RS",
 
-    "NepsMOASHABO": "MOASHA-BO+RW",
+    "NepsMOASHABO": "PriMO w/o Priors",
 
     "MOMFBO": "MOMF-BO",
 
@@ -34,7 +34,9 @@ LABELS_1 = {
 
     "NepsMOPriorband": "MO-Priorband",
 
-    "NepsPiBORW": "πBO+RW",
+    "NepsPiBORW": "πBO+RW with NePS prior decay",
+
+    "NepsPiBORW_legacy": "πBO+RW",
 
     "RandomSearchWithPriors": "RS+Prior",
 
@@ -45,6 +47,20 @@ LABELS_1 = {
     "NepsMOBO": "qLogNEHVI",
 }
 
+EPS_STUDY_LABELS = {
+    **LABELS_1,
+    "Optuna": "Strongest baseline",
+}
+
+PIBO_COMP_LABELS = {
+
+    "NepsPiBORW": "πBO+RW with NePS prior decay",
+
+    "NepsPiBORW_legacy": "πBO+RW with original prior decay",
+
+}
+
+
 ABLATION_LABELS = {
 
     "NepsPriMO_HV": "PriMO+HV",
@@ -53,11 +69,17 @@ ABLATION_LABELS = {
 
     "NepsPriMO_LCB": "PriMO+LCB",
 
+    "NepsPriMO_EHVI": "PriMO+EHVI",
+
     "NepsNoInitPriMO": "PriMO w/o initial design",
 
     "NepsMOASHA_RS": "PriMO w/o Priors and BO",
 
     "NepsPriMO": "PriMO",
+
+    "NepsPriMO_noEPS": "PriMO's prior decay w/o ϵ-greedy",
+
+    "NepsPiBORW_eps": "πBO's prior decay + ϵ-greedy",
 
     "NepsMOASHABO": "PriMO w/o Priors",
 
@@ -68,6 +90,8 @@ ABLATION_LABELS = {
     "NepsMFPriMO": "MO-ASHA + PriMO Sampler",
 
     "NepsEtaPriorMFPriMO": "MO-ASHA + 1/η Priors + PriMO Sampler",
+
+    "Optuna": "Strongest baseline",
 }
 
 ABLATION_INIT_LABELS = {
@@ -79,6 +103,7 @@ ABLATION_INIT_LABELS = {
 
 HP_LABELS = {
     "initial_design_size": "init",
+    "beta": r"$\beta$",
 }
 
 SIG_LABELS = {
@@ -96,8 +121,6 @@ SIG_LABELS = {
 
     "NepsMOASHA_RS": "MOASHA+RS",
 
-    "NepsMOASHABO": "MOASHA-BO+RW",
-
     "MOMFBO": "MOMF-BO",
 
     "NepsPriorMOASHA": "MOASHA+Prior",
@@ -105,6 +128,8 @@ SIG_LABELS = {
     "NepsMOPriorband": "MO-PB",
 
     "NepsPiBORW": "πBO+RW",
+
+    "NepsPiBORW_legacy": "πBO+RW",
 
     "RandomSearchWithPriors": "RS+Prior",
 
@@ -134,70 +159,3 @@ GENERAL_HPOSUITE = {
     "Optuna": "Optuna TPE",
 }
 
-
-
-
-#################
-# NOT IN USE
-#################
-
-LABELS_99 = {
-
-    # Our Optimizer
-
-    "NepsPriMO-all": "PriMO(all)",
-    "NepsPriMO-good-good": "PriMO(good-good)",
-    "NepsPriMO-bad-bad": "PriMO(bad-bad)",
-    "NepsPriMO-bad-good": "PriMO(bad-good)",
-
-    # Optimizers without Priors
-
-    "SMAC_ParEGO": "ParEGO",
-    "RandomSearch": "Random Search",
-    "NepsRW": "BO+RW",
-    "Nevergrad_EvolutionStrategy": "NSGA-II",
-
-    "NepsHyperbandRW": "HB+RW",
-
-    "NepsMOASHA": "MOASHA",
-
-    "NepsMOASHA_RS": "MOASHA+RS",
-
-    "NepsMOASHABO": "MOASHA-BO+RW",
-
-    "MOMFBO": "MOMF-BO",
-
-    # Optimizers with Priors
-
-    "NepsPriorMOASHA-all": "MOASHA+Prior(all)",
-    "NepsPriorMOASHA-good-good": "MOASHA+Prior(good-good)",
-    "NepsPriorMOASHA-bad-bad": "MOASHA+Prior(bad-bad)",
-    "NepsPriorMOASHA-bad-good": "MOASHA+Prior(bad-good)",
-
-    "NepsMOPriorband-all": "MO-Priorband(all)",
-    "NepsMOPriorband-good-good": "MO-Priorband(good-good)",
-    "NepsMOPriorband-bad-bad": "MO-Priorband(bad-bad)",
-    "NepsMOPriorband-bad-good": "MO-Priorband(bad-good)",
-
-    "NepsPiBORW-all": "πBO+RW(all)",
-    "NepsPiBORW-good-good": "πBO+RW(good-good)",
-    "NepsPiBORW-bad-bad": "πBO+RW(bad-bad)",
-    "NepsPiBORW-bad-good": "πBO+RW(bad-good)",
-
-    "RandomSearchWithPriors-all": "RS+Prior(all)",
-    "RandomSearchWithPriors-good-good": "RS+Prior(good-good)",
-    "RandomSearchWithPriors-good-bad": "RS+Prior(good-bad)",
-    "RandomSearchWithPriors-good-medium": "RS+Prior(good-medium)",
-    "RandomSearchWithPriors-good-None": "RS+Prior(good-None)",
-    "RandomSearchWithPriors-None-good": "RS+Prior(None-good)",
-    "RandomSearchWithPriors-bad-good": "RS+Prior(bad-good)",
-    "RandomSearchWithPriors-bad-bad": "RS+Prior(bad-bad)",
-    "RandomSearchWithPriors-bad-medium": "RS+Prior(bad-medium)",
-    "RandomSearchWithPriors-bad-None": "RS+Prior(bad-None)",
-    "RandomSearchWithPriors-None-bad": "RS+Prior(None-bad)",
-    "RandomSearchWithPriors-medium-good": "RS+Prior(medium-good)",
-    "RandomSearchWithPriors-medium-bad": "RS+Prior(medium-bad)",
-    "RandomSearchWithPriors-medium-medium": "RS+Prior(medium-medium)",
-    "RandomSearchWithPriors-medium-None": "RS+Prior(medium-None)",
-    "RandomSearchWithPriors-None-medium": "RS+Prior(None-medium)",
-}
