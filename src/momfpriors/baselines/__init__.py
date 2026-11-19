@@ -18,6 +18,7 @@ from momfpriors.baselines.neps_optimizers import (
     NepsPiBORW_eps,
     NepsPiBORW_legacy,
     NepsPriMO,
+    NepsPriMO_EHVI,
     NepsPriMO_HV,
     NepsPriMO_Init10,
     NepsPriMO_LCB,
@@ -62,6 +63,7 @@ OPTIMIZERS = {
     NepsPriMO_LCB.name: NepsPriMO_LCB,
     NepsPriMO_noEPS.name: NepsPriMO_noEPS,
     NepsPiBORW_eps.name: NepsPiBORW_eps,
+    NepsPriMO_EHVI.name: NepsPriMO_EHVI,
 }
 
 for opt in yield_nevergrad_optimizers():
